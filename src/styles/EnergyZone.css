@@ -1,0 +1,24 @@
+.energy-zone {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 10px;
+  border: 2px solid #ccc;
+  border-radius: 15px;
+  background-color: rgba(0, 0, 0, 0.3);
+  width: 69px; /* Recalculated */
+  height: 144px; /* Recalculated */
+  box-sizing: border-box;
+}
+
+.energy-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #555;
+  box-sizing: border-box;
+}
+
+.energy-circle.filled {
+  background-color: yellow; /* Or any color for filled energy */
+}

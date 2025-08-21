@@ -5,6 +5,7 @@ import { GameState } from '../types/gameState';
 import Hand from './Hand';
 import CardSlot from './CardSlot';
 import { Card } from '../types/card';
+import EnergyZone from './EnergyZone';
 
 const GameBoard: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(initialGameState);
@@ -65,7 +66,7 @@ const GameBoard: React.FC = () => {
       {/* Left Info Panel */}
       <div className="info-panel">
         <div className="card-info">カード情報</div>
-        <button onClick={handleDrawCard} className="draw-button">Draw Card</button>
+        
       </div>
 
       {/* Main Game Area */}
@@ -86,13 +87,12 @@ const GameBoard: React.FC = () => {
                     <div className="graveyard">墓地: {opponent.graveyard.length}</div>
                 </div>
                 <div className="special-card-hp">HP: {opponent.specialCardHp}</div>
+                <EnergyZone currentEnergy={opponent.currentEnergy} maxEnergy={opponent.maxEnergy} />
             </div>
+        <Hand cards={opponent.hand} onCardClick={() => {}} />
         </div>
 
         <Hand cards={opponent.hand} onCardClick={() => {}} />
-        <Hand cards={player.hand} onCardClick={handleSelectCard} selectedCardIndex={selectedCardIndex} />
-
-        {/* Player's Area */}
         <div className="player-area self-area">
             <div className="field-and-deck">
                 <div className="deck-graveyard">
@@ -108,7 +108,9 @@ const GameBoard: React.FC = () => {
                   </div>
                 </div>
                 <div className="special-card-hp">HP: {player.specialCardHp}</div>
+                <EnergyZone currentEnergy={player.currentEnergy} maxEnergy={player.maxEnergy} />
             </div>
+            <Hand cards={player.hand} onCardClick={handleSelectCard} selectedCardIndex={selectedCardIndex} />
         </div>
       </div>
 

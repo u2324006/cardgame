@@ -3,6 +3,8 @@ import { Card } from './card';
 export interface PlayerState {
   hp: number;
   specialCardHp: number;
+  currentEnergy: number;
+  maxEnergy: number;
   deck: Card[];
   hand: Card[];
   graveyard: Card[];

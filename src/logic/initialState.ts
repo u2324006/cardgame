@@ -34,6 +34,8 @@ const spellCard1: Card = {
 const createInitialPlayerState = (deck: Card[]): PlayerState => ({
   hp: 2000,
   specialCardHp: 100,
+  currentEnergy: 0,
+  maxEnergy: 10,
   deck: deck,
   hand: [],
   graveyard: [],

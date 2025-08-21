@@ -10,7 +10,8 @@
 .main-area {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: center;
+    gap: 0px;
     width: 65%;
 }
 
@@ -103,6 +104,18 @@
     position: absolute;
     bottom: 0;
     right: 120px; /* Adjust based on special-card-hp width + gap */
+}
+
+.opponent-area .energy-zone {
+    position: absolute;
+    top: 145px; /* Aligned with top of deck */
+    left: 16px; /* Next to special-card-hp, no overlap */
+}
+
+.self-area .energy-zone {
+    position: absolute;
+    bottom: 145px; /* Aligned with bottom of deck */
+    right: 16px; /* Next to special-card-hp, no overlap */
 }
 
 .info-panel {
