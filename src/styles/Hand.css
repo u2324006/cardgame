@@ -1,0 +1,10 @@
+.hand-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  gap: 10px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  min-height: 190px; /* Card height + padding */
+}
