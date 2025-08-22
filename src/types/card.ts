@@ -5,7 +5,9 @@ export interface Card {
   name: string;
   type: CardType;
   description: string;
-  attack?: number;
-  defense?: number;
+  frontAttack?: number;
+  backAttack?: number;
+  cardHp?: number;
+  race?: string;
   cost: number;
 }

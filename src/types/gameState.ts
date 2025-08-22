@@ -21,5 +21,5 @@ export interface GameState {
   };
   currentPlayer: 'player1' | 'player2';
   turn: number;
-  phase: 'Draw' | 'Standby' | 'Main1' | 'Battle' | 'Main2' | 'End';
+  phase: 'Draw' | 'Play' | 'Attack' | 'EndTurnPhase';
 }

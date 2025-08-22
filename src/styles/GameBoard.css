@@ -11,7 +11,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 0px;
+    gap: 10px; /* Changed from 0px to 10px */
     width: 65%;
 }
 
