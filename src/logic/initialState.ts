@@ -26,15 +26,6 @@ const monsterCard2: Card = {
   cost: 2,
 };
 
-const spellCard1: Card = {
-    id: 's001',
-    name: 'Fireball',
-    type: 'Spell',
-    description: 'Deals 600 damage to a target monster.',
-    race: 'Spell',
-    cost: 4,
-}
-
 const attackSpell: Card = {
     id: 's002',
     name: '攻撃の呪文',
@@ -95,7 +86,7 @@ const createInitialPlayerState = (fullDeck: Card[]): PlayerState => {
 };
 
 // --- Create Decks ---
-const baseCards = [monsterCard1, monsterCard2, spellCard1, attackSpell]; // Cards to duplicate
+const baseCards = [monsterCard1, monsterCard2, attackSpell]; // Cards to duplicate
 const fullDeck1 = createDeck(baseCards);
 const fullDeck2 = createDeck(baseCards);
 

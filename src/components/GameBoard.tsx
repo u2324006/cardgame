@@ -13,8 +13,8 @@ interface AttackerInfo {
   position: { row: 'frontRow' | 'backRow'; index: number; };
 }
 type AttackTarget = 
-  | { type: 'monster', card: Card; position: { player: 'player2', row: 'frontRow' | 'backRow', index: number } }
-  | { type: 'player', player: 'player2' };
+  | { type: 'monster', card: Card; position: { player: 'player1' | 'player2', row: 'frontRow' | 'backRow', index: number } }
+  | { type: 'player', player: 'player1' | 'player2' };
 
 const GameBoard: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(initialGameState);
@@ -165,6 +165,82 @@ const GameBoard: React.FC = () => {
         }
 
         if (phase === 'Attack') {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          if (isCancelled) return;
+
+          const aiAttackedMonsterIdsThisTurn: string[] = []; // Moved declaration here
+
+          setGameState(prevState => {
+            if (prevState.currentPlayer !== 'player2') return prevState;
+
+            const newState = { ...prevState };
+            const player2State = { ...newState.players.player2 };
+            const player1State = { ...newState.players.player1 };
+
+            const player2Monsters: { card: Card; position: { row: 'frontRow' | 'backRow'; index: number; }; }[] = [];
+            player2State.field.frontRow.forEach((card, index) => {
+              if (card && card.type === 'Monster') player2Monsters.push({ card, position: { row: 'frontRow', index } });
+            });
+            player2State.field.backRow.forEach((card, index) => {
+              if (card && card.type === 'Monster') player2Monsters.push({ card, position: { row: 'backRow', index } });
+            });
+
+            const player1FrontRowMonsters = player1State.field.frontRow.filter(card => card !== null);
+
+            // AI attacks
+            player2Monsters.forEach(attacker => {
+              if (aiAttackedMonsterIdsThisTurn.includes(attacker.card.id)) { // This will now correctly reference the outer variable
+                return; // This monster has already attacked this turn
+              }
+
+              let target: AttackTarget | null = null;
+
+              if (player1FrontRowMonsters.length > 0) {
+                // Attack first monster in player1's front row
+                const targetCard = player1FrontRowMonsters[0];
+                const targetIndex = player1State.field.frontRow.findIndex(card => card === targetCard);
+                if (targetCard && targetIndex !== -1) {
+                  target = { type: 'monster', card: targetCard, position: { player: 'player1', row: 'frontRow', index: targetIndex } };
+                }
+              } else {
+                // Direct attack player1's special card
+                target = { type: 'player', player: 'player1' };
+              }
+
+              if (target) {
+                const baseAttack = (attacker.position.row === 'frontRow' ? attacker.card.frontAttack : attacker.card.backAttack) || 0;
+                const buff = attackBuffs[attacker.card.id] || 0;
+                const attackPower = baseAttack + buff;
+
+                console.log(`AI Attack Debug: Attacker: ${attacker.card.name} (ID: ${attacker.card.id}), Position: ${attacker.position.row}, Base Attack: ${baseAttack}, Buff: ${buff}, Total Attack Power: ${attackPower}`);
+                if (target.type === 'monster') {
+                  console.log(`AI Attack Debug: Target Monster: ${target.card.name} (ID: ${target.card.id}), Current HP: ${target.card.cardHp}, Damage Taken: ${attackPower}`);
+                  const newHp = target.card.cardHp! - attackPower;
+                  const newField = { ...player1State.field };
+                  if (newHp <= 0) {
+                    newField[target.position.row][target.position.index] = null;
+                    player1State.graveyard = [...player1State.graveyard, target.card];
+                  } else {
+                    const newTargetCard = { ...target.card, cardHp: newHp };
+                    newField[target.position.row][target.position.index] = newTargetCard;
+                  }
+                  player1State.field = newField;
+                } else if (target.type === 'player') {
+                  console.log(`AI Attack Debug: Target Player Special Card, Current HP: ${player1State.specialCardHp}, Damage Taken: ${attackPower}`);
+                  player1State.specialCardHp -= attackPower;
+                }
+                aiAttackedMonsterIdsThisTurn.push(attacker.card.id); // Mark as attacked in local array
+              }
+            });
+
+            newState.players.player1 = player1State;
+            newState.players.player2 = player2State;
+            return newState;
+          });
+
+          // Update the global attackedMonsterIds state after the setGameState call
+          setAttackedMonsterIds(prevIds => [...prevIds, ...aiAttackedMonsterIdsThisTurn]);
+
           await new Promise(resolve => setTimeout(resolve, 1000));
           if (isCancelled) return;
           handleEndTurn();
