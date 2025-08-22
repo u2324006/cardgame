@@ -8,8 +8,8 @@ const monsterCard1: Card = {
   type: 'Monster',
   description: 'A standard goblin warrior.',
   frontAttack: 2,
-  backAttack: 3,
-  cardHp: 10,
+  backAttack: 2,
+  cardHp: 6,
   race: 'Goblin',
   cost: 1,
 };
@@ -19,15 +19,75 @@ const monsterCard2: Card = {
   name: 'Stone Golem',
   type: 'Monster',
   description: 'A creature made of living rock.',
-  frontAttack: 5,
+  frontAttack: 3,
+  backAttack: 0,
+  cardHp: 13,
+  race: 'Golem',
+  cost: 2,
+};
+
+const monsterCard3: Card = {
+  id: 'm003',
+  name: 'pute',
+  type: 'Monster',
+  description: 'A creature made of living rock.',
+  frontAttack: 4,
+  backAttack: 0,
+  cardHp: 5,
+  race: 'Golem',
+  cost: 1,
+};
+
+const monsterCard4: Card = {
+  id: 'm004',
+  name: 'hanta-',
+  type: 'Monster',
+  description: 'A creature made of living rock.',
+  frontAttack: 0,
   backAttack: 4,
-  cardHp: 8,
+  cardHp: 3,
+  race: 'Golem',
+  cost: 1,
+};
+
+const monsterCard5: Card = {
+  id: 'm005',
+  name: 'sennsi',
+  type: 'Monster',
+  description: 'A creature made of living rock.',
+  frontAttack: 5,
+  backAttack: 0,
+  cardHp: 7,
+  race: 'Golem',
+  cost: 2,
+};
+
+const monsterCard6: Card = {
+  id: 'm006',
+  name: 'majutu',
+  type: 'Monster',
+  description: 'A creature made of living rock.',
+  frontAttack: 0,
+  backAttack: 5,
+  cardHp: 6,
+  race: 'Golem',
+  cost: 2,
+};
+
+const monsterCard7: Card = {
+  id: 'm002',
+  name: 'baran',
+  type: 'Monster',
+  description: 'A creature made of living rock.',
+  frontAttack: 3,
+  backAttack: 3,
+  cardHp: 9,
   race: 'Golem',
   cost: 2,
 };
 
 const attackSpell: Card = {
-    id: 's002',
+    id: 's001',
     name: '攻撃の呪文',
     type: 'Spell',
     description: '味方モンスター1体のFAを、ターン終了まで1上げる。',
@@ -86,7 +146,7 @@ const createInitialPlayerState = (fullDeck: Card[]): PlayerState => {
 };
 
 // --- Create Decks ---
-const baseCards = [monsterCard1, monsterCard2, attackSpell]; // Cards to duplicate
+const baseCards = [monsterCard1, monsterCard2, monsterCard3, monsterCard4, monsterCard5, monsterCard6, monsterCard7, attackSpell]; // Cards to duplicate
 const fullDeck1 = createDeck(baseCards);
 const fullDeck2 = createDeck(baseCards);
 
