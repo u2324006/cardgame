@@ -22,6 +22,10 @@ const GameBoard: React.FC = () => {
   const [attackerInfo, setAttackerInfo] = useState<AttackerInfo | null>(null);
   const [gameOver, setGameOver] = useState<string | null>(null);
   const [attackedMonsterIds, setAttackedMonsterIds] = useState<string[]>([]);
+  const [movingCardInfo, setMovingCardInfo] = useState<AttackerInfo | null>(null);
+  const [hasMoved, setHasMoved] = useState<boolean>(false);
+  const [summonedThisTurnIds, setSummonedThisTurnIds] = useState<string[]>([]);
+  const [attackBuffs, setAttackBuffs] = useState<Record<string, number>>({}); // { [cardId]: buffValue }
 
   const { players, turn, phase, currentPlayer } = gameState;
   const isPlayer1Turn = currentPlayer === 'player1';
@@ -62,10 +66,14 @@ const GameBoard: React.FC = () => {
     }));
   }, [gameOver]);
 
-  // ターン開始時に攻撃済みリストをリセット
+  // ターン開始時に各種状態をリセット
   useEffect(() => {
     setAttackedMonsterIds([]);
     setAttackerInfo(null);
+    setMovingCardInfo(null);
+    setHasMoved(false);
+    setSummonedThisTurnIds([]);
+    setAttackBuffs({}); // バフをリセット
   }, [turn]);
 
   // 勝利判定
@@ -193,6 +201,7 @@ const GameBoard: React.FC = () => {
       newPlayerState.field = newField;
       return { ...prevState, players: { ...prevState.players, player1: newPlayerState } };
     });
+    setSummonedThisTurnIds(prevIds => [...prevIds, selectedCard.id]);
     setSelectedCardIndex(null);
   };
 
@@ -201,7 +210,10 @@ const GameBoard: React.FC = () => {
     if (gameOver) return;
     if (attacker.card.type !== 'Monster' || typeof attacker.card.frontAttack === 'undefined' || typeof attacker.card.backAttack === 'undefined') return;
 
-    const attackPower = attacker.position.row === 'frontRow' ? attacker.card.frontAttack : attacker.card.backAttack;
+    // バフを含めた攻撃力を計算
+    const baseAttack = attacker.position.row === 'frontRow' ? attacker.card.frontAttack : attacker.card.backAttack;
+    const buff = attackBuffs[attacker.card.id] || 0;
+    const attackPower = baseAttack + buff;
 
     // ターゲットがHPを持つモンスターか事前にチェック
     if (target.type === 'monster' && typeof target.card.cardHp === 'undefined') {
@@ -239,41 +251,123 @@ const GameBoard: React.FC = () => {
     setAttackerInfo(null);
   };
 
+  // モンスターを移動させる処理
+  const executeMove = (from: AttackerInfo, to: { row: 'frontRow' | 'backRow', index: number }) => {
+    setGameState(prevState => {
+      const newPlayerState = { ...prevState.players.player1 };
+      const newField = { ...newPlayerState.field };
+
+      // 移動元と移動先が同じ場合は処理しない
+      if (from.position.row === to.row && from.position.index === to.index) {
+        return prevState;
+      }
+
+      // 移動元からカードを削除
+      newField[from.position.row][from.position.index] = null;
+      // 移動先にカードを配置
+      newField[to.row][to.index] = from.card;
+
+      newPlayerState.field = newField;
+      return { ...prevState, players: { ...prevState.players, player1: newPlayerState } };
+    });
+
+    setHasMoved(true);
+    setMovingCardInfo(null);
+  };
+
+  // スペルカードを使用する処理
+  const executeSpell = (spellCard: Card, targetCard: Card) => {
+    if (gameOver || !isPlayer1Turn) return;
+
+    // エネルギーチェック
+    if (players.player1.currentEnergy < spellCard.cost) {
+      alert("エネルギーが足りません！");
+      return;
+    }
+
+    // 今回は '攻撃の呪文' の効果に限定して実装
+    if (spellCard.id.startsWith('s002')) {
+      console.log(`${targetCard.name} のFAを1上げます。`);
+      setAttackBuffs(prevBuffs => ({
+        ...prevBuffs,
+        [targetCard.id]: (prevBuffs[targetCard.id] || 0) + 1,
+      }));
+    }
+
+    // スペル使用後の処理
+    setGameState(prevState => {
+      const newPlayerState = { ...prevState.players.player1 };
+      // エネルギー消費
+      newPlayerState.currentEnergy -= spellCard.cost;
+      // 手札からスペルを削除
+      newPlayerState.hand = newPlayerState.hand.filter(card => card.id !== spellCard.id);
+      // 墓地に送る
+      newPlayerState.graveyard = [...newPlayerState.graveyard, spellCard];
+      return { ...prevState, players: { ...prevState.players, player1: newPlayerState } };
+    });
+
+    setSelectedCardIndex(null);
+  };
+
   // フィールドのカードをクリック
   const handleFieldClick = (player: 'player1' | 'player2', row: 'frontRow' | 'backRow', index: number) => {
     if (!isPlayer1Turn || gameOver) return;
     const clickedCard = players[player].field[row][index];
-    
+
+    // Attackフェイズのロジック
     if (phase === 'Attack') {
-      // 攻撃者を選択 (自分のモンスターをクリック)
       if (player === 'player1' && clickedCard) {
         if (attackedMonsterIds.includes(clickedCard.id)) {
           alert("このモンスターは既に攻撃済みです。");
           return;
         }
         setAttackerInfo({ card: clickedCard, position: { row, index } });
-      } 
-      // 攻撃対象を選択 (相手のモンスターをクリック)
-      else if (player === 'player2' && clickedCard && attackerInfo) {
+      } else if (player === 'player2' && clickedCard && attackerInfo) {
         const opponentFrontRow = players.player2.field.frontRow;
         const frontRowHasMonsters = opponentFrontRow.some(card => card !== null);
-
-        // 後衛を攻撃しようとした時に、前衛にモンスターがいる場合は攻撃不可
         if (row === 'backRow' && frontRowHasMonsters) {
           alert("前衛にモンスターがいるため、後衛を攻撃できません。");
           return;
         }
-        
         executeAttack(attackerInfo, { type: 'monster', card: clickedCard, position: { player, row, index } });
-      } 
-      // それ以外の場所をクリックしたら選択解除
-      else {
+      } else {
         setAttackerInfo(null);
       }
     } 
-    // プレイフェイズの処理
+    // Playフェイズのロジック
     else if (phase === 'Play') {
-      if (player === 'player1') handlePlayCard(row, index);
+      if (player === 'player1') {
+        const selectedCard = selectedCardIndex !== null ? players.player1.hand[selectedCardIndex] : null;
+
+        // スペルカード使用のロジック
+        if (selectedCard && selectedCard.type === 'Spell' && clickedCard) {
+          executeSpell(selectedCard, clickedCard);
+          return;
+        }
+
+        // モンスター移動のロジック
+        if (clickedCard) {
+          if (summonedThisTurnIds.includes(clickedCard.id)) {
+            alert("このモンスターは召喚されたターンには移動できません。");
+            return;
+          }
+          setMovingCardInfo({ card: clickedCard, position: { row, index } });
+        } else if (!clickedCard && movingCardInfo) {
+          if (hasMoved) {
+            alert("モンスターの移動は1ターンに1回までです。");
+            return;
+          }
+          if (movingCardInfo.position.row === row) {
+            setMovingCardInfo(null); // 同じ列内での移動はキャンセル扱い
+            return;
+          }
+          executeMove(movingCardInfo, { row, index });
+        }
+        // 召喚処理
+        else {
+          handlePlayCard(row, index);
+        }
+      }
     }
   };
 
@@ -313,7 +407,7 @@ const GameBoard: React.FC = () => {
               <div className="graveyard">墓地: {players.player2.graveyard.length}</div>
             </div>
             <div className="special-card-hp" onClick={handlePlayerHpClick}>HP: {players.player2.specialCardHp}</div>
-            <EnergyZone currentEnergy={players.player2.currentEnergy} maxEnergy={players.player2.maxEnergy} />
+            <EnergyZone currentEnergy={players.player2.currentEnergy} maxEnergy={players.player2.maxEnergy} className="rotated" />
           </div>
         </div>
         <div className="player-area self-area">

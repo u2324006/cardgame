@@ -1,6 +1,9 @@
 .energy-zone {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: row;
+  flex-wrap: wrap-reverse;
+  justify-content: flex-start;
+  align-items: flex-end; /* アイテムを下端に揃える */
   gap: 5px;
   padding: 10px;
   border: 2px solid #ccc;
@@ -21,4 +24,8 @@
 
 .energy-circle.filled {
   background-color: yellow; /* Or any color for filled energy */
+}
+
+.energy-zone.rotated {
+  transform: rotate(180deg);
 }

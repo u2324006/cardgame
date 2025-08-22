@@ -31,9 +31,17 @@ const spellCard1: Card = {
     name: 'Fireball',
     type: 'Spell',
     description: 'Deals 600 damage to a target monster.',
-    cardHp: 0, /* Spells typically don't have HP */
     race: 'Spell',
     cost: 4,
+}
+
+const attackSpell: Card = {
+    id: 's002',
+    name: '攻撃の呪文',
+    type: 'Spell',
+    description: '味方モンスター1体のFAを、ターン終了まで1上げる。',
+    race: 'Spell',
+    cost: 1,
 }
 
 // Helper to create a shuffled deck of 40 cards
@@ -87,7 +95,7 @@ const createInitialPlayerState = (fullDeck: Card[]): PlayerState => {
 };
 
 // --- Create Decks ---
-const baseCards = [monsterCard1, monsterCard2, spellCard1]; // Cards to duplicate
+const baseCards = [monsterCard1, monsterCard2, spellCard1, attackSpell]; // Cards to duplicate
 const fullDeck1 = createDeck(baseCards);
 const fullDeck2 = createDeck(baseCards);
 
