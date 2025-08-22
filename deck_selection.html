@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>デッキ選択</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .deck-selection-container {
+            padding: 20px;
+            text-align: center;
+        }
+        .deck-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .deck-item {
+            border: 1px solid #ccc;
+            padding: 15px;
+            cursor: pointer;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: background-color 0.3s ease;
+        }
+        .deck-item:hover {
+            background-color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container deck-selection-container">
+        <h1>デッキ選択</h1>
+        <div class="deck-list">
+            <div class="deck-item" onclick="location.href='deck_editing.html?deck=deck1'">
+                <p>デッキ 1</p>
+            </div>
+            <div class="deck-item" onclick="location.href='deck_editing.html?deck=deck2'">
+                <p>デッキ 2</p>
+            </div>
+            <div class="deck-item" onclick="location.href='deck_editing.html?deck=deck3'">
+                <p>デッキ 3</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,48 @@
+body {
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0; /* Light background for contrast */
+}
+
+.container {
+    border: 2px solid #003333; /* Dark teal border */
+    padding: 20px;
+    text-align: center;
+    background-color: #ffffff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 90%; /* Adjust width as needed */
+    max-width: 1000px; /* Max width for larger screens */
+}
+
+h1 {
+    color: #000000; /* Black text for main menu title */
+    margin-bottom: 40px;
+    font-size: 2.5em;
+}
+
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Three columns, equal width */
+    gap: 20px; /* Space between items */
+    justify-content: center;
+}
+
+.menu-item {
+    border: 2px solid #003333; /* Dark teal border for menu items */
+    padding: 50px 20px; /* Adjust padding for height and width */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5em;
+    color: #000000; /* Black text for menu item labels */
+    cursor: pointer; /* Indicate clickable */
+    transition: background-color 0.3s ease;
+}
+
+.menu-item:hover {
+    background-color: #e0e0e0; /* Slightly darker on hover */
+}

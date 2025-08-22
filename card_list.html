@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カード一覧</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .main-content-wrapper {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        /* Card Info Panel - styled to look like a single card */
+        .card-info-panel {
+            flex: 1;
+            min-width: 300px;
+            border: 2px solid #003333;
+            background-color: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: left;
+            height: 500px; /* Fixed height for card appearance */
+            position: sticky;
+            top: 20px;
+            display: flex;
+            flex-direction: column;
+            padding: 0; /* Remove padding from panel itself */
+            box-sizing: border-box;
+            position: relative; /* For absolute positioning of elements inside */
+            /* Removed overflow: hidden; to allow cost circle to extend */
+
+            /* Applying card.css styles */
+            width: 300px; /* Adjusted from 120px to fit panel */
+            height: 500px; /* Adjusted from 170px to fit panel */
+            border: 2px solid black; /* Stronger border */
+            border-radius: 0px; /* Sharp corners */
+            background-color: #f0f0f0;
+            color: #333;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .card-top-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px;
+            border-bottom: 1px solid black;
+            position: relative;
+        }
+
+        .card-hp {
+            font-size: 0.8em;
+            font-weight: bold;
+            border: 1px solid black;
+            padding: 2px 5px;
+        }
+
+        .card-race {
+            font-size: 0.7em;
+            border: 1px solid black;
+            padding: 2px 5px;
+        }
+
+        .card-cost-circle {
+            position: absolute;
+            top: -20px; /* Adjusted to push further out */
+            right: -20px; /* Adjusted to push further out */
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: white;
+            border: 2px solid black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            z-index: 10; /* Ensure it's on top */
+        }
+
+        .card-image-area {
+            flex-grow: 1;
+            border-bottom: 1px solid black;
+            background-color: lightgray;
+        }
+
+        .card-description-area {
+            font-size: 0.75em;
+            padding: 5px;
+            border-bottom: 1px solid black;
+            min-height: 40px;
+        }
+
+        .card-stats-bottom {
+            display: flex;
+            justify-content: flex-end;
+            font-size: 0.8em;
+            font-weight: bold;
+            padding: 5px;
+        }
+
+        .card-stats-bottom span:first-child {
+            margin-right: 10px;
+        }
+
+        /* General layout for card list */
+        .card-list-section {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card-list-section h1 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #000000;
+            font-size: 2.5em;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            width: 100%;
+        }
+
+        .card-item {
+            border: 2px solid #003333;
+            background-color: #005f6b;
+            color: #ffffff;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.1em;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .main-content-wrapper {
+                flex-direction: column;
+            }
+            .card-info-panel {
+                min-width: auto;
+                width: 100%;
+                position: static;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content-wrapper">
+        <div class="card-info-panel" id="card-info-panel">
+            <h2>カード情報</h2>
+            <p>カードにカーソルを合わせると詳細が表示されます。</p>
+        </div>
+
+        <div class="card-list-section">
+            <h1>カード一覧</h1>
+            <div class="card-grid">
+                <div class="card-item"
+                    data-id="m001"
+                    data-name="Goblin Attacker"
+                    data-type="Monster"
+                    data-description="A standard goblin warrior."
+                    data-frontattack="2"
+                    data-backattack="2"
+                    data-cardhp="6"
+                    data-race="Goblin"
+                    data-cost="1">
+                    <p>Goblin Attacker</p>
+                </div>
+                <div class="card-item"
+                    data-id="m002"
+                    data-name="Stone Golem"
+                    data-type="Monster"
+                    data-description="A creature made of living rock."
+                    data-frontattack="3"
+                    data-backattack="0"
+                    data-cardhp="13"
+                    data-race="Golem"
+                    data-cost="2">
+                    <p>Stone Golem</p>
+                </div>
+                <div class="card-item"
+                    data-id="m003"
+                    data-name="pute"
+                    data-type="Monster"
+                    data-description="A creature made of living rock."
+                    data-frontattack="4"
+                    data-backattack="0"
+                    data-cardhp="5"
+                    data-race="Golem"
+                    data-cost="1">
+                    <p>pute</p>
+                </div>
+                <div class="card-item"
+                    data-id="m004"
+                    data-name="hanta-"
+                    data-type="Monster"
+                    data-description="A creature made of living rock."
+                    data-frontattack="0"
+                    data-backattack="4"
+                    data-cardhp="3"
+                    data-race="Golem"
+                    data-cost="1">
+                    <p>hanta-</p>
+                </div>
+                <div class="card-item"
+                    data-id="m005"
+                    data-name="sennsi"
+                    data-type="Monster"
+                    data-description="A creature made of living rock."
+                    data-frontattack="5"
+                    data-backattack="0"
+                    data-cardhp="7"
+                    data-race="Golem"
+                    data-cost="2">
+                    <p>sennsi</p>
+                </div>
+                <div class="card-item"
+                    data-id="m006"
+                    data-name="majutu"
+                    data-type="Monster"
+                    data-description="A creature made of living rock."
+                    data-frontattack="0"
+                    data-backattack="5"
+                    data-cardhp="6"
+                    data-race="Golem"
+                    data-cost="2">
+                    <p>majutu</p>
+                </div>
+                <div class="card-item"
+                    data-id="m007"
+                    data-name="baran"
+                    data-type="Monster"
+                    data-description="A creature made of living rock."
+                    data-frontattack="3"
+                    data-backattack="3"
+                    data-cardhp="9"
+                    data-race="Golem"
+                    data-cost="2">
+                    <p>baran</p>
+                </div>
+                <div class="card-item"
+                    data-id="s001"
+                    data-name="攻撃の呪文"
+                    data-type="Spell"
+                    data-description="味方モンスター1体のFAを、ターン終了まで1上げる。"
+                    data-race="Spell" 
+                    data-cost="1">
+                    <p>攻撃の呪文</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const cardInfoPanel = document.getElementById('card-info-panel');
+        const cardItems = document.querySelectorAll('.card-item');
+
+        cardItems.forEach(item => {
+            item.addEventListener('mouseover', () => {
+                const id = item.dataset.id;
+                const name = item.dataset.name;
+                const type = item.dataset.type;
+                const description = item.dataset.description;
+                const frontAttack = item.dataset.frontattack;
+                const backAttack = item.dataset.backattack;
+                const cardHp = item.dataset.cardhp;
+                const race = item.dataset.race;
+                const cost = item.dataset.cost;
+
+                let detailsHtml = `
+                    <div class="card-top-section">
+                        ${cardHp ? `<div class="card-hp">HP: ${cardHp}</div>` : ''}
+                        ${race ? `<div class="card-race">${race}</div>` : ''}
+                        <div class="card-cost-circle">
+                            <div class="card-cost-value">${cost}</div>
+                        </div>
+                    </div>
+                    <div class="card-image-area">
+                        <!-- Placeholder for image -->
+                        <p style="text-align: center; padding-top: 50px;">${name}</p>
+                    </div>
+                    <div class="card-description-area">
+                        ${description}
+                    </div>
+                    ${type === 'Monster' ? `
+                    <div class="card-stats-bottom">
+                        <span>FA: ${frontAttack}</span>
+                        <span>BA: ${backAttack}</span>
+                    </div>
+                    ` : ''}
+                `;
+
+                cardInfoPanel.innerHTML = detailsHtml;
+            });
+
+            item.addEventListener('mouseout', () => {
+                cardInfoPanel.innerHTML = `<h2>カード情報</h2><p>カードにカーソルを合わせると詳細が表示されます。</p>`;
+            });
+        });
+    </script>
+</body>
+</html>
