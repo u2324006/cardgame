@@ -181,151 +181,255 @@
         </div>
 
         <div class="card-list-section">
+            <button onclick="location.href='index.html'" class="btn btn-back">メインメニューに戻る</button>
             <h1>カード一覧</h1>
-            <div class="card-grid">
-                <div class="card-item"
-                    data-id="m001"
-                    data-name="Goblin Attacker"
-                    data-type="Monster"
-                    data-description="A standard goblin warrior."
-                    data-frontattack="2"
-                    data-backattack="2"
-                    data-cardhp="6"
-                    data-race="Goblin"
-                    data-cost="1">
-                    <p>Goblin Attacker</p>
-                </div>
-                <div class="card-item"
-                    data-id="m002"
-                    data-name="Stone Golem"
-                    data-type="Monster"
-                    data-description="A creature made of living rock."
-                    data-frontattack="3"
-                    data-backattack="0"
-                    data-cardhp="13"
-                    data-race="Golem"
-                    data-cost="2">
-                    <p>Stone Golem</p>
-                </div>
-                <div class="card-item"
-                    data-id="m003"
-                    data-name="pute"
-                    data-type="Monster"
-                    data-description="A creature made of living rock."
-                    data-frontattack="4"
-                    data-backattack="0"
-                    data-cardhp="5"
-                    data-race="Golem"
-                    data-cost="1">
-                    <p>pute</p>
-                </div>
-                <div class="card-item"
-                    data-id="m004"
-                    data-name="hanta-"
-                    data-type="Monster"
-                    data-description="A creature made of living rock."
-                    data-frontattack="0"
-                    data-backattack="4"
-                    data-cardhp="3"
-                    data-race="Golem"
-                    data-cost="1">
-                    <p>hanta-</p>
-                </div>
-                <div class="card-item"
-                    data-id="m005"
-                    data-name="sennsi"
-                    data-type="Monster"
-                    data-description="A creature made of living rock."
-                    data-frontattack="5"
-                    data-backattack="0"
-                    data-cardhp="7"
-                    data-race="Golem"
-                    data-cost="2">
-                    <p>sennsi</p>
-                </div>
-                <div class="card-item"
-                    data-id="m006"
-                    data-name="majutu"
-                    data-type="Monster"
-                    data-description="A creature made of living rock."
-                    data-frontattack="0"
-                    data-backattack="5"
-                    data-cardhp="6"
-                    data-race="Golem"
-                    data-cost="2">
-                    <p>majutu</p>
-                </div>
-                <div class="card-item"
-                    data-id="m007"
-                    data-name="baran"
-                    data-type="Monster"
-                    data-description="A creature made of living rock."
-                    data-frontattack="3"
-                    data-backattack="3"
-                    data-cardhp="9"
-                    data-race="Golem"
-                    data-cost="2">
-                    <p>baran</p>
-                </div>
-                <div class="card-item"
-                    data-id="s001"
-                    data-name="攻撃の呪文"
-                    data-type="Spell"
-                    data-description="味方モンスター1体のFAを、ターン終了まで1上げる。"
-                    data-race="Spell" 
-                    data-cost="1">
-                    <p>攻撃の呪文</p>
-                </div>
+            <div class="card-grid" id="all-cards-grid">
+                <!-- Cards will be dynamically loaded here -->
             </div>
         </div>
     </div>
 
     <script>
         const cardInfoPanel = document.getElementById('card-info-panel');
-        const cardItems = document.querySelectorAll('.card-item');
+        const allCardsGrid = document.getElementById('all-cards-grid');
 
-        cardItems.forEach(item => {
-            item.addEventListener('mouseover', () => {
-                const id = item.dataset.id;
-                const name = item.dataset.name;
-                const type = item.dataset.type;
-                const description = item.dataset.description;
-                const frontAttack = item.dataset.frontattack;
-                const backAttack = item.dataset.backattack;
-                const cardHp = item.dataset.cardhp;
-                const race = item.dataset.race;
-                const cost = item.dataset.cost;
+        // Hardcoded card data (from initialState.ts)
+        const allCardsData = [
+            {
+                id: 'm001',
+                name: 'Goblin Attacker',
+                type: 'Monster',
+                description: 'A standard goblin warrior.',
+                frontAttack: 2,
+                backAttack: 2,
+                cardHp: 6,
+                race: 'Goblin',
+                cost: 1,
+            },
+            {
+                id: 'm002',
+                name: 'Stone Golem',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 3,
+                backAttack: 0,
+                cardHp: 13,
+                race: 'Golem',
+                cost: 2,
+            },
+            {
+                id: 'm003',
+                name: 'pute',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 4,
+                backAttack: 0,
+                cardHp: 5,
+                race: 'Golem',
+                cost: 1,
+            },
+            {
+                id: 'm004',
+                name: 'hanta-',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 0,
+                backAttack: 4,
+                cardHp: 3,
+                race: 'Golem',
+                cost: 1,
+            },
+            {
+                id: 'm005',
+                name: 'sennsi',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 5,
+                backAttack: 0,
+                cardHp: 7,
+                race: 'Golem',
+                cost: 2,
+            },
+            {
+                id: 'm006',
+                name: 'majutu',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 0,
+                backAttack: 5,
+                cardHp: 6,
+                race: 'Golem',
+                cost: 2,
+            },
+            {
+                id: 'm007',
+                name: 'baran',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 3,
+                backAttack: 3,
+                cardHp: 9,
+                race: 'Golem',
+                cost: 2,
+            },
+            {
+                id: 'm008',
+                name: 'deka',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 8,
+                backAttack: 0,
+                cardHp: 12,
+                race: 'Golem',
+                cost: 3,
+            },
+            {
+                id: 'm009',
+                name: 'tyu',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 4,
+                backAttack: 4,
+                cardHp: 15,
+                race: 'Golem',
+                cost: 3,
+            },
+            {
+                id: 'm010',
+                name: 'sibi',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 0,
+                backAttack: 8,
+                cardHp: 10,
+                race: 'Golem',
+                cost: 3,
+            },
+            {
+                id: 'm011',
+                name: 'hohei',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 2,
+                backAttack: 0,
+                cardHp: 2,
+                race: 'Golem',
+                cost: 0,
+            },
+            {
+                id: 'm012',
+                name: 'garu',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 1,
+                backAttack: 1,
+                cardHp: 3,
+                race: 'Golem',
+                cost: 0,
+            },
+            {
+                id: 'm013',
+                name: 'tebu',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 0,
+                backAttack: 1,
+                cardHp: 1,
+                race: 'Golem',
+                cost: 0,
+            },
+            {
+                id: 'm014',
+                name: 'souryo',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 0,
+                backAttack: 1,
+                cardHp: 2,
+                race: 'Golem',
+                cost: 1,
+            },
+            {
+                id: 's001',
+                name: '攻撃の呪文',
+                type: 'Spell',
+                description: '味方モンスター1体のFAを、ターン終了まで1上げる。',
+                race: 'Spell',
+                cost: 1,
+            },
+        ];
 
-                let detailsHtml = `
-                    <div class="card-top-section">
-                        ${cardHp ? `<div class="card-hp">HP: ${cardHp}</div>` : ''}
-                        ${race ? `<div class="card-race">${race}</div>` : ''}
-                        <div class="card-cost-circle">
-                            <div class="card-cost-value">${cost}</div>
+        // Function to render a card item as an HTML string
+        function renderCardItemHtml(cardData) {
+            return `
+                <div class="card-item"
+                    data-id="${cardData.id}"
+                    data-name="${cardData.name}"
+                    data-type="${cardData.type}"
+                    data-description="${cardData.description}"
+                    data-frontattack="${cardData.frontAttack || ''}"
+                    data-backattack="${cardData.backAttack || ''}"
+                    data-cardhp="${cardData.cardHp || ''}"
+                    data-race="${cardData.race || ''}"
+                    data-cost="${cardData.cost}">
+                    <p>${cardData.name}</p>
+                </div>
+            `;
+        }
+
+        // Function to attach event listeners to card items
+        function attachCardEventListeners(cardItems) {
+            cardItems.forEach(item => {
+                item.addEventListener('mouseover', () => {
+                    const id = item.dataset.id;
+                    const name = item.dataset.name;
+                    const type = item.dataset.type;
+                    const description = item.dataset.description;
+                    const frontAttack = item.dataset.frontattack;
+                    const backAttack = item.dataset.backattack;
+                    const cardHp = item.dataset.cardhp;
+                    const race = item.dataset.race;
+                    const cost = item.dataset.cost;
+
+                    let detailsHtml = `
+                        <div class="card-top-section">
+                            ${cardHp ? `<div class="card-hp">HP: ${cardHp}</div>` : ''}
+                            ${race ? `<div class="card-race">${race}</div>` : ''}
+                            <div class="card-cost-circle">
+                                <div class="card-cost-value">${cost}</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="card-image-area">
-                        <!-- Placeholder for image -->
-                        <p style="text-align: center; padding-top: 50px;">${name}</p>
-                    </div>
-                    <div class="card-description-area">
-                        ${description}
-                    </div>
-                    ${type === 'Monster' ? `
-                    <div class="card-stats-bottom">
-                        <span>FA: ${frontAttack}</span>
-                        <span>BA: ${backAttack}</span>
-                    </div>
-                    ` : ''}
-                `;
+                        <div class="card-image-area">
+                            <!-- Placeholder for image -->
+                            <p style="text-align: center; padding-top: 50px;">${name}</p>
+                        </div>
+                        <div class="card-description-area">
+                            ${description}
+                        </div>
+                        ${type === 'Monster' ? `
+                        <div class="card-stats-bottom">
+                            <span>FA: ${frontAttack}</span>
+                            <span>BA: ${backAttack}</span>
+                        </div>
+                        ` : ''}
+                    `;
 
-                cardInfoPanel.innerHTML = detailsHtml;
-            });
+                    cardInfoPanel.innerHTML = detailsHtml;
+                });
 
-            item.addEventListener('mouseout', () => {
-                cardInfoPanel.innerHTML = `<h2>カード情報</h2><p>カードにカーソルを合わせると詳細が表示されます。</p>`;
+                item.addEventListener('mouseout', () => {
+                    cardInfoPanel.innerHTML = `<h2>カード情報</h2><p>カードにカーソルを合わせると詳細が表示されます。</p>`;
+                });
             });
-        });
+        }
+
+        // Render all cards
+        const allCardsHtml = allCardsData.map(card => renderCardItemHtml(card)).join('');
+        allCardsGrid.innerHTML = allCardsHtml;
+        attachCardEventListeners(allCardsGrid.querySelectorAll('.card-item'));
+
+        // Initial state for card info panel
+        cardInfoPanel.innerHTML = `<h2>カード情報</h2><p>カードにカーソルを合わせると詳細が表示されます。</p>`;
     </script>
 </body>
 </html>

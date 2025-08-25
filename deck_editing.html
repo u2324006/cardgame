@@ -5,237 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>デッキ編集</title>
     <link rel="stylesheet" href="css/style.css">
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        .deck-editing-wrapper {
-            display: flex;
-            gap: 20px;
-            width: 100%;
-            max-width: 1200px;
-        }
-
-        .card-info-panel {
-            flex: 1;
-            min-width: 300px;
-            border: 2px solid #003333;
-            background-color: #ffffff;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            text-align: left;
-            height: 500px;
-            position: sticky;
-            top: 20px;
-            display: flex;
-            flex-direction: column;
-            padding: 0;
-            box-sizing: border-box;
-            position: relative;
-            /* Applying card.css styles */
-            width: 300px;
-            height: 500px;
-            border: 2px solid black;
-            border-radius: 0px;
-            background-color: #f0f0f0;
-            color: #333;
-            font-family: 'Arial', sans-serif;
-        }
-
-        .card-top-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 5px;
-            border-bottom: 1px solid black;
-            position: relative;
-        }
-
-        .card-hp {
-            font-size: 0.8em;
-            font-weight: bold;
-            border: 1px solid black;
-            padding: 2px 5px;
-        }
-
-        .card-race {
-            font-size: 0.7em;
-            border: 1px solid black;
-            padding: 2px 5px;
-        }
-
-        .card-cost-circle {
-            position: absolute;
-            top: -20px;
-            right: -20px;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: white;
-            border: 2px solid black;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.2em;
-            font-weight: bold;
-            z-index: 10;
-        }
-
-        .card-image-area {
-            flex-grow: 1;
-            border-bottom: 1px solid black;
-            background-color: lightgray;
-        }
-
-        .card-description-area {
-            font-size: 0.75em;
-            padding: 5px;
-            border-bottom: 1px solid black;
-            min-height: 40px;
-        }
-
-        .card-stats-bottom {
-            display: flex;
-            justify-content: flex-end;
-            font-size: 0.8em;
-            font-weight: bold;
-            padding: 5px;
-        }
-
-        .card-stats-bottom span:first-child {
-            margin-right: 10px;
-        }
-
-        .deck-columns {
-            flex: 2;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .card-list-section, .current-deck-section {
-            flex: 1;
-            border: 1px solid #ccc;
-            padding: 15px;
-            background-color: #fff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .card-list-section h2, .current-deck-section h2 {
-            margin-top: 0;
-            text-align: center;
-        }
-
-        .card-grid, .deck-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Smaller cards for editing */
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .card-item {
-            border: 2px solid #003333;
-            background-color: #005f6b;
-            color: #ffffff;
-            padding: 5px;
-            text-align: center;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            height: 150px; /* Smaller height for editing */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 0.9em;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .card-item:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        @media (max-width: 768px) {
-            .deck-editing-wrapper {
-                flex-direction: column;
-            }
-            .deck-columns {
-                flex-direction: column;
-            }
-            .card-info-panel {
-                min-width: auto;
-                width: 100%;
-                position: static;
-                height: auto;
-            }
-        }
-    </style>
 </head>
 <body>
     <div class="deck-editing-wrapper">
-        <div class="card-info-panel" id="card-info-panel">
-            <h2>カード情報</h2>
-            <p>カードにカーソルを合わせると詳細が表示されます。</p>
+        <div class="left-column">
+            <div id="card-info-panel" class="card-info-panel">
+                <h2>カード情報</h2>
+                <p>カードにカーソルを合わせると詳細が表示されます。</p>
+            </div>
+            <div class="action-buttons">
+                <button id="save-deck-button" class="btn">デッキを保存</button>
+                <button id="back-button" class="btn">戻る</button>
+            </div>
         </div>
 
-        <div class="deck-columns">
+        <div class="right-column">
             <div class="current-deck-section">
-                <h2>現在のデッキ</h2>
-                <div class="deck-grid" id="current-deck-grid">
-                    <!-- Cards in the current deck will be loaded here -->
-                    <div class="card-item">
-                        <p>デッキカード1</p>
-                    </div>
-                    <div class="card-item">
-                        <p>デッキカード2</p>
-                    </div>
+                <h2>現在のデッキ (<span id="deck-count">0</span>/40)</h2>
+                <div id="current-deck-grid" class="deck-grid">
+                    <!-- Cards in the current deck will be loaded here by JavaScript -->
                 </div>
             </div>
 
             <div class="card-list-section">
                 <h2>カード一覧</h2>
-                <div class="card-grid" id="all-cards-grid">
+                <div id="all-cards-grid" class="card-grid">
                     <!-- All available cards will be loaded here -->
-                    <div class="card-item"
-                        data-id="m001"
-                        data-name="Goblin Attacker"
-                        data-type="Monster"
-                        data-description="A standard goblin warrior."
-                        data-frontattack="2"
-                        data-backattack="3"
-                        data-cardhp="10"
-                        data-race="Goblin"
-                        data-cost="1">
-                        <p>Goblin Attacker</p>
-                    </div>
-                    <div class="card-item"
-                        data-id="m002"
-                        data-name="Stone Golem"
-                        data-type="Monster"
-                        data-description="A creature made of living rock."
-                        data-frontattack="5"
-                        data-backattack="4"
-                        data-cardhp="8"
-                        data-race="Golem"
-                        data-cost="2">
-                        <p>Stone Golem</p>
-                    </div>
-                    <div class="card-item"
-                        data-id="s002"
-                        data-name="攻撃の呪文"
-                        data-type="Spell"
-                        data-description="味方モンスター1体のFAを、ターン終了まで1上げる。"
-                        data-race="Spell" 
-                        data-cost="1">
-                        <p>攻撃の呪文</p>
-                    </div>
                 </div>
             </div>
         </div>
@@ -245,184 +40,183 @@
         const cardInfoPanel = document.getElementById('card-info-panel');
         const allCardsGrid = document.getElementById('all-cards-grid');
         const currentDeckGrid = document.getElementById('current-deck-grid');
+        const saveDeckButton = document.getElementById('save-deck-button');
+        const backButton = document.getElementById('back-button');
+        const deckCountSpan = document.getElementById('deck-count');
 
-        // Function to render a card item
-        function renderCardItem(cardData) {
-            const cardItem = document.createElement('div');
-            cardItem.className = 'card-item';
-            cardItem.dataset.id = cardData.id;
-            cardItem.dataset.name = cardData.name;
-            cardItem.dataset.type = cardData.type;
-            cardItem.dataset.description = cardData.description;
-            cardItem.dataset.frontattack = cardData.frontAttack || '';
-            cardItem.dataset.backattack = cardData.backAttack || '';
-            cardItem.dataset.cardhp = cardData.cardHp || '';
-            cardItem.dataset.race = cardData.race || '';
-            cardItem.dataset.cost = cardData.cost;
+        const allCardsData = [
+            { id: 'm001', name: 'Goblin Attacker', type: 'Monster', description: 'A standard goblin warrior.', frontAttack: 2, backAttack: 2, cardHp: 6, race: 'Goblin', cost: 1 },
+            { id: 'm002', name: 'Stone Golem', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 3, backAttack: 0, cardHp: 13, race: 'Golem', cost: 2 },
+            { id: 'm003', name: 'pute', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 4, backAttack: 0, cardHp: 5, race: 'Golem', cost: 1 },
+            { id: 'm004', name: 'hanta-', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 0, backAttack: 4, cardHp: 3, race: 'Golem', cost: 1 },
+            { id: 'm005', name: 'sennsi', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 5, backAttack: 0, cardHp: 7, race: 'Golem', cost: 2 },
+            { id: 'm006', name: 'majutu', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 0, backAttack: 5, cardHp: 6, race: 'Golem', cost: 2 },
+            { id: 'm007', name: 'baran', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 3, backAttack: 3, cardHp: 9, race: 'Golem', cost: 2 },
+            { id: 'm008', name: 'deka', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 8, backAttack: 0, cardHp: 12, race: 'Golem', cost: 3 },
+            { id: 'm009', name: 'tyu', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 4, backAttack: 4, cardHp: 15, race: 'Golem', cost: 3 },
+            { id: 'm010', name: 'sibi', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 0, backAttack: 8, cardHp: 10, race: 'Golem', cost: 3 },
+            { id: 'm011', name: 'hohei', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 2, backAttack: 0, cardHp: 2, race: 'Golem', cost: 0 },
+            { id: 'm012', name: 'garu', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 1, backAttack: 1, cardHp: 3, race: 'Golem', cost: 0 },
+            { id: 'm013', name: 'tebu', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 0, backAttack: 1, cardHp: 1, race: 'Golem', cost: 0 },
+            { id: 'm014', name: 'souryo', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 0, backAttack: 1, cardHp: 2, race: 'Golem', cost: 1 },
+            { id: 's001', name: '攻撃の呪文', type: 'Spell', description: '味方モンスター1体のFAを、ターン終了まで1上げる。', race: 'Spell', cost: 1 },
+        ];
 
-            cardItem.innerHTML = `<p>${cardData.name}</p>`;
+        let currentDeck = [];
+        let draggedCardId = null;
+        let draggedFromDeck = false;
 
-            cardItem.addEventListener('mouseover', () => {
-                let detailsHtml = ``;
-
-                if (cardData.cardHp) {
-                    detailsHtml += `<div class="card-hp">HP: ${cardData.cardHp}</div>`;
-                }
-
-                detailsHtml += `<div class="card-cost-circle">${cardData.cost}</div>`;
-
-                detailsHtml += `
-                    <div class="card-top-section">
-                        <h2>${cardData.name}</h2>
-                    </div>
-                    <div class="card-image-area">
-                        <p style="text-align: center; padding-top: 50px;">${cardData.name}</p>
-                    </div>
-                    <div class="card-description-area">
-                        ${cardData.description}
-                    </div>
-                    ${cardData.type === 'Monster' ? `
-                    <div class="card-stats-bottom">
-                        <span>FA: ${cardData.frontAttack}</span>
-                        <span>BA: ${cardData.backAttack}</span>
-                    </div>
-                    ` : ''}
-                `;
-
-                cardInfoPanel.innerHTML = detailsHtml;
-            });
-
-            cardItem.addEventListener('mouseout', () => {
-                cardInfoPanel.innerHTML = `<h2>カード情報</h2><p>カードにカーソルを合わせると詳細が表示されます。</p>`;
-            });
-
-            return cardItem;
+        function updateDeckCount() {
+            if (deckCountSpan) {
+                deckCountSpan.textContent = currentDeck.length;
+            }
         }
 
-        // Hardcoded card data (same as card_list.html)
-        const allCardsData = [
-            {
-                id: 'm001',
-                name: 'Goblin Attacker',
-                type: 'Monster',
-                description: 'A standard goblin warrior.',
-                frontAttack: 2,
-                backAttack: 2,
-                cardHp: 6,
-                race: 'Goblin',
-                cost: 1,
-            },
-            {
-                id: 'm002',
-                name: 'Stone Golem',
-                type: 'Monster',
-                description: 'A creature made of living rock.',
-                frontAttack: 3,
-                backAttack: 0,
-                cardHp: 13,
-                race: 'Golem',
-                cost: 2,
-            },
-            {
-                id: 'm003',
-                name: 'pute',
-                type: 'Monster',
-                description: 'A creature made of living rock.',
-                frontAttack: 4,
-                backAttack: 0,
-                cardHp: 5,
-                race: 'Golem',
-                cost: 1,
-            },
-            {
-                id: 'm004',
-                name: 'hanta-',
-                type: 'Monster',
-                description: 'A creature made of living rock.',
-                frontAttack: 0,
-                backAttack: 4,
-                cardHp: 3,
-                race: 'Golem',
-                cost: 1,
-            },
-            {
-                id: 'm005',
-                name: 'sennsi',
-                type: 'Monster',
-                description: 'A creature made of living rock.',
-                frontAttack: 5,
-                backAttack: 0,
-                cardHp: 7,
-                race: 'Golem',
-                cost: 2,
-            },
-            {
-                id: 'm006',
-                name: 'majutu',
-                type: 'Monster',
-                description: 'A creature made of living rock.',
-                frontAttack: 0,
-                backAttack: 5,
-                cardHp: 6,
-                race: 'Golem',
-                cost: 2,
-            },
-            {
-                id: 'm007',
-                name: 'baran',
-                type: 'Monster',
-                description: 'A creature made of living rock.',
-                frontAttack: 3,
-                backAttack: 3,
-                cardHp: 9,
-                race: 'Golem',
-                cost: 2,
-            },
-            {
-                id: 's001',
-                name: '攻撃の呪文',
-                type: 'Spell',
-                description: '味方モンスター1体のFAを、ターン終了まで1上げる。',
-                race: 'Spell',
-                cost: 1,
-            },
-        ];
+        function renderCardItemHtml(cardData) {
+            return `
+                <div class="card-item" draggable="true" data-id="${cardData.id}">
+                    <p>${cardData.name}</p>
+                </div>
+            `;
+        }
 
-        // Render all cards
-        allCardsData.forEach(card => {
-            allCardsGrid.appendChild(renderCardItem(card));
+        function attachCardEventListeners(cardItems) {
+            cardItems.forEach(item => {
+                item.addEventListener('mouseover', () => {
+                    const cardData = allCardsData.find(c => c.id === item.dataset.id);
+                    if (!cardData) return;
+                    let detailsHtml = `
+                        <div class="card-top-section">
+                            ${cardData.cardHp ? `<div class="card-hp">HP: ${cardData.cardHp}</div>` : ''}
+                            ${cardData.race ? `<div class="card-race">${cardData.race}</div>` : ''}
+                            <div class="card-cost-circle"><div class="card-cost-value">${cardData.cost}</div></div>
+                        </div>
+                        <div class="card-image-area"><p style="text-align: center; padding-top: 50px;">${cardData.name}</p></div>
+                        <div class="card-description-area">${cardData.description}</div>
+                        ${cardData.type === 'Monster' ? `<div class="card-stats-bottom"><span>FA: ${cardData.frontAttack}</span><span>BA: ${cardData.backAttack}</span></div>` : ''}
+                    `;
+                    cardInfoPanel.innerHTML = detailsHtml;
+                });
+                item.addEventListener('mouseout', () => {
+                    cardInfoPanel.innerHTML = `<h2>カード情報</h2><p>カードにカーソルを合わせると詳細が表示されます。</p>`;
+                });
+                item.addEventListener('dragstart', (e) => {
+                    draggedCardId = item.dataset.id;
+                    draggedFromDeck = item.closest('#current-deck-grid') !== null;
+                    e.dataTransfer.setData('text/plain', draggedCardId);
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+            });
+        }
+
+        function customDeckSort(a, b) {
+            const aIsMonster = a.type === 'Monster';
+            const bIsMonster = b.type === 'Monster';
+            if (aIsMonster && !bIsMonster) return -1;
+            if (!aIsMonster && bIsMonster) return 1;
+            const costA = parseInt(a.cost, 10);
+            const costB = parseInt(b.cost, 10);
+            if (costA > costB) return -1;
+            if (costA < costB) return 1;
+            return a.name.localeCompare(b.name);
+        }
+
+        function renderDeckGrid(gridElement, cards) {
+            const cardsHtml = cards.map(card => renderCardItemHtml(card)).join('');
+            gridElement.innerHTML = cardsHtml;
+            attachCardEventListeners(gridElement.querySelectorAll('.card-item'));
+            updateDeckCount();
+        }
+
+        function renderAllCardsGrid(gridElement, cards) {
+            const cardsHtml = cards.map(card => renderCardItemHtml(card)).join('');
+            gridElement.innerHTML = cardsHtml;
+            attachCardEventListeners(gridElement.querySelectorAll('.card-item'));
+        }
+
+        function loadDeck() {
+            const selectedDeckIndex = localStorage.getItem('selectedDeckIndex');
+            if (selectedDeckIndex === null) {
+                window.location.href = 'deck_selection.html';
+                return;
+            }
+            const decks = JSON.parse(localStorage.getItem('decks')) || [[], [], []];
+            currentDeck = decks[selectedDeckIndex] || [];
+            renderDeckGrid(currentDeckGrid, currentDeck);
+        }
+
+        function validateDeck(deck) {
+            if (deck.length !== 40) {
+                return { isValid: false, message: `デッキの枚数は40枚である必要があります。現在 ${deck.length} 枚です。` };
+            }
+            const cardCounts = {};
+            for (const card of deck) {
+                cardCounts[card.id] = (cardCounts[card.id] || 0) + 1;
+                if (cardCounts[card.id] > 3) {
+                    const cardName = allCardsData.find(c => c.id === card.id).name;
+                    return { isValid: false, message: `同じカードは3枚までです。'${cardName}' が4枚以上あります。` };
+                }
+            }
+            return { isValid: true, message: 'デッキは有効です。' };
+        }
+
+        function saveDeck() {
+            const selectedDeckIndex = localStorage.getItem('selectedDeckIndex');
+            if (selectedDeckIndex === null) {
+                alert("エラー: 保存するデッキが選択されていません。");
+                return;
+            }
+            const decks = JSON.parse(localStorage.getItem('decks')) || [[], [], []];
+            decks[selectedDeckIndex] = currentDeck;
+            localStorage.setItem('decks', JSON.stringify(decks));
+            alert('デッキを保存しました。');
+            window.location.href = 'deck_selection.html';
+        }
+
+        [currentDeckGrid, allCardsGrid].forEach(grid => {
+            grid.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+            grid.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const cardId = e.dataTransfer.getData('text/plain');
+                const fromDeck = draggedFromDeck;
+                const toDeck = grid.id === 'current-deck-grid';
+                if (fromDeck && !toDeck) {
+                    const cardIndex = currentDeck.findIndex(card => card.id === cardId);
+                    if (cardIndex > -1) {
+                        currentDeck.splice(cardIndex, 1);
+                    }
+                } else if (!fromDeck && toDeck) {
+                    const cardData = allCardsData.find(card => card.id === cardId);
+                    if (cardData) {
+                        currentDeck.push(cardData);
+                    }
+                }
+                currentDeck.sort(customDeckSort);
+                renderDeckGrid(currentDeckGrid, currentDeck);
+                draggedCardId = null;
+            });
         });
 
-        // Sample current deck cards (for demonstration)
-        const currentDeckData = [
-            {
-                id: 'm001',
-                name: 'Goblin Attacker',
-                type: 'Monster',
-                description: 'A standard goblin warrior.',
-                frontAttack: 2,
-                backAttack: 3,
-                cardHp: 10,
-                race: 'Goblin',
-                cost: 1,
-            },
-            {
-                id: 's002',
-                name: '攻撃の呪文',
-                type: 'Spell',
-                description: '味方モンスター1体のFAを、ターン終了まで1上げる。',
-                race: 'Spell',
-                cost: 1,
-            },
-        ];
+        if (saveDeckButton) {
+            saveDeckButton.addEventListener('click', () => {
+                const validationResult = validateDeck(currentDeck);
+                if (validationResult.isValid) {
+                    saveDeck();
+                } else {
+                    alert(validationResult.message);
+                }
+            });
+        }
 
-        currentDeckData.forEach(card => {
-            currentDeckGrid.appendChild(renderCardItem(card));
-        });
+        if (backButton) {
+            backButton.addEventListener('click', () => {
+                window.location.href = 'deck_selection.html';
+            });
+        }
 
-        // Initial state for card info panel
+        renderAllCardsGrid(allCardsGrid, allCardsData);
+        loadDeck();
         cardInfoPanel.innerHTML = `<h2>カード情報</h2><p>カードにカーソルを合わせると詳細が表示されます。</p>`;
-
     </script>
 </body>
 </html>
