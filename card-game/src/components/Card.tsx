@@ -10,7 +10,7 @@ interface CardProps {
 
 const Card: React.FC<CardProps> = ({ card, onClick, isSelected }) => {
   return (
-    <div className={`card ${card.type.toLowerCase()} ${isSelected ? 'selected' : ''}`} onClick={onClick}>
+    <div className={`card ${card.type.toLowerCase()} ${isSelected ? 'selected' : ''} ${card.hasUsedEffectThisTurn ? 'used-effect' : ''}`} onClick={onClick}>
       {/* Top section: HP, Race, Cost */}
       <div className="card-top-section">
         <div className="card-hp">HP: {card.cardHp}</div>

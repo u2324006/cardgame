@@ -2,7 +2,7 @@ import { GameState, PlayerState } from '../types/gameState';
 import { Card } from '../types/card';
 
 // --- Sample Cards ---
-const allCardsData: Card[] = [
+const allCardsData = [
     { id: 'm001', name: 'Goblin Attacker', type: 'Monster', description: 'A standard goblin warrior.', frontAttack: 2, backAttack: 2, cardHp: 6, race: 'Goblin', cost: 1 },
     { id: 'm002', name: 'Stone Golem', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 3, backAttack: 0, cardHp: 13, race: 'Golem', cost: 2 },
     { id: 'm003', name: 'pute', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 4, backAttack: 0, cardHp: 5, race: 'Golem', cost: 1 },
@@ -16,12 +16,12 @@ const allCardsData: Card[] = [
     { id: 'm011', name: 'hohei', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 2, backAttack: 0, cardHp: 2, race: 'Golem', cost: 0 },
     { id: 'm012', name: 'garu', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 1, backAttack: 1, cardHp: 3, race: 'Golem', cost: 0 },
     { id: 'm013', name: 'tebu', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 0, backAttack: 1, cardHp: 1, race: 'Golem', cost: 0 },
-    { id: 'm014', name: 'souryo', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 0, backAttack: 1, cardHp: 2, race: 'Golem', cost: 1 },
+    { id: 'm014', name: '僧侶', type: 'Monster', description: '1ターンに1度自分のモンスター1体のHPを1回復する。', frontAttack: 0, backAttack: 1, cardHp: 2, race: 'Golem', cost: 1 },
     { id: 's001', name: '攻撃の呪文', type: 'Spell', description: '味方モンスター1体のFAを、ターン終了まで1上げる。', race: 'Spell', cost: 1 },
-];
+] as const;
 
 // Helper to create a shuffled deck of 40 cards from the master list
-const createRandomDeck = (cards: Card[]): Card[] => {
+const createRandomDeck = (cards: readonly Card[]): Card[] => {
     const deck: Card[] = [];
     while (deck.length < 40) {
         const randomIndex = Math.floor(Math.random() * cards.length);

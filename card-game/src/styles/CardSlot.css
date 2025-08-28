@@ -18,3 +18,32 @@
     width: 100%;
     height: 100%;
 }
+
+.action-buttons-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  z-index: 10; /* Ensure it's above the card */
+}
+
+.action-buttons-overlay button {
+  padding: 8px 12px;
+  font-size: 0.9em;
+  cursor: pointer;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+}
+
+.action-buttons-overlay button:hover {
+  background-color: #45a049;
+}

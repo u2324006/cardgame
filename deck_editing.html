@@ -5,106 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>デッキ編集</title>
         <link rel="stylesheet" href="css/style.css">
-    <style>
-        /* Card Info Panel - styled to look like a single card */
-        .card-info-panel {
-            flex: 1;
-            min-width: 300px;
-            border: 2px solid #003333;
-            background-color: #ffffff;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            text-align: left;
-            height: 500px; /* Fixed height for card appearance */
-            position: sticky;
-            top: 20px;
-            display: flex;
-            flex-direction: column;
-            padding: 0; /* Remove padding from panel itself */
-            box-sizing: border-box;
-            position: relative; /* For absolute positioning of elements inside */
-            /* Removed overflow: hidden; to allow cost circle to extend */
-
-            /* Applying card.css styles */
-            width: 300px; /* Adjusted from 120px to fit panel */
-            height: 500px; /* Adjusted from 170px to fit panel */
-            border: 2px solid black; /* Stronger border */
-            border-radius: 0px; /* Sharp corners */
-            background-color: #f0f0f0;
-            color: #333;
-            font-family: 'Arial', sans-serif;
-        }
-
-        .card-top-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 5px;
-            border-bottom: 1px solid black;
-            position: relative;
-        }
-
-        .card-hp {
-            font-size: 0.8em;
-            font-weight: bold;
-            border: 1px solid black;
-            padding: 2px 5px;
-        }
-
-        .card-race {
-            font-size: 0.7em;
-            border: 1px solid black;
-            padding: 2px 5px;
-        }
-
-        .card-cost-circle {
-            position: absolute;
-            top: -20px; /* Adjusted to push further out */
-            right: -20px; /* Adjusted to push further out */
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: white;
-            border: 2px solid black;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.2em;
-            font-weight: bold;
-            z-index: 10; /* Ensure it's on top */
-        }
-
-        .card-name {
-            font-size: 1em;
-            font-weight: bold;
-            text-align: center;
-            flex-grow: 1;
-        }
-
-        .card-image-area {
-            flex-grow: 1;
-            border-bottom: 1px solid black;
-            background-color: lightgray;
-        }
-
-        .card-description-area {
-            font-size: 0.75em;
-            padding: 5px;
-            border-bottom: 1px solid black;
-            min-height: 40px;
-        }
-
-        .card-stats-bottom {
-            display: flex;
-            justify-content: flex-end;
-            font-size: 0.8em;
-            font-weight: bold;
-            padding: 5px;
-        }
-
-        .card-stats-bottom span:first-child {
-            margin-right: 10px;
-        }
-    </style>
+    
 </head>
 <body>
     <div class="deck-editing-wrapper">
@@ -136,6 +37,8 @@
         </div>
     </div>
 
+    <script src="data/cards.js"></script>
+    <script src="js/ui.js"></script>
     <script>
         const cardInfoPanel = document.getElementById('card-info-panel');
         const allCardsGrid = document.getElementById('all-cards-grid');
@@ -143,24 +46,6 @@
         const saveDeckButton = document.getElementById('save-deck-button');
         const backButton = document.getElementById('back-button');
         const deckCountSpan = document.getElementById('deck-count');
-
-        const allCardsData = [
-            { id: 'm001', name: 'Goblin Attacker', type: 'Monster', description: 'A standard goblin warrior.', frontAttack: 2, backAttack: 2, cardHp: 6, race: 'Goblin', cost: 1 },
-            { id: 'm002', name: 'Stone Golem', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 3, backAttack: 0, cardHp: 13, race: 'Golem', cost: 2 },
-            { id: 'm003', name: 'pute', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 4, backAttack: 0, cardHp: 5, race: 'Golem', cost: 1 },
-            { id: 'm004', name: 'hanta-', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 0, backAttack: 4, cardHp: 3, race: 'Golem', cost: 1 },
-            { id: 'm005', name: 'sennsi', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 5, backAttack: 0, cardHp: 7, race: 'Golem', cost: 2 },
-            { id: 'm006', name: 'majutu', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 0, backAttack: 5, cardHp: 6, race: 'Golem', cost: 2 },
-            { id: 'm007', name: 'baran', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 3, backAttack: 3, cardHp: 9, race: 'Golem', cost: 2 },
-            { id: 'm008', name: 'deka', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 8, backAttack: 0, cardHp: 12, race: 'Golem', cost: 3 },
-            { id: 'm009', name: 'tyu', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 4, backAttack: 4, cardHp: 15, race: 'Golem', cost: 3 },
-            { id: 'm010', name: 'sibi', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 0, backAttack: 8, cardHp: 10, race: 'Golem', cost: 3 },
-            { id: 'm011', name: 'hohei', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 2, backAttack: 0, cardHp: 2, race: 'Golem', cost: 0 },
-            { id: 'm012', name: 'garu', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 1, backAttack: 1, cardHp: 3, race: 'Golem', cost: 0 },
-            { id: 'm013', name: 'tebu', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 0, backAttack: 1, cardHp: 1, race: 'Golem', cost: 0 },
-            { id: 'm014', name: 'souryo', type: 'Monster', description: 'A creature made of living rock.', frontAttack: 0, backAttack: 1, cardHp: 2, race: 'Golem', cost: 1 },
-            { id: 's001', name: '攻撃の呪文', type: 'Spell', description: '味方モンスター1体のFAを、ターン終了まで1上げる。', race: 'Spell', cost: 1 },
-        ];
 
         let currentDeck = [];
         let draggedCardId = null;
@@ -183,23 +68,12 @@
         function attachCardEventListeners(cardItems) {
             cardItems.forEach(item => {
                 item.addEventListener('mouseover', () => {
-                    const cardData = allCardsData.find(c => c.id === item.dataset.id);
-                    if (!cardData) return;
-                    let detailsHtml = `
-                        <div class="card-top-section">
-                            ${cardData.cardHp ? `<div class="card-hp">HP: ${cardData.cardHp}</div>` : ''}
-                            <div class="card-name">${cardData.name}</div>
-                            ${cardData.race ? `<div class="card-race">${cardData.race}</div>` : ''}
-                            <div class="card-cost-circle"><div class="card-cost-value">${cardData.cost}</div></div>
-                        </div>
-                        <div class="card-image-area"></div>
-                        <div class="card-description-area">${cardData.description}</div>
-                        ${cardData.type === 'Monster' ? `<div class="card-stats-bottom"><span>FA: ${cardData.frontAttack}</span><span>BA: ${cardData.backAttack}</span></div>` : ''}
-                    `;
-                    cardInfoPanel.innerHTML = detailsHtml;
+                    const cardId = item.dataset.id;
+                    const cardData = allCardsData.find(c => c.id === cardId);
+                    cardInfoPanel.innerHTML = renderCardDetails(cardData);
                 });
                 item.addEventListener('mouseout', () => {
-                    cardInfoPanel.innerHTML = `<h2>カード情報</h2><p>カードにカーソルを合わせると詳細が表示されます。</p>`;
+                    cardInfoPanel.innerHTML = renderCardDetails(null);
                 });
                 item.addEventListener('dragstart', (e) => {
                     draggedCardId = item.dataset.id;

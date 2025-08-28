@@ -78,3 +78,9 @@
 .card-stats-bottom span:first-child {
   margin-right: 10px; /* Space between FA and BA */
 }
+
+.used-effect {
+  opacity: 0.6;
+  filter: grayscale(50%);
+  cursor: not-allowed;
+}

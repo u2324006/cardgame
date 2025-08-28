@@ -151,20 +151,7 @@ h1 {
     overflow: hidden; /* Prevents overflow issues */
 }
 
-.card-info-panel {
-    background-color: var(--container-bg-color);
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
-    padding: 20px;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-}
 
-.card-info-panel h2, .card-info-panel p {
-    text-align: center;
-    margin-top: 0;
-}
 
 .action-buttons {
     display: flex;
@@ -298,4 +285,103 @@ h1 {
     .menu-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* Card Info Panel - styled to look like a single card */
+.card-info-panel {
+    flex: 1;
+    min-width: 300px;
+    border: 2px solid #003333;
+    background-color: #ffffff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: left;
+    height: 500px; /* Fixed height for card appearance */
+    position: sticky;
+    top: 20px;
+    display: flex;
+    flex-direction: column;
+    padding: 0; /* Remove padding from panel itself */
+    box-sizing: border-box;
+    position: relative; /* For absolute positioning of elements inside */
+    /* Removed overflow: hidden; to allow cost circle to extend */
+
+    /* Applying card.css styles */
+    width: 300px; /* Adjusted from 120px to fit panel */
+    height: 500px; /* Adjusted from 170px to fit panel */
+    border: 2px solid black; /* Stronger border */
+    border-radius: 0px; /* Sharp corners */
+    background-color: #f0f0f0;
+    color: #333;
+    font-family: 'Arial', sans-serif;
+}
+
+.card-top-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px;
+    border-bottom: 1px solid black;
+    position: relative;
+}
+
+.card-hp {
+    font-size: 0.8em;
+    font-weight: bold;
+    border: 1px solid black;
+    padding: 2px 5px;
+}
+
+.card-race {
+    font-size: 0.7em;
+    border: 1px solid black;
+    padding: 2px 5px;
+}
+
+.card-cost-circle {
+    position: absolute;
+    top: -20px; /* Adjusted to push further out */
+    right: -20px; /* Adjusted to push further out */
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: white;
+    border: 2px solid black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2em;
+    font-weight: bold;
+    z-index: 10; /* Ensure it's on top */
+}
+
+.card-name {
+    font-size: 1em;
+    font-weight: bold;
+    text-align: center;
+    flex-grow: 1;
+}
+
+.card-image-area {
+    flex-grow: 1;
+    border-bottom: 1px solid black;
+    background-color: lightgray;
+}
+
+.card-description-area {
+    font-size: 0.75em;
+    padding: 5px;
+    border-bottom: 1px solid black;
+    min-height: 40px;
+}
+
+.card-stats-bottom {
+    display: flex;
+    justify-content: flex-end;
+    font-size: 0.8em;
+    font-weight: bold;
+    padding: 5px;
+}
+
+.card-stats-bottom span:first-child {
+    margin-right: 10px;
 }

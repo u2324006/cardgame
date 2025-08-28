@@ -10,4 +10,5 @@ export interface Card {
   cardHp?: number;
   race?: string;
   cost: number;
+  hasUsedEffectThisTurn?: boolean; // Added for once-per-turn effects
 }

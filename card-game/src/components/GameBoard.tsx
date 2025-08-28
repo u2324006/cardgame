@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import '../styles/GameBoard.css';
 import { initialGameState } from '../logic/initialState';
+import { healMonster } from '../logic/gameActions';
 import { GameState, PlayerState } from '../types/gameState';
 import { Card } from '../types/card';
 import Hand from './Hand';
@@ -27,8 +28,37 @@ const GameBoard: React.FC = () => {
   const [summonedThisTurnIds, setSummonedThisTurnIds] = useState<string[]>([]);
   const [attackBuffs, setAttackBuffs] = useState<Record<string, number>>({}); // { [cardId]: buffValue }
 
-  const { players, turn, phase, currentPlayer } = gameState;
-  const isPlayer1Turn = currentPlayer === 'player1';
+  const [effectActivationMode, setEffectActivationMode] = useState<boolean>(false);
+  const [monkCardForEffect, setMonkCardForEffect] = useState<Card | null>(null);
+  const [targetingMonkHeal, setTargetingMonkHeal] = useState<boolean>(false); // New state for targeting mode
+  const [cardAwaitingAction, setCardAwaitingAction] = useState<{ card: Card, position: { row: 'frontRow' | 'backRow', index: number } } | null>(null); // Card awaiting action choice
+
+  const isCardAwaitingAction = useCallback((card: Card | null, row: 'frontRow' | 'backRow', index: number) => {
+    return cardAwaitingAction?.card?.id === card?.id &&
+           cardAwaitingAction?.position.row === row &&
+           cardAwaitingAction?.position.index === index;
+  }, [cardAwaitingAction]);
+
+  const handleMoveMonk = useCallback((monkCard: Card, position: { row: 'frontRow' | 'backRow', index: number }) => {
+    setMovingCardInfo({ card: monkCard, position: position });
+    setCardAwaitingAction(null); // Clear action choice
+  }, []);
+
+  const handleActivateMonkEffect = useCallback((card: Card) => {
+    if (!cardAwaitingAction) return; // Should not happen if button is visible
+
+    setMonkCardForEffect(card);
+    setTargetingMonkHeal(true);
+    setGameState(prevState => {
+      const newPlayers = { ...prevState.players };
+      const playerState = newPlayers[prevState.currentPlayer];
+      const newField = { ...playerState.field };
+      newField[cardAwaitingAction.position.row][cardAwaitingAction.position.index] = { ...card };
+      newPlayers[prevState.currentPlayer] = { ...playerState, field: newField };
+      return { ...prevState, players: newPlayers };
+    });
+    setCardAwaitingAction(null); // Clear action choice after activating effect
+  }, [cardAwaitingAction]);
 
   // フェイズを進める処理
   const handleNextPhase = useCallback(() => {
@@ -66,6 +96,10 @@ const GameBoard: React.FC = () => {
     }));
   }, [gameOver]);
 
+  const { players, turn, phase, currentPlayer } = gameState;
+
+  const isPlayer1Turn = currentPlayer === 'player1';
+
   // ターン開始時に各種状態をリセット
   useEffect(() => {
     setAttackedMonsterIds([]);
@@ -74,6 +108,22 @@ const GameBoard: React.FC = () => {
     setHasMoved(false);
     setSummonedThisTurnIds([]);
     setAttackBuffs({}); // バフをリセット
+
+    // Reset hasUsedEffectThisTurn flag for all cards on the field
+    setGameState(prevState => {
+      const newPlayers = { ...prevState.players };
+      for (const playerId of ['player1', 'player2'] as const) {
+        const playerState = newPlayers[playerId];
+        const newField = { ...playerState.field };
+        for (const row of ['frontRow', 'backRow'] as const) {
+          newField[row] = newField[row].map(card =>
+            card ? { ...card, hasUsedEffectThisTurn: false } : null
+          );
+        }
+        newPlayers[playerId] = { ...playerState, field: newField };
+      }
+      return { ...prevState, players: newPlayers };
+    });
   }, [turn]);
 
   // 勝利判定
@@ -389,8 +439,25 @@ const GameBoard: React.FC = () => {
   const handleFieldClick = (player: 'player1' | 'player2', row: 'frontRow' | 'backRow', index: number) => {
     if (!isPlayer1Turn || gameOver) return;
     const clickedCard = players[player].field[row][index];
+    const currentPlayerState = players[currentPlayer]; // Assuming currentPlayer is 'player1' for this logic
 
-    // Attackフェイズのロジック
+    // --- Targeting Mode for Monk Heal ---
+    if (targetingMonkHeal && monkCardForEffect) {
+      if (player === 'player1' && clickedCard && clickedCard.type === 'Monster' && clickedCard.cardHp !== undefined) {
+        // Call the healMonster function (from Step 2)
+        setGameState(prevState => healMonster(prevState, monkCardForEffect.id, clickedCard.id));
+        setTargetingMonkHeal(false);
+        setMonkCardForEffect(null);
+        return; // Effect applied, exit
+      } else {
+        alert("僧侶の効果は味方のモンスターにのみ使用できます。");
+        setTargetingMonkHeal(false); // Exit targeting mode on invalid target
+        setMonkCardForEffect(null);
+        return;
+      }
+    }
+
+    // --- Normal Click Handling ---
     if (phase === 'Attack') {
       if (player === 'player1' && clickedCard) {
         if (attackedMonsterIds.includes(clickedCard.id)) {
@@ -413,15 +480,21 @@ const GameBoard: React.FC = () => {
     // Playフェイズのロジック
     else if (phase === 'Play') {
       if (player === 'player1') {
+        // Check if clicked card is a Monk and its effect can be activated
+        if (clickedCard && clickedCard.name === '僧侶' && !clickedCard.hasUsedEffectThisTurn) {
+          setCardAwaitingAction({ card: clickedCard, position: { row, index } }); // Set card awaiting action
+          return; // Exit, waiting for action choice from CardSlot
+        }
+
         const selectedCard = selectedCardIndex !== null ? players.player1.hand[selectedCardIndex] : null;
 
-        // スペルカード使用のロジック
+        // Spell card logic (existing)
         if (selectedCard && selectedCard.type === 'Spell' && clickedCard) {
           executeSpell(selectedCard, clickedCard);
           return;
         }
 
-        // モンスター移動のロジック
+        // Monster movement logic (existing)
         if (clickedCard) {
           if (summonedThisTurnIds.includes(clickedCard.id)) {
             alert("このモンスターは召喚されたターンには移動できません。");
@@ -434,12 +507,12 @@ const GameBoard: React.FC = () => {
             return;
           }
           if (movingCardInfo.position.row === row) {
-            setMovingCardInfo(null); // 同じ列内での移動はキャンセル扱い
+            setMovingCardInfo(null); // Cancel move if same row
             return;
           }
           executeMove(movingCardInfo, { row, index });
         }
-        // 召喚処理
+        // Summon logic (existing)
         else {
           handlePlayCard(row, index);
         }
@@ -481,8 +554,8 @@ const GameBoard: React.FC = () => {
           <Hand cards={players.player2.hand} onCardClick={() => {}} />
           <div className="field-and-deck">
             <div className="field">
-              <div className="row back-row">{players.player2.field.backRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player2', 'backRow', i)} />)}</div>
-              <div className="row front-row">{players.player2.field.frontRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player2', 'frontRow', i)} />)}</div>
+              <div className="row back-row">{players.player2.field.backRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player2', 'backRow', i)} isAwaitingAction={false} />)}</div>
+              <div className="row front-row">{players.player2.field.frontRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player2', 'frontRow', i)} isAwaitingAction={false} />)}</div>
             </div>
             <div className="deck-graveyard">
               <div className="deck">山札: {players.player2.deck.length}</div>
@@ -499,8 +572,8 @@ const GameBoard: React.FC = () => {
               <div className="graveyard">墓地: {players.player1.graveyard.length}</div>
             </div>
             <div className="field">
-              <div className="row front-row">{players.player1.field.frontRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player1', 'frontRow', i)} />)}</div>
-              <div className="row back-row">{players.player1.field.backRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player1', 'backRow', i)} />)}</div>
+              <div className="row front-row">{players.player1.field.frontRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player1', 'frontRow', i)} isAwaitingAction={isCardAwaitingAction(card, 'frontRow', i)} onActivateEffect={(c) => handleActivateMonkEffect(c)} onMoveCard={(c) => handleMoveMonk(c, { row: 'frontRow', index: i })} />)}</div>
+              <div className="row back-row">{players.player1.field.backRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player1', 'backRow', i)} isAwaitingAction={isCardAwaitingAction(card, 'backRow', i)} onActivateEffect={(c) => handleActivateMonkEffect(c)} onMoveCard={(c) => handleMoveMonk(c, { row: 'backRow', index: i })} />)}</div>
             </div>
             <div className="special-card-hp">HP: {players.player1.specialCardHp}</div>
             <EnergyZone currentEnergy={players.player1.currentEnergy} maxEnergy={players.player1.maxEnergy} />
