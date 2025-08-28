@@ -1,0 +1,20 @@
+.card-slot {
+  width: 125px; /* Slightly larger to accommodate the card with padding */
+  height: 175px; /* Slightly larger to accommodate the card with padding */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--card-border-color);
+  border-radius: 10px;
+  background-color: var(--card-slot-bg-color);
+  cursor: pointer;
+}
+
+.card-slot:hover {
+    background-color: var(--card-slot-bg-color-hover, #3a8bcd);
+}
+
+.empty-slot {
+    width: 100%;
+    height: 100%;
+}

@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カード一覧</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .main-content-wrapper {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        /* Card Info Panel - styled to look like a single card */
+        .card-info-panel {
+            flex: 1;
+            min-width: 300px;
+            border: 2px solid #003333;
+            background-color: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: left;
+            height: 500px; /* Fixed height for card appearance */
+            position: sticky;
+            top: 20px;
+            display: flex;
+            flex-direction: column;
+            padding: 0; /* Remove padding from panel itself */
+            box-sizing: border-box;
+            position: relative; /* For absolute positioning of elements inside */
+            /* Removed overflow: hidden; to allow cost circle to extend */
+
+            /* Applying card.css styles */
+            width: 300px; /* Adjusted from 120px to fit panel */
+            height: 500px; /* Adjusted from 170px to fit panel */
+            border: 2px solid black; /* Stronger border */
+            border-radius: 0px; /* Sharp corners */
+            background-color: #f0f0f0;
+            color: #333;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .card-top-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px;
+            border-bottom: 1px solid black;
+            position: relative;
+        }
+
+        .card-hp {
+            font-size: 0.8em;
+            font-weight: bold;
+            border: 1px solid black;
+            padding: 2px 5px;
+        }
+
+        .card-race {
+            font-size: 0.7em;
+            border: 1px solid black;
+            padding: 2px 5px;
+        }
+
+        .card-cost-circle {
+            position: absolute;
+            top: -20px; /* Adjusted to push further out */
+            right: -20px; /* Adjusted to push further out */
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: white;
+            border: 2px solid black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            z-index: 10; /* Ensure it's on top */
+        }
+
+        .card-name {
+            font-size: 1em;
+            font-weight: bold;
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .card-image-area {
+            flex-grow: 1;
+            border-bottom: 1px solid black;
+            background-color: lightgray;
+        }
+
+        .card-description-area {
+            font-size: 0.75em;
+            padding: 5px;
+            border-bottom: 1px solid black;
+            min-height: 40px;
+        }
+
+        .card-stats-bottom {
+            display: flex;
+            justify-content: flex-end;
+            font-size: 0.8em;
+            font-weight: bold;
+            padding: 5px;
+        }
+
+        .card-stats-bottom span:first-child {
+            margin-right: 10px;
+        }
+
+        /* General layout for card list */
+        .card-list-section {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card-list-section h1 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #000000;
+            font-size: 2.5em;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            width: 100%;
+        }
+
+        .card-item {
+            border: 2px solid #003333;
+            background-color: #005f6b;
+            color: #ffffff;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.1em;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .main-content-wrapper {
+                flex-direction: column;
+            }
+            .card-info-panel {
+                min-width: auto;
+                width: 100%;
+                position: static;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content-wrapper">
+        <div class="card-info-panel" id="card-info-panel">
+            <h2>カード情報</h2>
+            <p>カードにカーソルを合わせると詳細が表示されます。</p>
+        </div>
+
+        <div class="card-list-section">
+            <button onclick="location.href='index.html'" class="btn btn-back" style="bottom:120px;left:160px;">メインメニューに戻る</button>
+            <h1>カード一覧</h1>
+            <div class="card-grid" id="all-cards-grid">
+                <!-- Cards will be dynamically loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const cardInfoPanel = document.getElementById('card-info-panel');
+        const allCardsGrid = document.getElementById('all-cards-grid');
+
+        // Hardcoded card data (from initialState.ts)
+        const allCardsData = [
+            {
+                id: 'm001',
+                name: 'Goblin Attacker',
+                type: 'Monster',
+                description: 'A standard goblin warrior.',
+                frontAttack: 2,
+                backAttack: 2,
+                cardHp: 6,
+                race: 'Goblin',
+                cost: 1,
+            },
+            {
+                id: 'm002',
+                name: 'Stone Golem',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 3,
+                backAttack: 0,
+                cardHp: 13,
+                race: 'Golem',
+                cost: 2,
+            },
+            {
+                id: 'm003',
+                name: 'pute',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 4,
+                backAttack: 0,
+                cardHp: 5,
+                race: 'Golem',
+                cost: 1,
+            },
+            {
+                id: 'm004',
+                name: 'hanta-',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 0,
+                backAttack: 4,
+                cardHp: 3,
+                race: 'Golem',
+                cost: 1,
+            },
+            {
+                id: 'm005',
+                name: 'sennsi',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 5,
+                backAttack: 0,
+                cardHp: 7,
+                race: 'Golem',
+                cost: 2,
+            },
+            {
+                id: 'm006',
+                name: 'majutu',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 0,
+                backAttack: 5,
+                cardHp: 6,
+                race: 'Golem',
+                cost: 2,
+            },
+            {
+                id: 'm007',
+                name: 'baran',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 3,
+                backAttack: 3,
+                cardHp: 9,
+                race: 'Golem',
+                cost: 2,
+            },
+            {
+                id: 'm008',
+                name: 'deka',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 8,
+                backAttack: 0,
+                cardHp: 12,
+                race: 'Golem',
+                cost: 3,
+            },
+            {
+                id: 'm009',
+                name: 'tyu',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 4,
+                backAttack: 4,
+                cardHp: 15,
+                race: 'Golem',
+                cost: 3,
+            },
+            {
+                id: 'm010',
+                name: 'sibi',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 0,
+                backAttack: 8,
+                cardHp: 10,
+                race: 'Golem',
+                cost: 3,
+            },
+            {
+                id: 'm011',
+                name: 'hohei',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 2,
+                backAttack: 0,
+                cardHp: 2,
+                race: 'Golem',
+                cost: 0,
+            },
+            {
+                id: 'm012',
+                name: 'garu',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 1,
+                backAttack: 1,
+                cardHp: 3,
+                race: 'Golem',
+                cost: 0,
+            },
+            {
+                id: 'm013',
+                name: 'tebu',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 0,
+                backAttack: 1,
+                cardHp: 1,
+                race: 'Golem',
+                cost: 0,
+            },
+            {
+                id: 'm014',
+                name: 'souryo',
+                type: 'Monster',
+                description: 'A creature made of living rock.',
+                frontAttack: 0,
+                backAttack: 1,
+                cardHp: 2,
+                race: 'Golem',
+                cost: 1,
+            },
+            {
+                id: 's001',
+                name: '攻撃の呪文',
+                type: 'Spell',
+                description: '味方モンスター1体のFAを、ターン終了まで1上げる。',
+                race: 'Spell',
+                cost: 1,
+            },
+        ];
+
+        // Function to render a card item as an HTML string
+        function renderCardItemHtml(cardData) {
+            return `
+                <div class="card-item"
+                    data-id="${cardData.id}"
+                    data-name="${cardData.name}"
+                    data-type="${cardData.type}"
+                    data-description="${cardData.description}"
+                    data-frontattack="${cardData.frontAttack || ''}"
+                    data-backattack="${cardData.backAttack || ''}"
+                    data-cardhp="${cardData.cardHp || ''}"
+                    data-race="${cardData.race || ''}"
+                    data-cost="${cardData.cost}">
+                    <p>${cardData.name}</p>
+                </div>
+            `;
+        }
+
+        // Function to attach event listeners to card items
+        function attachCardEventListeners(cardItems) {
+            cardItems.forEach(item => {
+                item.addEventListener('mouseover', () => {
+                    const id = item.dataset.id;
+                    const name = item.dataset.name;
+                    const type = item.dataset.type;
+                    const description = item.dataset.description;
+                    const frontAttack = item.dataset.frontattack;
+                    const backAttack = item.dataset.backattack;
+                    const cardHp = item.dataset.cardhp;
+                    const race = item.dataset.race;
+                    const cost = item.dataset.cost;
+
+                    let detailsHtml = `
+                        <div class="card-top-section">
+                            ${cardHp ? `<div class="card-hp">HP: ${cardHp}</div>` : ''}
+                            <div class="card-name">${name}</div>
+                            ${race ? `<div class="card-race">${race}</div>` : ''}
+                            <div class="card-cost-circle">
+                                <div class="card-cost-value">${cost}</div>
+                            </div>
+                        </div>
+                        <div class="card-image-area">
+                            <!-- Placeholder for image -->
+                        </div>
+                        <div class="card-description-area">
+                            ${description}
+                        </div>
+                        ${type === 'Monster' ? `
+                        <div class="card-stats-bottom">
+                            <span>FA: ${frontAttack}</span>
+                            <span>BA: ${backAttack}</span>
+                        </div>
+                        ` : ''}
+                    `;
+
+                    cardInfoPanel.innerHTML = detailsHtml;
+                });
+
+                item.addEventListener('mouseout', () => {
+                    cardInfoPanel.innerHTML = `<h2>カード情報</h2><p>カードにカーソルを合わせると詳細が表示されます。</p>`;
+                });
+            });
+        }
+
+        // Render all cards
+        const allCardsHtml = allCardsData.map(card => renderCardItemHtml(card)).join('');
+        allCardsGrid.innerHTML = allCardsHtml;
+        attachCardEventListeners(allCardsGrid.querySelectorAll('.card-item'));
+
+        // Initial state for card info panel
+        cardInfoPanel.innerHTML = `<h2>カード情報</h2><p>カードにカーソルを合わせると詳細が表示されます。</p>`;
+    </script>
+</body>
+</html>

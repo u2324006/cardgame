@@ -1,0 +1,23 @@
+:root {
+  --board-bg-color: #0D2B45;
+  --player-area-bg-color: #1C4B7A;
+  --card-slot-bg-color: #2A6DAD;
+  --card-info-bg-color: #061A2E;
+  --card-border-color: #84A9C0;
+  --text-color: #F0F8FF;
+  --turn-button-bg-color: #5D9B9B;
+  --turn-button-hover-bg-color: #84C0C0;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--board-bg-color);
+  color: var(--text-color);
+}
+
+* {
+  box-sizing: border-box;
+}

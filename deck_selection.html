@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>デッキ選択</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <button onclick="location.href='index.html'" class="btn btn-back">メインメニューに戻る</button>
+        <h1 id="page-title">デッキ選択</h1>
+        <div class="deck-list">
+            <div class="deck-item" data-deck-index="0">
+                <p>デッキ 1</p>
+            </div>
+            <div class="deck-item" data-deck-index="1">
+                <p>デッキ 2</p>
+            </div>
+            <div class="deck-item" data-deck-index="2">
+                <p>デッキ 3</p>
+            </div>
+        </div>
+        <button id="start-battle-button" class="btn" style="display: none;">対戦開始</button>
+    </div>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode');
+        const pageTitle = document.getElementById('page-title');
+        const startBattleButton = document.getElementById('start-battle-button');
+        const deckItems = document.querySelectorAll('.deck-item');
+        let selectedDeckIndex = null;
+
+        if (mode === 'battle') {
+            pageTitle.textContent = '対戦デッキ選択';
+            startBattleButton.style.display = 'block';
+
+            deckItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    selectedDeckIndex = item.getAttribute('data-deck-index');
+                    deckItems.forEach(d => d.classList.remove('selected'));
+                    item.classList.add('selected');
+                });
+            });
+
+            startBattleButton.addEventListener('click', () => {
+                if (selectedDeckIndex === null) {
+                    alert('対戦に使用するデッキを1つ選択してください。');
+                    return;
+                }
+
+                const allDecks = JSON.parse(localStorage.getItem('decks')) || [[], [], []];
+                const deckForBattle = allDecks[selectedDeckIndex];
+
+                if (!deckForBattle || deckForBattle.length === 0) {
+                    alert('選択されたデッキは空です。カードを編集してください。');
+                    return;
+                }
+
+                localStorage.setItem('deckForBattle', JSON.stringify(deckForBattle));
+                // Note: This assumes the 'card-game' project will be built and accessible at this path.
+                window.location.href = 'card-game/build/index.html';
+            });
+
+        } else {
+            // Default mode: Deck Editing
+            deckItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const deckIndex = item.getAttribute('data-deck-index');
+                    localStorage.setItem('selectedDeckIndex', deckIndex);
+                    window.location.href = 'deck_editing.html';
+                });
+            });
+        }
+    </script>
+</body>
+</html>
