@@ -18,6 +18,7 @@ const Hand: React.FC<HandProps> = ({ cards, onCardClick, selectedCardIndex }) =>
           card={card} 
           onClick={() => onCardClick(index)} 
           isSelected={selectedCardIndex === index}
+          hasEffect={card.hasEffect || false}
         />
       ))}
     </div>

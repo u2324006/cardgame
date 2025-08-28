@@ -6,15 +6,17 @@ interface CardProps {
   card: CardType;
   onClick: () => void;
   isSelected: boolean;
+  hasEffect: boolean; // New prop
 }
 
-const Card: React.FC<CardProps> = ({ card, onClick, isSelected }) => {
+const Card: React.FC<CardProps> = ({ card, onClick, isSelected, hasEffect }) => {
   return (
     <div className={`card ${card.type.toLowerCase()} ${isSelected ? 'selected' : ''} ${card.hasUsedEffectThisTurn ? 'used-effect' : ''}`} onClick={onClick}>
       {/* Top section: HP, Race, Cost */}
       <div className="card-top-section">
         <div className="card-hp">HP: {card.cardHp}</div>
         <div className="card-name">{card.name}</div>
+        {hasEffect && <div className="card-effect-label">効果</div>} {/* New label */}
         <div className="card-race">{card.race}</div>
         <div className="card-cost-circle">
           <div className="card-cost-value">{card.cost}</div>

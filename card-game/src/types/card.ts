@@ -11,4 +11,5 @@ export interface Card {
   race?: string;
   cost: number;
   hasUsedEffectThisTurn?: boolean; // Added for once-per-turn effects
+  hasEffect?: boolean; // New property to indicate if the card has an effect
 }

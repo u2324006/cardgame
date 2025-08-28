@@ -24,11 +24,12 @@ const GameBoard: React.FC = () => {
   const [gameOver, setGameOver] = useState<string | null>(null);
   const [attackedMonsterIds, setAttackedMonsterIds] = useState<string[]>([]);
   const [movingCardInfo, setMovingCardInfo] = useState<AttackerInfo | null>(null);
-  const [hasMoved, setHasMoved] = useState<boolean>(false);
+  const [movedMonstersThisTurnIds, setMovedMonstersThisTurnIds] = useState<Set<string>>(new Set());
   const [summonedThisTurnIds, setSummonedThisTurnIds] = useState<string[]>([]);
   const [attackBuffs, setAttackBuffs] = useState<Record<string, number>>({}); // { [cardId]: buffValue }
 
   const [effectActivationMode, setEffectActivationMode] = useState<boolean>(false);
+  const [isMoveTargetingMode, setIsMoveTargetingMode] = useState<boolean>(false); // New state
   const [monkCardForEffect, setMonkCardForEffect] = useState<Card | null>(null);
   const [targetingMonkHeal, setTargetingMonkHeal] = useState<boolean>(false); // New state for targeting mode
   const [cardAwaitingAction, setCardAwaitingAction] = useState<{ card: Card, position: { row: 'frontRow' | 'backRow', index: number } } | null>(null); // Card awaiting action choice
@@ -39,10 +40,42 @@ const GameBoard: React.FC = () => {
            cardAwaitingAction?.position.index === index;
   }, [cardAwaitingAction]);
 
-  const handleMoveMonk = useCallback((monkCard: Card, position: { row: 'frontRow' | 'backRow', index: number }) => {
-    setMovingCardInfo({ card: monkCard, position: position });
-    setCardAwaitingAction(null); // Clear action choice
-  }, []);
+  const handleMoveCard = useCallback((cardToMove: Card, fromPosition: { row: 'frontRow' | 'backRow', index: number }, toPosition?: { row: 'frontRow' | 'backRow', index: number }) => {
+    if (toPosition) {
+      // This is the second click, performing the move
+      if (movedMonstersThisTurnIds.has(cardToMove.id)) {
+        alert("このモンスターは既に移動済みです。");
+        return;
+      }
+      if (fromPosition.row === toPosition.row && fromPosition.index === toPosition.index) {
+        setMovingCardInfo(null); // Cancel move if same slot
+        return;
+      }
+
+      setGameState(prevState => {
+        const newPlayerState = { ...prevState.players.player1 };
+        const newField = { ...newPlayerState.field };
+
+        // 移動元からカードを削除
+        newField[fromPosition.row][fromPosition.index] = null;
+        // 移動先にカードを配置
+        newField[toPosition.row][toPosition.index] = cardToMove;
+
+        newPlayerState.field = newField;
+        return { ...prevState, players: { ...prevState.players, player1: newPlayerState } };
+      });
+
+      setMovedMonstersThisTurnIds(prev => new Set(prev).add(cardToMove.id));
+      setMovingCardInfo(null);
+    } else {
+      // This is the first click, selecting a card to move
+      if (summonedThisTurnIds.includes(cardToMove.id)) {
+        alert("このモンスターは召喚されたターンには移動できません。");
+        return;
+      }
+      setMovingCardInfo({ card: cardToMove, position: fromPosition });
+    }
+  }, [summonedThisTurnIds, movedMonstersThisTurnIds]);
 
   const handleActivateMonkEffect = useCallback((card: Card) => {
     if (!cardAwaitingAction) return; // Should not happen if button is visible
@@ -96,6 +129,12 @@ const GameBoard: React.FC = () => {
     }));
   }, [gameOver]);
 
+  const handleCancelAction = useCallback(() => {
+    setCardAwaitingAction(null);
+    setIsMoveTargetingMode(false);
+    setMovingCardInfo(null);
+  }, []);
+
   const { players, turn, phase, currentPlayer } = gameState;
 
   const isPlayer1Turn = currentPlayer === 'player1';
@@ -105,9 +144,10 @@ const GameBoard: React.FC = () => {
     setAttackedMonsterIds([]);
     setAttackerInfo(null);
     setMovingCardInfo(null);
-    setHasMoved(false);
+    
     setSummonedThisTurnIds([]);
     setAttackBuffs({}); // バフをリセット
+    setMovedMonstersThisTurnIds(new Set()); // Reset moved monsters
 
     // Reset hasUsedEffectThisTurn flag for all cards on the field
     setGameState(prevState => {
@@ -377,29 +417,7 @@ const GameBoard: React.FC = () => {
     setAttackerInfo(null);
   };
 
-  // モンスターを移動させる処理
-  const executeMove = (from: AttackerInfo, to: { row: 'frontRow' | 'backRow', index: number }) => {
-    setGameState(prevState => {
-      const newPlayerState = { ...prevState.players.player1 };
-      const newField = { ...newPlayerState.field };
-
-      // 移動元と移動先が同じ場合は処理しない
-      if (from.position.row === to.row && from.position.index === to.index) {
-        return prevState;
-      }
-
-      // 移動元からカードを削除
-      newField[from.position.row][from.position.index] = null;
-      // 移動先にカードを配置
-      newField[to.row][to.index] = from.card;
-
-      newPlayerState.field = newField;
-      return { ...prevState, players: { ...prevState.players, player1: newPlayerState } };
-    });
-
-    setHasMoved(true);
-    setMovingCardInfo(null);
-  };
+  
 
   // スペルカードを使用する処理
   const executeSpell = (spellCard: Card, targetCard: Card) => {
@@ -439,7 +457,6 @@ const GameBoard: React.FC = () => {
   const handleFieldClick = (player: 'player1' | 'player2', row: 'frontRow' | 'backRow', index: number) => {
     if (!isPlayer1Turn || gameOver) return;
     const clickedCard = players[player].field[row][index];
-    const currentPlayerState = players[currentPlayer]; // Assuming currentPlayer is 'player1' for this logic
 
     // --- Targeting Mode for Monk Heal ---
     if (targetingMonkHeal && monkCardForEffect) {
@@ -453,6 +470,22 @@ const GameBoard: React.FC = () => {
         alert("僧侶の効果は味方のモンスターにのみ使用できます。");
         setTargetingMonkHeal(false); // Exit targeting mode on invalid target
         setMonkCardForEffect(null);
+        return;
+      }
+    }
+
+    // --- Move Targeting Mode ---
+    if (isMoveTargetingMode && movingCardInfo) {
+      // This is the second click for a move (the target slot)
+      if (player === 'player1' && clickedCard === null) { // Only allow moving to empty slots for now
+        handleMoveCard(movingCardInfo.card, movingCardInfo.position, { row, index });
+        setIsMoveTargetingMode(false); // Exit move targeting mode
+        setMovingCardInfo(null); // Clear moving card info
+        return;
+      } else {
+        alert("モンスターは空のスロットにのみ移動できます。"); // Or allow swapping, depending on game rules
+        setIsMoveTargetingMode(false); // Exit move targeting mode on invalid target
+        setMovingCardInfo(null); // Clear moving card info
         return;
       }
     }
@@ -480,41 +513,24 @@ const GameBoard: React.FC = () => {
     // Playフェイズのロジック
     else if (phase === 'Play') {
       if (player === 'player1') {
-        // Check if clicked card is a Monk and its effect can be activated
-        if (clickedCard && clickedCard.name === '僧侶' && !clickedCard.hasUsedEffectThisTurn) {
-          setCardAwaitingAction({ card: clickedCard, position: { row, index } }); // Set card awaiting action
-          return; // Exit, waiting for action choice from CardSlot
-        }
-
-        const selectedCard = selectedCardIndex !== null ? players.player1.hand[selectedCardIndex] : null;
-
-        // Spell card logic (existing)
-        if (selectedCard && selectedCard.type === 'Spell' && clickedCard) {
-          executeSpell(selectedCard, clickedCard);
-          return;
-        }
-
-        // Monster movement logic (existing)
-        if (clickedCard) {
-          if (summonedThisTurnIds.includes(clickedCard.id)) {
-            alert("このモンスターは召喚されたターンには移動できません。");
-            return;
-          }
-          setMovingCardInfo({ card: clickedCard, position: { row, index } });
-        } else if (!clickedCard && movingCardInfo) {
-          if (hasMoved) {
-            alert("モンスターの移動は1ターンに1回までです。");
-            return;
-          }
-          if (movingCardInfo.position.row === row) {
-            setMovingCardInfo(null); // Cancel move if same row
-            return;
-          }
-          executeMove(movingCardInfo, { row, index });
-        }
-        // Summon logic (existing)
-        else {
+        // If a card from hand is selected AND an empty slot is clicked, play the card
+        if (selectedCardIndex !== null && !clickedCard) {
           handlePlayCard(row, index);
+        }
+        // If a card from hand is selected AND a card on the field is clicked, it's a spell target
+        else if (selectedCardIndex !== null && clickedCard) {
+          const selectedCard = players.player1.hand[selectedCardIndex];
+          // Spell card logic
+          if (selectedCard && selectedCard.type === 'Spell') {
+            executeSpell(selectedCard, clickedCard);
+            return;
+          }
+        }
+        // If a card on the field is clicked, and no other action is pending,
+        // set it for action choice (move/effect)
+        else if (clickedCard && clickedCard.type === 'Monster') {
+          setCardAwaitingAction({ card: clickedCard, position: { row, index } });
+          return;
         }
       }
     }
@@ -554,8 +570,8 @@ const GameBoard: React.FC = () => {
           <Hand cards={players.player2.hand} onCardClick={() => {}} />
           <div className="field-and-deck">
             <div className="field">
-              <div className="row back-row">{players.player2.field.backRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player2', 'backRow', i)} isAwaitingAction={false} />)}</div>
-              <div className="row front-row">{players.player2.field.frontRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player2', 'frontRow', i)} isAwaitingAction={false} />)}</div>
+              <div className="row back-row">{players.player2.field.backRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player2', 'backRow', i)} isAwaitingAction={false} isSummonedThisTurn={false} row={'backRow'} index={i} hasEffect={card ? card.hasEffect || false : false} onCancelAction={handleCancelAction} />)}</div>
+              <div className="row front-row">{players.player2.field.frontRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player2', 'frontRow', i)} isAwaitingAction={false} isSummonedThisTurn={false} row={'frontRow'} index={i} hasEffect={card ? card.hasEffect || false : false} onCancelAction={handleCancelAction} />)}</div>
             </div>
             <div className="deck-graveyard">
               <div className="deck">山札: {players.player2.deck.length}</div>
@@ -572,8 +588,24 @@ const GameBoard: React.FC = () => {
               <div className="graveyard">墓地: {players.player1.graveyard.length}</div>
             </div>
             <div className="field">
-              <div className="row front-row">{players.player1.field.frontRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player1', 'frontRow', i)} isAwaitingAction={isCardAwaitingAction(card, 'frontRow', i)} onActivateEffect={(c) => handleActivateMonkEffect(c)} onMoveCard={(c) => handleMoveMonk(c, { row: 'frontRow', index: i })} />)}</div>
-              <div className="row back-row">{players.player1.field.backRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player1', 'backRow', i)} isAwaitingAction={isCardAwaitingAction(card, 'backRow', i)} onActivateEffect={(c) => handleActivateMonkEffect(c)} onMoveCard={(c) => handleMoveMonk(c, { row: 'backRow', index: i })} />)}</div>
+              <div className="row front-row">{players.player1.field.frontRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player1', 'frontRow', i)} isAwaitingAction={isCardAwaitingAction(card, 'frontRow', i)} onActivateEffect={(c) => handleActivateMonkEffect(c)} onStartMoveTargeting={(c, pos) => {
+  if (summonedThisTurnIds.includes(c.id)) {
+    alert("このモンスターは召喚されたターンには移動できません。");
+    return;
+  }
+  setIsMoveTargetingMode(true);
+  setMovingCardInfo({ card: c, position: pos });
+  setCardAwaitingAction(null);
+}} isSummonedThisTurn={card ? summonedThisTurnIds.includes(card.id) : false} row={'frontRow'} index={i} hasEffect={card ? card.hasEffect || false : false} onCancelAction={handleCancelAction} />)}</div>
+              <div className="row back-row">{players.player1.field.backRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player1', 'backRow', i)} isAwaitingAction={isCardAwaitingAction(card, 'backRow', i)} onActivateEffect={(c) => handleActivateMonkEffect(c)} onStartMoveTargeting={(c, pos) => {
+  if (summonedThisTurnIds.includes(c.id)) {
+    alert("このモンスターは召喚されたターンには移動できません。");
+    return;
+  }
+  setIsMoveTargetingMode(true);
+  setMovingCardInfo({ card: c, position: pos });
+  setCardAwaitingAction(null);
+}} isSummonedThisTurn={card ? summonedThisTurnIds.includes(card.id) : false} row={'backRow'} index={i} hasEffect={card ? card.hasEffect || false : false} onCancelAction={handleCancelAction} />)}</div>
             </div>
             <div className="special-card-hp">HP: {players.player1.specialCardHp}</div>
             <EnergyZone currentEnergy={players.player1.currentEnergy} maxEnergy={players.player1.maxEnergy} />
