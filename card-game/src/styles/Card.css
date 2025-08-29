@@ -16,6 +16,10 @@
   border: 2px solid blue; /* Example selected border */
 }
 
+.card.discarding {
+  border: 2px solid red;
+}
+
 .card-top-section {
   display: flex;
   justify-content: space-between;

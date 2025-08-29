@@ -7,20 +7,25 @@ interface HandProps {
   cards: CardType[];
   onCardClick: (index: number) => void;
   selectedCardIndex?: number | null;
+  cardsToDiscard?: CardType[];
 }
 
-const Hand: React.FC<HandProps> = ({ cards, onCardClick, selectedCardIndex }) => {
+const Hand: React.FC<HandProps> = ({ cards, onCardClick, selectedCardIndex, cardsToDiscard }) => {
   return (
     <div className="hand-container">
-      {cards.map((card, index) => (
-        <Card 
-          key={card.id} 
-          card={card} 
-          onClick={() => onCardClick(index)} 
-          isSelected={selectedCardIndex === index}
-          hasEffect={card.hasEffect || false}
-        />
-      ))}
+      {cards.map((card, index) => {
+        const isDiscarding = cardsToDiscard?.some(dCard => dCard.id === card.id) ?? false;
+        return (
+          <Card 
+            key={card.id} 
+            card={card} 
+            onClick={() => onCardClick(index)} 
+            isSelected={selectedCardIndex === index}
+            isDiscarding={isDiscarding}
+            hasEffect={card.hasEffect || false}
+          />
+        );
+      })}
     </div>
   );
 };

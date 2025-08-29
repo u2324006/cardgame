@@ -32,6 +32,8 @@ const GameBoard: React.FC = () => {
   const [monkCardForEffect, setMonkCardForEffect] = useState<Card | null>(null);
   const [targetingMonkHeal, setTargetingMonkHeal] = useState<boolean>(false); 
   const [cardAwaitingAction, setCardAwaitingAction] = useState<{ card: Card, position: { row: 'frontRow' | 'backRow', index: number } } | null>(null);
+  const [spellBeingCast, setSpellBeingCast] = useState<Card | null>(null);
+  const [cardsToDiscard, setCardsToDiscard] = useState<Card[]>([]);
 
   const isCardAwaitingAction = useCallback((card: Card | null, row: 'frontRow' | 'backRow', index: number) => {
     return cardAwaitingAction?.card?.id === card?.id &&
@@ -315,9 +317,68 @@ const GameBoard: React.FC = () => {
 
   const handleSelectCard = (cardIndex: number) => {
     if (!isPlayer1Turn || gameOver) return;
+
+    if (spellBeingCast && spellBeingCast.id.startsWith('s003')) {
+      const cardToDiscard = players.player1.hand[cardIndex];
+      if (cardToDiscard.id === spellBeingCast.id) {
+        alert("「取捨選択」自体を捨てることはできません。");
+        return;
+      }
+      if (cardsToDiscard.find(card => card.id === cardToDiscard.id)) {
+        // Deselect card
+        setCardsToDiscard(cardsToDiscard.filter(card => card.id !== cardToDiscard.id));
+      } else {
+        // Select card
+        const newCardsToDiscard = [...cardsToDiscard, cardToDiscard];
+        setCardsToDiscard(newCardsToDiscard);
+
+        if (newCardsToDiscard.length === 2) {
+          if (window.confirm("選択したカードでよろしいですか？")) {
+            // Execute the spell effect
+            setGameState(prevState => {
+              const newPlayerState = { ...prevState.players.player1 };
+              // Move discarded cards to graveyard
+              newPlayerState.graveyard = [...newPlayerState.graveyard, ...newCardsToDiscard];
+              // Remove discarded cards from hand
+              newPlayerState.hand = newPlayerState.hand.filter(card => !newCardsToDiscard.some(dCard => dCard.id === card.id));
+              // Draw 2 cards
+              for (let i = 0; i < 2; i++) {
+                if (newPlayerState.deck.length > 0) {
+                  const drawnCard = newPlayerState.deck[0];
+                  newPlayerState.deck = newPlayerState.deck.slice(1);
+                  newPlayerState.hand = [...newPlayerState.hand, drawnCard];
+                } else {
+                  alert("山札がありません！");
+                }
+              }
+              // Move spell card to graveyard and remove from hand
+              newPlayerState.graveyard = [...newPlayerState.graveyard, spellBeingCast];
+              newPlayerState.hand = newPlayerState.hand.filter(card => card.id !== spellBeingCast.id);
+              // Pay energy cost
+              newPlayerState.currentEnergy -= spellBeingCast.cost;
+
+              return {
+                ...prevState,
+                players: { ...prevState.players, player1: newPlayerState },
+              };
+            });
+
+            // Reset state
+            setSpellBeingCast(null);
+            setCardsToDiscard([]);
+            setSelectedCardIndex(null);
+          } else {
+            // User clicked "No", so reset the selection
+            setCardsToDiscard([]);
+          }
+        }
+      }
+      return;
+    }
+
     const cardToSelect = players.player1.hand[cardIndex];
     if (selectedCardIndex === cardIndex) {
-      if (cardToSelect && cardToSelect.id.startsWith('s002') && phase === 'Play') {
+      if (cardToSelect && (cardToSelect.id.startsWith('s002') || cardToSelect.id.startsWith('s003')) && phase === 'Play') {
         executeSpell(cardToSelect, null);
         setSelectedCardIndex(null);
         return;
@@ -422,6 +483,13 @@ const GameBoard: React.FC = () => {
           newPlayers[prevState.currentPlayer] = currentPlayerState;
           return { ...prevState, players: newPlayers };
         });
+        break;
+      case spellCard.id.startsWith('s003'):
+        if (players.player1.hand.length < 3) { // 2 to discard + the spell itself
+          alert("手札が足りません。");
+          return;
+        }
+        setSpellBeingCast(spellCard);
         break;
       default:
         console.warn(`Unknown spell card ID: ${spellCard.id}`);
@@ -576,7 +644,7 @@ const GameBoard: React.FC = () => {
             <div className="special-card-hp">HP: {players.player1.specialCardHp}</div>
             <EnergyZone currentEnergy={players.player1.currentEnergy} maxEnergy={players.player1.maxEnergy} />
           </div>
-          <Hand cards={players.player1.hand} onCardClick={handleSelectCard} selectedCardIndex={selectedCardIndex} />
+          <Hand cards={players.player1.hand} onCardClick={handleSelectCard} selectedCardIndex={selectedCardIndex} cardsToDiscard={cardsToDiscard} />
         </div>
       </div>
       <div className="control-panel">

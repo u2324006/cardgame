@@ -15,4 +15,5 @@ const allCardsData = [
     { id: 'm014', name: '僧侶', type: 'Monster', description: '1ターンに1度自分のモンスター1体のHPを1回復する。', frontAttack: 0, backAttack: 1, cardHp: 2, race: 'Golem', cost: 1, hasEffect: true },
     { id: 's001', name: '攻撃の呪文', type: 'Spell', description: '味方モンスター1体のFAを、ターン終了まで1上げる。', race: 'Spell', cost: 1, hasEffect: true },
     { id: 's002', name: '恵', type: 'Spell', description: 'カード2枚ドローする。', race: 'Spell', cost: 2, hasEffect: true },
+    { id: 's003', name: '取捨選択', type: 'Spell', description: '手札からカードを2枚墓地に送り、カード2枚ドローする。', race: 'Spell', cost: 1, hasEffect: true },
 ];
