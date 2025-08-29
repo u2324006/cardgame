@@ -435,7 +435,11 @@ const GameBoard: React.FC = () => {
     const clickedCard = players[player].field[row][index];
     if (targetingMonkHeal && monkCardForEffect) {
       if (player === 'player1' && clickedCard && clickedCard.type === 'Monster' && clickedCard.cardHp !== undefined) {
-        setGameState(prevState => healMonster(prevState, monkCardForEffect.id, clickedCard.id));
+        const result = healMonster(gameState, monkCardForEffect.id, clickedCard.id);
+        setGameState(result.newState);
+        if (result.message) {
+            alert(result.message);
+        }
         setTargetingMonkHeal(false);
         setMonkCardForEffect(null);
         return;
@@ -517,7 +521,27 @@ const GameBoard: React.FC = () => {
   };
 
   if (gameOver) {
-    return <div className="game-over-message">{gameOver} の勝利！</div>;
+    const handlePlayAgain = () => {
+      setGameState(initialGameState);
+      setGameOver(null);
+    };
+
+    const handleGoToDeckSelection = () => {
+      window.location.href = '../../deck_selection.html?mode=battle';
+    };
+
+    const handleGoToMainMenu = () => {
+      window.location.href = '../../index.html';
+    };
+
+    return (
+      <div className="game-over-message">
+        <h1>{gameOver} の勝利！</h1>
+        <button onClick={handlePlayAgain}>もう一度対戦する</button>
+        <button onClick={handleGoToDeckSelection}>デッキを選ぶ</button>
+        <button onClick={handleGoToMainMenu}>メインメニューに戻る</button>
+      </div>
+    );
   }
 
   return (

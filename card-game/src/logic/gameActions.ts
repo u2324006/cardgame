@@ -6,7 +6,7 @@ export const healMonster = (
   gameState: GameState,
   monkCardId: string,
   targetMonsterId: string
-): GameState => {
+): { newState: GameState, message: string | null } => {
   const newGameState = { ...gameState };
   const currentPlayerId = newGameState.currentPlayer;
   const currentPlayerState = newGameState.players[currentPlayerId];
@@ -36,7 +36,7 @@ export const healMonster = (
     monkCard.hasUsedEffectThisTurn
   ) {
     console.warn('Monk card not found, not a Monk, or effect already used.');
-    return gameState; // Return original state if conditions not met
+    return { newState: gameState, message: '僧侶カードが見つからないか、効果が既に使用されています。' }; // Return original state if conditions not met
   }
 
   // Find the target monster on the field
@@ -59,7 +59,7 @@ export const healMonster = (
   // Validate target monster
   if (!targetMonster || targetMonster.type !== 'Monster' || typeof targetMonster.cardHp === 'undefined') {
     console.warn('Target is not a valid monster or has no HP.');
-    return gameState; // Return original state if conditions not met
+    return { newState: gameState, message: 'ターゲットは有効なモンスターではありません。' }; // Return original state if conditions not met
   }
 
   // Find the target monster's original definition to get its max HP
@@ -67,7 +67,7 @@ export const healMonster = (
 
   if (!originalTargetCardDefinition || originalTargetCardDefinition.type !== 'Monster' || typeof originalTargetCardDefinition.cardHp === 'undefined') {
     console.warn('Original target card definition not found or invalid for healing.');
-    return gameState;
+    return { newState: gameState, message: 'ターゲットの元のカード定義が見つかりません。' };
   }
 
   const maxHp = originalTargetCardDefinition.cardHp;
@@ -78,8 +78,7 @@ export const healMonster = (
   
   // Check if monster is already at max HP
   if (targetMonster.cardHp === maxHp) {
-    console.warn('このモンスターは回復できません'); // Message for the user
-    return gameState; // Return original state, preventing healing
+    return { newState: gameState, message: 'このモンスターは回復できません' }; // Return original state, preventing healing
   }
 
   // Calculate new HP, capping at maxHp
@@ -101,5 +100,5 @@ export const healMonster = (
     field: newField,
   };
 
-  return newGameState;
+  return { newState: newGameState, message: 'モンスターのHPが1回復しました。' };
 };
