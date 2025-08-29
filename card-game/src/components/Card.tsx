@@ -6,7 +6,7 @@ interface CardProps {
   card: CardType;
   onClick: () => void;
   isSelected: boolean;
-  hasEffect: boolean; // New prop
+  hasEffect?: boolean; // Make prop optional
 }
 
 const Card: React.FC<CardProps> = ({ card, onClick, isSelected, hasEffect }) => {
@@ -16,7 +16,7 @@ const Card: React.FC<CardProps> = ({ card, onClick, isSelected, hasEffect }) => 
       <div className="card-top-section">
         <div className="card-hp">HP: {card.cardHp}</div>
         <div className="card-name">{card.name}</div>
-        {hasEffect && <div className="card-effect-label">効果</div>} {/* New label */}
+        {(hasEffect || card.hasEffect) && <div className="card-effect-label">効果</div>} {/* Check both prop and card property */}
         <div className="card-race">{card.race}</div>
         <div className="card-cost-circle">
           <div className="card-cost-value">{card.cost}</div>

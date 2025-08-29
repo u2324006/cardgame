@@ -1,5 +1,6 @@
-import { GameState, PlayerState } from '../types/gameState';
+import { GameState } from '../types/gameState';
 import { Card } from '../types/card';
+import { allCardsData } from '../data/cards'; // Add this import
 
 export const healMonster = (
   gameState: GameState,
@@ -56,15 +57,36 @@ export const healMonster = (
   }
 
   // Validate target monster
-  if (!targetMonster || targetMonster.type !== 'Monster' || !targetMonster.cardHp) {
+  if (!targetMonster || targetMonster.type !== 'Monster' || typeof targetMonster.cardHp === 'undefined') {
     console.warn('Target is not a valid monster or has no HP.');
     return gameState; // Return original state if conditions not met
   }
 
+  // Find the target monster's original definition to get its max HP
+  const originalTargetCardDefinition = allCardsData.find(card => card.id === targetMonsterId.split('-')[0]); // Split ID to get original ID (e.g., 'm014-instance-25' -> 'm014')
+
+  if (!originalTargetCardDefinition || originalTargetCardDefinition.type !== 'Monster' || typeof originalTargetCardDefinition.cardHp === 'undefined') {
+    console.warn('Original target card definition not found or invalid for healing.');
+    return gameState;
+  }
+
+  const maxHp = originalTargetCardDefinition.cardHp;
+
   // Apply healing effect
   const newField = { ...currentPlayerState.field };
   const newTargetRow = [...newField[targetRow!]];
-  const updatedTargetMonster = { ...targetMonster, cardHp: targetMonster.cardHp + 1 };
+  
+  // Check if monster is already at max HP
+  if (targetMonster.cardHp === maxHp) {
+    console.warn('このモンスターは回復できません'); // Message for the user
+    return gameState; // Return original state, preventing healing
+  }
+
+  // Calculate new HP, capping at maxHp
+  const healedHp = targetMonster.cardHp + 1;
+  const finalHp = Math.min(healedHp, maxHp);
+
+  const updatedTargetMonster = { ...targetMonster, cardHp: finalHp };
   newTargetRow[targetIndex!] = updatedTargetMonster;
   newField[targetRow!] = newTargetRow;
 

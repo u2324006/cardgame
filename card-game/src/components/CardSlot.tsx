@@ -12,25 +12,31 @@ interface CardSlotProps {
   isSummonedThisTurn: boolean;
   row: 'frontRow' | 'backRow';
   index: number;
-  hasEffect: boolean; // New prop
-  onCancelAction: () => void; // New prop
+  onCancelAction: () => void;
+  hasEffect?: boolean; // Keep this prop for compatibility with GameBoard
 }
 
-const CardSlot: React.FC<CardSlotProps> = ({ card, onClick, isAwaitingAction, onActivateEffect, onStartMoveTargeting, isSummonedThisTurn, row, index, hasEffect, onCancelAction }) => {
+const CardSlot: React.FC<CardSlotProps> = ({ card, onClick, isAwaitingAction, onActivateEffect, onStartMoveTargeting, isSummonedThisTurn, row, index, onCancelAction }) => {
+  console.log(`Card ID: ${card?.id}, hasEffect: ${card?.hasEffect}`); // この行を追加
   return (
     <div className="card-slot" onClick={onClick}>
       {card ? (
         <>
-          <Card card={card} onClick={() => {}} isSelected={false} hasEffect={hasEffect} />
-          {isAwaitingAction && (
+          <Card card={card} onClick={() => {}} isSelected={false} hasEffect={card.hasEffect} />
+          {isAwaitingAction && card && (
             <div className="action-buttons-overlay">
-              {onActivateEffect && hasEffect && (
-                <button onClick={(e) => { e.stopPropagation(); console.log('onActivateEffect called for card:', card); onActivateEffect(card); }}>効果発動</button>
+              {card.hasEffect && onActivateEffect && (
+                <button onClick={(e) => { e.stopPropagation(); onActivateEffect(card); }}>効果発動</button>
               )}
-              {onStartMoveTargeting && card && (
-                <button className={isSummonedThisTurn ? 'summoned-this-turn' : ''} onClick={(e) => { e.stopPropagation(); onStartMoveTargeting(card, { row, index }); }}>移動</button>
+              {onStartMoveTargeting && (
+                <button 
+                  className={isSummonedThisTurn ? 'summoned-this-turn' : ''} 
+                  onClick={(e) => { e.stopPropagation(); onStartMoveTargeting(card, { row, index }); }}
+                >
+                  移動
+                </button>
               )}
-              <button onClick={(e) => { e.stopPropagation(); onCancelAction(); }}>戻る</button> {/* New button */}
+              <button onClick={(e) => { e.stopPropagation(); onCancelAction(); }}>戻る</button>
             </div>
           )}
         </>
