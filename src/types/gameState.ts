@@ -26,6 +26,8 @@ export interface TurnState {
   summonedThisTurnIds: string[];
   movedMonsterId: string | null; // このターンに移動したモンスター（移動は1ターンに1回）
   attackBuffs: Record<string, number>; // { [cardId]: FA上昇値 }
+  backAttackBuffs: Record<string, number>; // { [cardId]: BA上昇値 }
+  disabledLeaders: PlayerId[]; // このターンの間、大将カードの効果がなくなっているプレイヤー
 }
 
 // 「カードを引いてその後手札から墓地に置く」効果などで、捨てるカードを選んでいるところ

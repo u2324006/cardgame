@@ -6,11 +6,13 @@ import {
   castSpell,
   discardCards,
   endTurn,
+  getAttackPower,
+  getEffectiveHp,
   moveMonster,
   nextPhase,
   playCard,
 } from './gameLogic';
-import { drawSpell, emptyState, fireSpell, healSpell, inPhase, monster, spell, unwrap, withField, withPlayer } from './testUtils';
+import { backSpell, disableSpell, drawSpell, emptyState, fireSpell, healSpell, inPhase, monster, spell, unwrap, withField, withGolemLeader, withPlayer } from './testUtils';
 
 describe('phase progression', () => {
   it('does not draw on the first player\'s first turn, but still gains energy', () => {
@@ -248,3 +250,44 @@ describe('draw then discard (恵の泉)', () => {
     expect(next.pendingDiscard?.count).toBe(2);
   });
 });
+
+describe('後衛支援 (BA buff)', () => {
+  it('raises BA of an ally until the end of the turn', () => {
+    let state = withField(emptyState(), 'player1', 'backRow', [monster('a', { backAttack: 2 }), null, null]);
+    state = withPlayer(state, 'player1', { hand: [backSpell] });
+    const next = unwrap(castSpell(state, 'player1', 0, { row: 'backRow', index: 0 }));
+    const card = next.players.player1.field.backRow[0]!;
+    expect(getAttackPower(next, card, 'backRow')).toBe(3);
+    expect(getAttackPower(next, card, 'frontRow')).toBe(3); // FA は変わらない
+    expect(getAttackPower(endTurn(next), card, 'backRow')).toBe(2);
+  });
+});
+
+describe('leader ability (マウンテンゴーレム)', () => {
+  const golem = (id: string, cardHp: number) => monster(id, { race: 'ゴーレム', cardHp });
+
+  it('gives golems +1 HP, so they survive damage equal to their card HP', () => {
+    let state = withGolemLeader(emptyState(), 'player2');
+    state = withField(state, 'player2', 'frontRow', [golem('g', 3), monster('other', { cardHp: 3 }), null]);
+    expect(getEffectiveHp(state, 'player2', state.players.player2.field.frontRow[0]!)).toBe(4);
+    state = withPlayer(state, 'player1', { hand: [fireSpell, fireSpell] });
+    let next = unwrap(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 }));
+    expect(next.players.player2.field.frontRow[0]?.cardHp).toBe(0); // 表示上の HP は 0 + 1 = 1
+    next = unwrap(castSpell(next, 'player1', 0, { row: 'frontRow', index: 1 }));
+    expect(next.players.player2.field.frontRow[1]).toBeNull(); // ゴーレム以外は倒される
+  });
+
+  it('is cancelled by 指揮低下 for this turn: golems left at 0 HP are destroyed', () => {
+    let state = withGolemLeader(emptyState(), 'player2');
+    state = withField(state, 'player2', 'frontRow', [golem('weak', 0), golem('strong', 5), null]);
+    state = withPlayer(state, 'player1', { hand: [disableSpell] });
+    const next = unwrap(castSpell(state, 'player1', 0));
+    expect(next.turnState.disabledLeaders).toEqual(['player2']);
+    expect(next.players.player2.field.frontRow[0]).toBeNull();
+    expect(next.players.player2.graveyard.map(c => c.id)).toEqual(['weak']);
+    const strong = next.players.player2.field.frontRow[1]!;
+    expect(getEffectiveHp(next, 'player2', strong)).toBe(5);
+    expect(getEffectiveHp(endTurn(next), 'player2', strong)).toBe(6); // 次のターンには戻る
+  });
+});
+

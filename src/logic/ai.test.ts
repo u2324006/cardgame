@@ -1,6 +1,6 @@
 import { GameState, Phase } from '../types/gameState';
 import { runAiAttackPhase, runAiPlayPhase } from './ai';
-import { drawSpell, emptyState, fireSpell, healSpell, inPhase, monster, spell, withField, withPlayer } from './testUtils';
+import { backSpell, disableSpell, drawSpell, emptyState, fireSpell, healSpell, inPhase, monster, spell, withField, withGolemLeader, withPlayer } from './testUtils';
 
 const aiTurn = (state: GameState, phase: Phase = 'Play'): GameState => inPhase(state, phase, 'player2');
 
@@ -134,3 +134,22 @@ describe('AI attack phase', () => {
     expect(next.players.player1.specialCardHp).toBe(20 - 6);
   });
 });
+
+describe('AI with leader-related spells', () => {
+  it('casts 指揮低下 only when the opponent leader is boosting a monster', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 1, hand: [disableSpell] });
+    state = withField(state, 'player1', 'frontRow', [monster('g', { race: 'ゴーレム', cardHp: 0 }), null, null]);
+    expect(runAiPlayPhase(state, 'player2').players.player2.hand).toHaveLength(1);
+    const next = runAiPlayPhase(withGolemLeader(state, 'player1'), 'player2');
+    expect(next.players.player2.hand).toHaveLength(0);
+    expect(next.players.player1.field.frontRow[0]).toBeNull();
+  });
+
+  it('casts 後衛支援 on a back-row attacker', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 1, hand: [backSpell] });
+    state = withField(state, 'player2', 'backRow', [monster('archer', { frontAttack: 0, backAttack: 3 }), null, null]);
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.turnState.backAttackBuffs).toEqual({ archer: 1 });
+  });
+});
+

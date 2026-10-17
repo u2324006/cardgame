@@ -1,6 +1,7 @@
 import { MonsterCard, SpellCard } from '../types/card';
 import { BUILTIN_CARD_SET } from './cards';
 import {
+  fromLeaderRecord,
   fromMonsterRecord,
   fromSpellRecord,
   imageFromRecord,
@@ -75,7 +76,7 @@ describe('card records (JSON for AI)', () => {
   });
 
   it('parses one category or all categories, and rejects anything else', () => {
-    const all = toRecords([newMonster, customSpell], BUILTIN_CARD_SET.leaders);
+    const all = toRecords([newMonster, customSpell], BUILTIN_CARD_SET.leaders.slice(0, 1));
     expect(parseRecords(JSON.stringify(all.monsters))?.monsters).toHaveLength(1);
     const parsed = parseRecords(JSON.stringify(all));
     expect([parsed?.monsters.length, parsed?.spells.length, parsed?.leaders.length]).toEqual([1, 1, 1]);
@@ -92,7 +93,26 @@ describe('card records (JSON for AI)', () => {
 
   it('loads 恵の泉 from spells.json as an implemented spell', () => {
     const spring = BUILTIN_CARD_SET.cards.find(c => c.id === 'cmvcejw05kll9') as SpellCard;
-    expect(spring).toMatchObject({ name: '恵の泉', cost: 1, effect: { kind: 'drawDiscard', amount: 2 }, implementation: '実装済み' });
+    expect(spring).toMatchObject({ name: '恵の泉', cost: 2, effect: { kind: 'drawDiscard', amount: 2 }, implementation: '実装済み' });
     expect(spring.image).toContain('/images/cards/blessing-spring.svg');
+  });
+
+  it('loads the imported spells, races and leader with their effects', () => {
+    const find = (id: string) => BUILTIN_CARD_SET.cards.find(c => c.id === id);
+    expect(find('s001')).toMatchObject({ name: '前衛支援', effect: { kind: 'buffFa', amount: 1 } });
+    expect(find('s003')).toMatchObject({ cost: 3, effect: { kind: 'damage', amount: 3 } });
+    expect(find('cmvcf4e4u3szf')).toMatchObject({ name: '指揮低下', effect: { kind: 'disableLeader', amount: 1 } });
+    expect(find('cmvcf6svl19jp')).toMatchObject({ name: '後衛支援', effect: { kind: 'buffBa', amount: 1 } });
+    expect([find('m003')?.race, find('m011')?.race]).toEqual(['恐竜', '戦士']);
+    const golem = BUILTIN_CARD_SET.leaders.find(l => l.id === 'lmvcf1jj9pvni');
+    expect(golem).toMatchObject({ maxHp: 22, ability: { kind: 'raceHpBonus', race: 'ゴーレム', amount: 1 } });
+  });
+
+  it('round-trips a leader effect', () => {
+    const golem = BUILTIN_CARD_SET.leaders.find(l => l.id === 'lmvcf1jj9pvni')!;
+    const record = toLeaderRecord(golem);
+    expect(record.effect).toEqual({ kind: 'raceHpBonus', race: 'ゴーレム', amount: 1 });
+    expect(isLeaderRecord({ ...record, effect: { kind: 'raceHpBonus', race: 'ゴーレム' } })).toBe(false);
+    expect(fromLeaderRecord(record).ability).toEqual(record.effect);
   });
 });

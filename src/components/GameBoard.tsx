@@ -9,6 +9,9 @@ import {
   endTurn,
   canAttackThisTurn,
   getCardAt,
+  getHpBonus,
+  getMonsterPositions,
+  isLeaderActive,
   hasFrontRowMonsters,
   moveMonster,
   nextPhase,
@@ -58,6 +61,17 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
   const usedLabels: Record<string, string> = {};
   if (isPlayerTurn && phase === 'Play' && turnState.movedMonsterId) usedLabels[turnState.movedMonsterId] = '移動済み';
   if (isPlayerTurn && phase === 'Attack') turnState.attackedMonsterIds.forEach(id => { usedLabels[id] = '攻撃済み'; });
+
+  // 大将カードの効果で上がっている HP（両方のプレイヤーの場のモンスター）
+  const hpBonusesOf = (owner: PlayerId): Record<string, number> => {
+    const bonuses: Record<string, number> = {};
+    getMonsterPositions(gameState, owner).forEach(position => {
+      const card = getCardAt(gameState, owner, position);
+      const bonus = card ? getHpBonus(gameState, owner, card) : 0;
+      if (card && bonus > 0) bonuses[card.id] = bonus;
+    });
+    return bonuses;
+  };
 
   const canDirectAttack = isPlayerTurn && phase === 'Attack' && selection.kind === 'attacker' && !hasFrontRowMonsters(players[AI]);
 
@@ -260,6 +274,8 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
           onLeaderClick={handleOpponentLeaderClick}
           isLeaderTargetable={canDirectAttack}
           onInspect={setHovered}
+          hpBonuses={hpBonusesOf(AI)}
+          isLeaderDisabled={!isLeaderActive(gameState, AI)}
         />
         <div className="front-line" aria-hidden="true"><span>前線</span></div>
         <PlayerArea
@@ -272,6 +288,8 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
           selectedPosition={selectedFieldPosition}
           usedLabels={usedLabels}
           markedHandIndices={discardIndices}
+          hpBonuses={hpBonusesOf(HUMAN)}
+          isLeaderDisabled={!isLeaderActive(gameState, HUMAN)}
         />
       </div>
       <ControlPanel

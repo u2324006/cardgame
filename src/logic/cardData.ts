@@ -1,4 +1,4 @@
-import { Card, ImplementationStatus, LeaderCard, MonsterCard, SpellCard, SpellEffect, SpellTarget } from '../types/card';
+import { Card, ImplementationStatus, LeaderAbility, LeaderCard, MonsterCard, SpellCard, SpellEffect, SpellTarget } from '../types/card';
 import { cardImage } from './builtinCards';
 import { summarizeEffect } from './spellEffects';
 
@@ -38,6 +38,7 @@ export interface SpellRecord extends RecordBase {
 
 export interface LeaderRecord extends RecordBase {
   maxHp: number;
+  effect?: LeaderAbility | null; // 実装済みの効果（まだなければ null）
 }
 
 export interface CardRecords {
@@ -89,8 +90,10 @@ const spellTarget = (card: SpellCard): SpellTarget => {
   switch (card.effect.kind) {
     case 'damage': return 'enemyMonster';
     case 'heal':
-    case 'buffFa': return 'allyMonster';
+    case 'buffFa':
+    case 'buffBa': return 'allyMonster';
     case 'drawDiscard': return 'none';
+    case 'disableLeader': return 'enemyLeader';
     case 'custom': return card.target ?? 'none';
   }
 };
@@ -113,6 +116,7 @@ export const toSpellRecord = (card: SpellCard): SpellRecord => {
 export const toLeaderRecord = (card: LeaderCard): LeaderRecord => ({
   ...notesToRecord(card),
   maxHp: card.maxHp,
+  effect: card.ability ?? null,
 });
 
 export const toRecords = (cards: Card[], leaders: LeaderCard[]): CardRecords => ({
@@ -164,6 +168,7 @@ export const fromSpellRecord = (record: SpellRecord): SpellCard => {
 export const fromLeaderRecord = (record: LeaderRecord): LeaderCard => ({
   ...notesFromRecord(record),
   maxHp: record.maxHp,
+  ...(record.effect ? { ability: record.effect } : {}),
 });
 
 // --- 形のチェック ---
@@ -188,13 +193,18 @@ export const isMonsterRecord = (r: unknown): r is MonsterRecord => {
 export const isSpellRecord = (r: unknown): r is SpellRecord => {
   const s = r as SpellRecord;
   const effectOk = s?.effect === null
-    || (!!s?.effect && ['damage', 'heal', 'buffFa', 'drawDiscard'].includes(s.effect.kind) && isNumber(s.effect.amount));
+    || (!!s?.effect && ['damage', 'heal', 'buffFa', 'buffBa', 'drawDiscard', 'disableLeader'].includes(s.effect.kind) && isNumber(s.effect.amount));
   return isRecordBase(s) && isNumber(s.cost) && TARGETS.includes(s.target) && effectOk;
+};
+
+const isLeaderAbility = (effect: unknown): effect is LeaderAbility => {
+  const e = effect as LeaderAbility;
+  return !!e && e.kind === 'raceHpBonus' && isText(e.race) && isNumber(e.amount);
 };
 
 export const isLeaderRecord = (r: unknown): r is LeaderRecord => {
   const l = r as LeaderRecord;
-  return isRecordBase(l) && isNumber(l.maxHp);
+  return isRecordBase(l) && isNumber(l.maxHp) && (l.effect === undefined || l.effect === null || isLeaderAbility(l.effect));
 };
 
 // 貼り付けられた JSON を読む。カテゴリごとの配列（monsters.json など）か、3つをまとめたものを受け付ける

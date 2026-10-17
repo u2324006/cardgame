@@ -39,7 +39,9 @@ export const EFFECT_OPTIONS: { kind: SpellEffect['kind']; label: string }[] = [
   { kind: 'damage', label: '相手のモンスターにダメージ' },
   { kind: 'heal', label: '味方のモンスターを回復' },
   { kind: 'buffFa', label: '味方のモンスターの FA を上げる' },
+  { kind: 'buffBa', label: '味方のモンスターの BA を上げる' },
   { kind: 'drawDiscard', label: '引いて同じ枚数を捨てる' },
+  { kind: 'disableLeader', label: '相手の大将の効果をなくす' },
   { kind: 'custom', label: 'まだない効果' },
 ];
 
@@ -59,8 +61,10 @@ export const getSpellTarget = (spell: SpellCard): SpellTarget => {
   switch (spell.effect.kind) {
     case 'damage': return 'enemyMonster';
     case 'heal':
-    case 'buffFa': return 'allyMonster';
+    case 'buffFa':
+    case 'buffBa': return 'allyMonster';
     case 'drawDiscard': return 'none';
+    case 'disableLeader': return 'enemyLeader';
     case 'custom': return spell.target ?? 'none';
   }
 };

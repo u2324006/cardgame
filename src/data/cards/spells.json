@@ -1,5 +1,45 @@
 [
   {
+    "id": "s001",
+    "name": "前衛支援",
+    "race": "スペル",
+    "effectText": "味方モンスター1体のFAを、ターン終了まで1上げる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": "attack-spell.svg"
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-17T13:28:00.000Z",
+    "cost": 1,
+    "target": "allyMonster",
+    "effect": {
+      "kind": "buffFa",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s003",
+    "name": "炎の呪文",
+    "race": "スペル",
+    "effectText": "相手のモンスター1体に3ダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": "fire-spell.svg"
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-17T13:28:00.000Z",
+    "cost": 3,
+    "target": "enemyMonster",
+    "effect": {
+      "kind": "damage",
+      "amount": 3
+    }
+  },
+  {
     "id": "cmvcejw05kll9",
     "name": "恵の泉",
     "race": "スペル",
@@ -11,9 +51,52 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-17T13:06:43.000Z",
-    "cost": 1,
+    "updatedAt": "2026-10-17T13:28:00.000Z",
+    "cost": 2,
     "target": "none",
-    "effect": { "kind": "drawDiscard", "amount": 2 }
+    "effect": {
+      "kind": "drawDiscard",
+      "amount": 2
+    }
+  },
+  {
+    "id": "cmvcf4e4u3szf",
+    "name": "指揮低下",
+    "race": "スペル",
+    "effectText": "このターンの間相手の大将カードの効果をなくす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-17T13:28:00.000Z",
+    "cost": 1,
+    "target": "enemyLeader",
+    "effect": {
+      "kind": "disableLeader",
+      "amount": 1
+    }
+  },
+  {
+    "id": "cmvcf6svl19jp",
+    "name": "後衛支援",
+    "race": "スペル",
+    "effectText": "このターン自分のモンスター1体のBAを+1する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-17T13:28:00.000Z",
+    "cost": 1,
+    "target": "allyMonster",
+    "effect": {
+      "kind": "buffBa",
+      "amount": 1
+    }
   }
 ]

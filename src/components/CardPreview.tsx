@@ -6,8 +6,8 @@ import LeaderCard from './LeaderCard';
 
 // カード情報欄に大きく表示するもの
 export type InspectTarget =
-  | { kind: 'card'; card: CardType; row?: Row }
-  | { kind: 'leader'; leader: LeaderCardType; hp: number };
+  | { kind: 'card'; card: CardType; row?: Row; hpBonus?: number }
+  | { kind: 'leader'; leader: LeaderCardType; hp: number; isDisabled?: boolean };
 
 const previewNote = (target: InspectTarget): string => {
   if (target.kind === 'leader') return '大将カードのHPが0になると負けです。';
@@ -25,8 +25,8 @@ const CardPreview: React.FC<{ target: InspectTarget | null }> = ({ target }) => 
   return (
     <>
       {target.kind === 'leader'
-        ? <LeaderCard leader={target.leader} hp={target.hp} size="large" />
-        : <Card card={target.card} row={target.row} size="large" />}
+        ? <LeaderCard leader={target.leader} hp={target.hp} isDisabled={target.isDisabled} size="large" />
+        : <Card card={target.card} row={target.row} hpBonus={target.hpBonus} size="large" />}
       <div className="card-preview-note">{previewNote(target)}</div>
     </>
   );

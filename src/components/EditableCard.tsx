@@ -1,5 +1,5 @@
 import React from 'react';
-import { SpellEffect, SpellTarget, isImplementedEffect } from '../types/card';
+import { SpellEffect, SpellTarget, effectHasAmount, isImplementedEffect } from '../types/card';
 import { Draft, EFFECT_OPTIONS, LIMITS, TARGET_OPTIONS, describeEffect } from '../logic/cardEditor';
 import '../styles/CardEditor.css';
 
@@ -151,7 +151,7 @@ const EditableCard: React.FC<EditableCardProps> = ({ draft, onChange, onPickImag
           >
             {EFFECT_OPTIONS.map(option => <option key={option.kind} value={option.kind}>{option.label}</option>)}
           </select>
-          {isImplementedEffect(draft.card.effect) ? (
+          {isImplementedEffect(draft.card.effect) ? effectHasAmount(draft.card.effect.kind) && (
             <NumberField
               value={draft.card.effect.amount}
               onChange={amount => updateEffect({ ...(draft.card.effect as Exclude<SpellEffect, { kind: 'custom' }>), amount })}

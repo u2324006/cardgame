@@ -49,17 +49,35 @@ export const findEmptySlot = (state: GameState, player: PlayerId, row: Row): Fie
 export const hasFrontRowMonsters = (playerState: PlayerState): boolean =>
   playerState.field.frontRow.some(card => card !== null);
 
-// 攻撃の呪文のバフはFA（前衛での攻撃力）にのみ適用される
 // ラウンド：先手と後手のターンを1組とした数（turn 1・2 がラウンド1、turn 3・4 がラウンド2 …）
 export const getRound = (turn: number): number => Math.ceil(turn / 2);
 
 // 先手の1ターン目（ゲーム全体の1ターン目）は攻撃できない
 export const canAttackThisTurn = (state: GameState): boolean => state.turn > 1;
 
+// 攻撃力：前衛なら FA ＋ FA を上げる効果、後衛なら BA ＋ BA を上げる効果
 export const getAttackPower = (state: GameState, card: MonsterCard, row: Row): number =>
   row === 'frontRow'
     ? card.frontAttack + (state.turnState.attackBuffs[card.id] ?? 0)
-    : card.backAttack;
+    : card.backAttack + (state.turnState.backAttackBuffs[card.id] ?? 0);
+
+// --- 大将カードの効果 ---
+
+export const isLeaderActive = (state: GameState, player: PlayerId): boolean =>
+  !state.turnState.disabledLeaders.includes(player);
+
+// 大将カードの効果で上がっている HP（owner はそのモンスターの持ち主）
+export const getHpBonus = (state: GameState, owner: PlayerId, card: MonsterCard): number => {
+  const ability = state.players[owner].leader.ability;
+  if (!ability || !isLeaderActive(state, owner)) return 0;
+  switch (ability.kind) {
+    case 'raceHpBonus': return card.race === ability.race ? ability.amount : 0;
+  }
+};
+
+// 大将カードの効果を含めた今の HP（倒されるかどうかはこれで判定する）
+export const getEffectiveHp = (state: GameState, owner: PlayerId, card: MonsterCard): number =>
+  card.cardHp + getHpBonus(state, owner, card);
 
 // --- 状態の更新ヘルパー ---
 
@@ -99,11 +117,19 @@ const damageMonster = (state: GameState, player: PlayerId, position: FieldPositi
   if (!card) return state;
   const newHp = card.cardHp - amount;
   return updatePlayer(state, player, p =>
-    newHp <= 0
+    newHp + getHpBonus(state, player, card) <= 0
       ? { ...p, field: setSlot(p.field, position, null), graveyard: [...p.graveyard, toOriginalCard(card)] }
       : { ...p, field: setSlot(p.field, position, { ...card, cardHp: newHp }) },
   );
 };
+
+// 大将カードの効果がなくなるなどして HP が 0 以下になったモンスターを墓地へ送る
+const removeDefeatedMonsters = (state: GameState): GameState =>
+  (['player1', 'player2'] as PlayerId[]).reduce((current, player) =>
+    getMonsterPositions(current, player).reduce((next, position) => {
+      const card = getCardAt(next, player, position);
+      return card && getEffectiveHp(next, player, card) <= 0 ? damageMonster(next, player, position, 0) : next;
+    }, current), state);
 
 // 大将カードにダメージを与え、HPが0以下になったら相手の勝利とする
 const damageSpecialCard = (state: GameState, player: PlayerId, amount: number): GameState => {
@@ -208,12 +234,20 @@ const castUntargetedSpell = (state: GameState, player: PlayerId, handIndex: numb
   if (!spell || isMonster(spell)) return failure('スペルカードが選択されていません。');
   if (playerState.currentEnergy < spell.cost) return failure('エネルギーが足りません！');
   const { effect } = spell;
-  if (effect.kind !== 'drawDiscard') return failure('このスペルの効果はまだ実装されていません。');
+  if (effect.kind !== 'drawDiscard' && effect.kind !== 'disableLeader') return failure('このスペルの効果はまだ実装されていません。');
 
   const paid = updatePlayer(state, player, p => ({
     ...payFromHand(p, handIndex, spell.cost),
     graveyard: [...p.graveyard, spell],
   }));
+  if (effect.kind === 'disableLeader') {
+    const opponent = getOpponent(player);
+    const { disabledLeaders } = paid.turnState;
+    const disabled = updateTurnState(paid, {
+      disabledLeaders: disabledLeaders.includes(opponent) ? disabledLeaders : [...disabledLeaders, opponent],
+    });
+    return success(removeDefeatedMonsters(disabled));
+  }
   const drawn = updatePlayer(paid, player, p => drawCards(p, effect.amount));
   const count = Math.min(effect.amount, drawn.players[player].hand.length);
   return success(count > 0 ? { ...drawn, pendingDiscard: { player, count } } : drawn);
@@ -279,9 +313,16 @@ export const castSpell = (
       const healed = { ...target, cardHp: Math.min(target.cardHp + effect.amount, getMaxHp(target)) };
       return success(updatePlayer(paid, player, p => ({ ...p, field: setSlot(p.field, targetPosition, healed) })));
     }
+    case 'buffBa': {
+      const { backAttackBuffs } = paid.turnState;
+      return success(updateTurnState(paid, {
+        backAttackBuffs: { ...backAttackBuffs, [target.id]: (backAttackBuffs[target.id] ?? 0) + effect.amount },
+      }));
+    }
     case 'damage':
       return success(damageMonster(paid, targetPlayer, targetPosition, effect.amount));
     case 'drawDiscard':
+    case 'disableLeader':
       return failure('このスペルは対象を選ばずに使います。'); // isUntargetedSpell で先に処理している
   }
 };

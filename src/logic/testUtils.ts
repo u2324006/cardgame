@@ -30,6 +30,25 @@ export const fireSpell: SpellCard = {
   id: 's003-0', name: '炎の呪文', type: 'Spell', description: '', cost: 2, effect: { kind: 'damage', amount: 3 },
 };
 
+export const backSpell: SpellCard = {
+  id: 'cmvcf6svl19jp-0', name: '後衛支援', type: 'Spell', description: '', cost: 1, effect: { kind: 'buffBa', amount: 1 }, target: 'allyMonster',
+};
+export const disableSpell: SpellCard = {
+  id: 'cmvcf4e4u3szf-0', name: '指揮低下', type: 'Spell', description: '', cost: 1, effect: { kind: 'disableLeader', amount: 1 }, target: 'enemyLeader',
+};
+
+// 種族ゴーレムの HP を +1 する大将（マウンテンゴーレム）を持たせる
+export const withGolemLeader = (state: GameState, player: PlayerId): GameState => ({
+  ...state,
+  players: {
+    ...state.players,
+    [player]: {
+      ...state.players[player],
+      leader: { ...state.players[player].leader, ability: { kind: 'raceHpBonus', race: 'ゴーレム', amount: 1 } },
+    },
+  },
+});
+
 // 両プレイヤーの手札・フィールドを空にした、テスト用の状態を作る（先手1ターン目の制限がかからないよう3ターン目）
 export const emptyState = (): GameState => {
   const base = createInitialGameState();

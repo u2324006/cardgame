@@ -31,7 +31,9 @@ export type SpellEffect =
   | { kind: 'buffFa'; amount: number } // 味方モンスターのFAをターン終了まで上げる
   | { kind: 'heal'; amount: number } // 味方モンスターのHPを回復する（最大HPまで）
   | { kind: 'damage'; amount: number } // 相手のモンスターにダメージを与える
+  | { kind: 'buffBa'; amount: number } // 味方モンスターのBAをターン終了まで上げる
   | { kind: 'drawDiscard'; amount: number } // カードを amount 枚引き、その後手札から amount 枚を選んで墓地に置く（対象なし）
+  | { kind: 'disableLeader'; amount: number } // このターンの間、相手の大将カードの効果をなくす（amount は使わない。対象は相手の大将）
   | { kind: 'custom' }; // まだ実装されていない効果（effectText に文章で書く。対戦では使えない）
 
 // スペルの対象（まだ実装されていない効果のときに指定する。実装済みの効果は効果の種類から決まる）
@@ -46,8 +48,13 @@ export interface SpellCard extends BaseCard {
 
 // スペルの対象が味方モンスターか相手のモンスターか
 // 対象を選ばずに使うスペルか
+// 対象を選ばずに使うスペルか（相手の大将など、対象が1つに決まるものも含む）
 export const isUntargetedSpell = (spell: SpellCard): boolean =>
-  spell.effect.kind === 'drawDiscard' || (spell.effect.kind === 'custom' && (spell.target ?? 'none') === 'none');
+  spell.effect.kind === 'drawDiscard' || spell.effect.kind === 'disableLeader'
+  || (spell.effect.kind === 'custom' && (spell.target ?? 'none') === 'none');
+
+// 数値を使わない効果（カード作成画面で数値の欄を出さない）
+export const effectHasAmount = (kind: SpellEffect['kind']): boolean => kind !== 'disableLeader' && kind !== 'custom';
 
 export const getSpellTargetSide = (spell: SpellCard): 'ally' | 'enemy' => {
   if (spell.effect.kind === 'damage') return 'enemy';
@@ -59,10 +66,15 @@ export const isImplementedEffect = (effect: SpellEffect): effect is Exclude<Spel
   effect.kind !== 'custom';
 
 // 大将カード：大将ゾーンに置かれ、HPが0になると負け
+// 大将カードの効果（大将が場にいるあいだずっと働く）
+export type LeaderAbility =
+  | { kind: 'raceHpBonus'; race: string; amount: number }; // 種族が race の自分のモンスターの HP を amount 上げる
+
 export interface LeaderCard extends CardNotes {
   id: string;
   name: string;
   race?: string;
+  ability?: LeaderAbility; // 実装済みの効果（なければ効果なし、または未実装）
   description: string;
   maxHp: number;
   image?: string;

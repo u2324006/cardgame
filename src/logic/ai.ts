@@ -9,6 +9,8 @@ import {
   findEmptySlot,
   getAttackPower,
   getCardAt,
+  getEffectiveHp,
+  getHpBonus,
   getMonsterPositions,
   getOpponent,
   moveMonster,
@@ -89,13 +91,16 @@ const findSpellTarget = (state: GameState, player: PlayerId, spell: SpellCard): 
   switch (effect.kind) {
     case 'custom':
       return null; // まだ実装されていない効果は使わない
-    case 'buffFa': {
-      const defenderFront = monstersOnField(state, defender, ['frontRow']).map(({ card }) => card);
-      const target = monstersOnField(state, player, ['frontRow']).find(({ card }) => {
-        const power = getAttackPower(state, card, 'frontRow');
+    case 'buffFa':
+    case 'buffBa': {
+      // FA を上げるなら前衛、BA を上げるなら後衛のモンスターが対象
+      const row: Row = effect.kind === 'buffFa' ? 'frontRow' : 'backRow';
+      const defenderFrontHps = monstersOnField(state, defender, ['frontRow']).map(({ card }) => getEffectiveHp(state, defender, card));
+      const target = monstersOnField(state, player, [row]).find(({ card }) => {
+        const power = getAttackPower(state, card, row);
         if (power <= 0) return false;
-        return defenderFront.length === 0
-          || defenderFront.some(enemy => enemy.cardHp > power && enemy.cardHp <= power + effect.amount);
+        return defenderFrontHps.length === 0
+          || defenderFrontHps.some(hp => hp > power && hp <= power + effect.amount);
       });
       return target?.position ?? null;
     }
@@ -107,18 +112,30 @@ const findSpellTarget = (state: GameState, player: PlayerId, spell: SpellCard): 
     }
     case 'damage': {
       const killable = monstersOnField(state, defender)
-        .filter(({ card }) => card.cardHp <= effect.amount)
+        .filter(({ card }) => getEffectiveHp(state, defender, card) <= effect.amount)
         .sort((a, b) => monsterValue(b.card) - monsterValue(a.card));
       return killable[0]?.position ?? null;
     }
     case 'drawDiscard':
+    case 'disableLeader':
       return null; // 対象を選ばないスペル（shouldCastUntargeted で判断する）
   }
 };
 
 // 対象を選ばないスペルを使うか：引く枚数ぶん山札が残っていれば使う
-const shouldCastUntargeted = (state: GameState, player: PlayerId, spell: SpellCard): boolean =>
-  spell.effect.kind === 'drawDiscard' && state.players[player].deck.length >= spell.effect.amount;
+// - 引いて捨てる：引く枚数ぶん山札が残っていれば使う
+// - 相手の大将の効果をなくす：相手の大将の効果で HP が上がっている相手モンスターがいれば使う
+const shouldCastUntargeted = (state: GameState, player: PlayerId, spell: SpellCard): boolean => {
+  const defender = getOpponent(player);
+  switch (spell.effect.kind) {
+    case 'drawDiscard':
+      return state.players[player].deck.length >= spell.effect.amount;
+    case 'disableLeader':
+      return monstersOnField(state, defender).some(({ card }) => getHpBonus(state, defender, card) > 0);
+    default:
+      return false;
+  }
+};
 
 // 手札のカードの残しておきたさ（低いものから捨てる）。まだ効果のないスペルは真っ先に捨てる
 const keepValue = (card: Card): number => {
@@ -195,7 +212,7 @@ const chooseAttack = (state: GameState, player: PlayerId): AttackPlan | null => 
   let bestKill: { plan: AttackPlan; value: number; overkill: number } | null = null;
   for (const attacker of attackers) {
     for (const target of targets) {
-      const hp = target.card.cardHp;
+      const hp = getEffectiveHp(state, defender, target.card);
       if (attacker.power < hp) continue;
       const value = monsterValue(target.card);
       const overkill = attacker.power - hp;
@@ -207,7 +224,8 @@ const chooseAttack = (state: GameState, player: PlayerId): AttackPlan | null => 
   if (bestKill) return bestKill.plan;
 
   const strongest = attackers.reduce((a, b) => (b.power > a.power ? b : a));
-  const weakest = targets.reduce((a, b) => (b.card.cardHp < a.card.cardHp ? b : a));
+  const hpOf = (target: { card: MonsterCard }) => getEffectiveHp(state, defender, target.card);
+  const weakest = targets.reduce((a, b) => (hpOf(b) < hpOf(a) ? b : a));
   return { attacker: strongest.position, target: { type: 'monster', position: weakest.position } };
 };
 

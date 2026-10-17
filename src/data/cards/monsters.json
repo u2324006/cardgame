@@ -1,1 +1,92 @@
-[]
+[
+  {
+    "id": "m003",
+    "name": "プテ",
+    "race": "恐竜",
+    "effectText": "",
+    "flavorText": "前衛で鋭く攻める。後衛では攻撃できない。",
+    "illustration": {
+      "prompt": "",
+      "image": "pute.svg"
+    },
+    "implementation": "効果なし",
+    "memo": "",
+    "updatedAt": "2026-10-17T13:28:00.000Z",
+    "cost": 1,
+    "frontAttack": 4,
+    "backAttack": 0,
+    "hp": 5
+  },
+  {
+    "id": "m004",
+    "name": "ハンター",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "後衛から獲物を狙い撃つ。前衛では攻撃できない。",
+    "illustration": {
+      "prompt": "",
+      "image": "hunter.svg"
+    },
+    "implementation": "効果なし",
+    "memo": "",
+    "updatedAt": "2026-10-17T13:28:00.000Z",
+    "cost": 1,
+    "frontAttack": 0,
+    "backAttack": 4,
+    "hp": 3
+  },
+  {
+    "id": "m005",
+    "name": "戦士",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "前衛で力を発揮する。後衛では攻撃できない。",
+    "illustration": {
+      "prompt": "",
+      "image": "warrior.svg"
+    },
+    "implementation": "効果なし",
+    "memo": "",
+    "updatedAt": "2026-10-17T13:28:00.000Z",
+    "cost": 2,
+    "frontAttack": 5,
+    "backAttack": 0,
+    "hp": 7
+  },
+  {
+    "id": "m006",
+    "name": "魔術師",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "後衛から強力な魔術を放つ。前衛では攻撃できない。",
+    "illustration": {
+      "prompt": "",
+      "image": "mage.svg"
+    },
+    "implementation": "効果なし",
+    "memo": "",
+    "updatedAt": "2026-10-17T13:28:00.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 5,
+    "hp": 6
+  },
+  {
+    "id": "m011",
+    "name": "騎士",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "重い鎧で前線を守り抜く。",
+    "illustration": {
+      "prompt": "",
+      "image": "knight.svg"
+    },
+    "implementation": "効果なし",
+    "memo": "",
+    "updatedAt": "2026-10-17T13:28:00.000Z",
+    "cost": 3,
+    "frontAttack": 5,
+    "backAttack": 2,
+    "hp": 14
+  }
+]

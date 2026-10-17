@@ -1,1 +1,22 @@
-[]
+[
+  {
+    "id": "lmvcf1jj9pvni",
+    "name": "マウンテンゴーレム",
+    "race": "ゴーレム",
+    "effectText": "種族がゴーレムの自分モンスターのHPを+1する",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-17T13:28:00.000Z",
+    "maxHp": 22,
+    "effect": {
+      "kind": "raceHpBonus",
+      "race": "ゴーレム",
+      "amount": 1
+    }
+  }
+]

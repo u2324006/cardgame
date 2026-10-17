@@ -74,7 +74,8 @@ describe('card editor', () => {
   });
 
   it('refuses to delete the last leader', () => {
-    expect(deleteFromSet(BUILTIN_CARD_SET, 'l001')).toEqual({ error: '大将カードは最低1枚必要なので削除できません。' });
+    const onlyOne = { ...BUILTIN_CARD_SET, leaders: BUILTIN_CARD_SET.leaders.filter(l => l.id === 'l001') };
+    expect(deleteFromSet(onlyOne, 'l001')).toEqual({ error: '大将カードは最低1枚必要なので削除できません。' });
   });
 
   it('duplicates a card under a new id', () => {

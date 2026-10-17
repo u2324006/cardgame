@@ -57,13 +57,22 @@
 | `damage` | 相手のモンスター1体に amount ダメージ | 相手のモンスター |
 | `heal` | 味方のモンスター1体の HP を amount 回復（最大 HP まで） | 味方のモンスター |
 | `buffFa` | 味方のモンスター1体の FA をターン終了まで amount 上げる | 味方のモンスター |
+| `buffBa` | 味方のモンスター1体の BA をターン終了まで amount 上げる | 味方のモンスター |
 | `drawDiscard` | カードを amount 枚引き、その後手札から amount 枚を選んで墓地に置く | なし |
+| `disableLeader` | このターンの間、相手の大将カードの効果をなくす（amount は使わないので 1） | 相手の大将 |
 
 ### 大将だけ
 
 | 項目 | 内容 |
 |---|---|
 | `maxHp` | 最大 HP |
+| `effect` | 実装済みの効果。まだなければ `null` |
+
+大将の効果の種類（`kind`）：
+
+| kind | 内容 | 例 |
+|---|---|---|
+| `raceHpBonus` | 種族が race の自分のモンスターの HP を amount 上げる（大将ゾーンにあるあいだずっと） | `{ "kind": "raceHpBonus", "race": "ゴーレム", "amount": 1 }` |
 
 ## AI へのお願い（効果の実装）
 
@@ -74,7 +83,8 @@
 - スペルの効果の種類は `src/types/card.ts` の `SpellEffect` です。種類を増やしたら、
   `src/logic/spellEffects.ts`（効果の文章）、`src/logic/cardData.ts`（JSON との変換）、
   `src/logic/cardEditor.ts`（カード作成画面の選択肢 `EFFECT_OPTIONS`）も更新します。
-- モンスターや大将の効果（召喚したとき、攻撃したとき など）は、まだ仕組みがありません。最初に実装するときに仕組みを作ってください。
+- 大将の効果の種類は `src/types/card.ts` の `LeaderAbility` です。効果は `src/logic/gameLogic.ts` の `getHpBonus` などで計算します。
+- モンスターの効果（召喚したとき、攻撃したとき など）は、まだ仕組みがありません。最初に実装するときに仕組みを作ってください。
 - 実装したら、そのカードの `implementation` を `実装済み` にし、`updatedAt` を今の日時にして、テスト（`src/logic/*.test.ts`）を追加してください。
   `updatedAt` を新しくしないと、ユーザーのブラウザに残っている未実装の版が使われ続けます。
 - ゲームのルールが変わる場合は、`RULES.md` も更新してください。

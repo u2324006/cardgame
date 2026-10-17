@@ -40,6 +40,8 @@ export const createInitialTurnState = (): TurnState => ({
   summonedThisTurnIds: [],
   movedMonsterId: null,
   attackBuffs: {},
+  backAttackBuffs: {},
+  disabledLeaders: [],
 });
 
 const createPlayerFromDeck = (deck: DeckList): PlayerState =>

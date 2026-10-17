@@ -18,6 +18,8 @@ interface PlayerAreaProps {
   selectedPosition?: FieldPosition | null;
   usedLabels?: Record<string, string>; // { [カードID]: '攻撃済み' など } 行動済みのモンスター
   markedHandIndices?: number[]; // 捨てるカードとして選んだ手札
+  hpBonuses?: Record<string, number>; // { [カードID]: 大将の効果で上がっている HP }
+  isLeaderDisabled?: boolean; // このターンの間、大将の効果がなくなっているか
 }
 
 const ROW_LABELS: Record<Row, string> = { frontRow: '前衛', backRow: '後衛' };
@@ -35,6 +37,8 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
   selectedPosition,
   usedLabels = {},
   markedHandIndices,
+  hpBonuses = {},
+  isLeaderDisabled = false,
 }) => {
   // 自分から見て前衛が中央側になるよう、相手は後衛→前衛の順に並べる
   const rows: Row[] = isOpponent ? ['backRow', 'frontRow'] : ['frontRow', 'backRow'];
@@ -67,7 +71,8 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
                   onClick={() => onSlotClick(row, i)}
                   isSelected={selectedPosition?.row === row && selectedPosition.index === i}
                   usedLabel={card ? usedLabels[card.id] : undefined}
-                  onMouseEnter={() => card && onInspect({ kind: 'card', card, row })}
+                  hpBonus={card ? hpBonuses[card.id] : undefined}
+                  onMouseEnter={() => card && onInspect({ kind: 'card', card, row, hpBonus: hpBonuses[card.id] })}
                   onMouseLeave={() => onInspect(null)}
                 />
               ))}
@@ -81,7 +86,8 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
             hp={specialCardHp}
             onClick={onLeaderClick}
             isTargetable={isLeaderTargetable}
-            onMouseEnter={() => onInspect({ kind: 'leader', leader, hp: specialCardHp })}
+            isDisabled={isLeaderDisabled}
+            onMouseEnter={() => onInspect({ kind: 'leader', leader, hp: specialCardHp, isDisabled: isLeaderDisabled })}
             onMouseLeave={() => onInspect(null)}
           />
           <EnergyZone currentEnergy={playerState.currentEnergy} maxEnergy={playerState.maxEnergy} />

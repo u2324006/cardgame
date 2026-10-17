@@ -50,7 +50,7 @@ const isSpellEffect = (effect: unknown): effect is SpellEffect => {
   const e = effect as SpellEffect;
   if (!e) return false;
   if (e.kind === 'custom') return true;
-  return ['buffFa', 'heal', 'damage', 'drawDiscard'].includes(e.kind) && isNumber(e.amount);
+  return ['buffFa', 'buffBa', 'heal', 'damage', 'drawDiscard', 'disableLeader'].includes(e.kind) && isNumber(e.amount);
 };
 
 const isCard = (value: unknown): value is Card => {

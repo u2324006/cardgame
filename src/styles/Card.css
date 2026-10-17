@@ -135,6 +135,11 @@
   background: var(--hp-damaged);
 }
 
+/* 大将の効果で HP が上がっている */
+.card-hp.boosted {
+  box-shadow: 0 0 0 2px #7FE0A8;
+}
+
 .card-stats {
   display: flex;
   gap: 3px;
@@ -266,6 +271,19 @@
   flex-direction: column;
   overflow: hidden;
   flex: none;
+}
+
+.leader-card {
+  position: relative;
+}
+
+.leader-card.disabled .card-art,
+.leader-card.disabled .card-description {
+  filter: grayscale(0.8) brightness(0.7);
+}
+
+.leader-disabled-label {
+  top: 42%;
 }
 
 .leader-card.targetable {

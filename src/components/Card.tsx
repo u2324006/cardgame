@@ -17,6 +17,7 @@ interface CardProps extends HoverHandlers {
   size?: 'normal' | 'large'; // large はカード情報欄用で、説明文も表示する
   usedLabel?: string; // 行動済みのとき（例: '攻撃済み'）。カードを薄く表示してラベルを出す
   markLabel?: string; // 選んだ印（例: '墓地へ'）。カードに赤い枠とラベルを出す
+  hpBonus?: number; // 大将カードの効果などで上がっている HP（表示する HP に足す）
 }
 
 // 裏向きのカード（相手の手札など）
@@ -34,7 +35,7 @@ export const CardArt: React.FC<{ image?: string; label?: string; children?: Reac
   </div>
 );
 
-const Card: React.FC<CardProps> = ({ card, onClick, isSelected = false, row, size = 'normal', usedLabel, markLabel, onMouseEnter, onMouseLeave }) => {
+const Card: React.FC<CardProps> = ({ card, onClick, isSelected = false, row, size = 'normal', usedLabel, markLabel, hpBonus = 0, onMouseEnter, onMouseLeave }) => {
   const monster = isMonster(card) ? card : null;
   const spell = isMonster(card) ? null : card;
   const classes = ['card', card.type.toLowerCase(), size, isSelected && 'selected', usedLabel && 'used', markLabel && 'marked'].filter(Boolean).join(' ');
@@ -49,7 +50,12 @@ const Card: React.FC<CardProps> = ({ card, onClick, isSelected = false, row, siz
 
       <CardArt image={card.image} label={card.race}>
         {monster && (
-          <div className={`card-hp ${monster.cardHp < getMaxHp(monster) ? 'damaged' : ''}`}>HP {monster.cardHp}</div>
+          <div
+            className={`card-hp ${monster.cardHp < getMaxHp(monster) ? 'damaged' : ''} ${hpBonus > 0 ? 'boosted' : ''}`}
+            title={hpBonus > 0 ? `大将の効果で HP +${hpBonus}` : undefined}
+          >
+            HP {monster.cardHp + hpBonus}
+          </div>
         )}
       </CardArt>
 
