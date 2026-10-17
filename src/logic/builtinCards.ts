@@ -109,5 +109,5 @@ export const BUILTIN_LEADER_CARDS: LeaderCard[] = [
 export const BUILTIN_IMAGES = [
   'goblin.svg', 'stone-golem.svg', 'pute.svg', 'hunter.svg', 'warrior.svg', 'mage.svg', 'baran.svg',
   'slime.svg', 'fairy.svg', 'orc.svg', 'knight.svg', 'dragon.svg',
-  'attack-spell.svg', 'heal-spell.svg', 'fire-spell.svg', 'leader.svg',
+  'attack-spell.svg', 'heal-spell.svg', 'fire-spell.svg', 'blessing-spring.svg', 'leader.svg',
 ].map(fileName => ({ fileName, url: cardImage(fileName) }));

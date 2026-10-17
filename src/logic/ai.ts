@@ -1,10 +1,11 @@
-import { MonsterCard, SpellCard, isMonster } from '../types/card';
+import { Card, MonsterCard, SpellCard, isMonster, isUntargetedSpell } from '../types/card';
 import { getMaxHp } from './cards';
 import { AttackTarget, FieldPosition, GameState, PlayerId, Row } from '../types/gameState';
 import {
   ActionResult,
   attack,
   castSpell,
+  discardCards,
   findEmptySlot,
   getAttackPower,
   getCardAt,
@@ -110,7 +111,32 @@ const findSpellTarget = (state: GameState, player: PlayerId, spell: SpellCard): 
         .sort((a, b) => monsterValue(b.card) - monsterValue(a.card));
       return killable[0]?.position ?? null;
     }
+    case 'drawDiscard':
+      return null; // 対象を選ばないスペル（shouldCastUntargeted で判断する）
   }
+};
+
+// 対象を選ばないスペルを使うか：引く枚数ぶん山札が残っていれば使う
+const shouldCastUntargeted = (state: GameState, player: PlayerId, spell: SpellCard): boolean =>
+  spell.effect.kind === 'drawDiscard' && state.players[player].deck.length >= spell.effect.amount;
+
+// 手札のカードの残しておきたさ（低いものから捨てる）。まだ効果のないスペルは真っ先に捨てる
+const keepValue = (card: Card): number => {
+  if (isMonster(card)) return monsterValue(card);
+  return card.effect.kind === 'custom' ? -100 : 6 + card.cost;
+};
+
+// 捨てるカードを選んでいる途中なら、残しておきたさの低いカードから捨てる
+const resolveAiDiscard = (state: GameState, player: PlayerId): GameState => {
+  const pending = state.pendingDiscard;
+  if (!pending || pending.player !== player) return state;
+  const indices = state.players[player].hand
+    .map((card, index) => ({ index, value: keepValue(card) }))
+    .sort((a, b) => a.value - b.value)
+    .slice(0, pending.count)
+    .map(({ index }) => index);
+  const result = discardCards(state, player, indices);
+  return result.ok ? result.state : state;
 };
 
 // 使う価値のあるスペルがなくなるまで、手札のスペルを使う
@@ -128,6 +154,12 @@ const tryCastOneSpell = (state: GameState, player: PlayerId): GameState | null =
   for (let handIndex = 0; handIndex < hand.length; handIndex++) {
     const card = hand[handIndex];
     if (isMonster(card) || card.cost > currentEnergy) continue;
+    if (isUntargetedSpell(card)) {
+      if (!shouldCastUntargeted(state, player, card)) continue;
+      const result = castSpell(state, player, handIndex);
+      if (result.ok) return resolveAiDiscard(result.state, player);
+      continue;
+    }
     const target = findSpellTarget(state, player, card);
     if (!target) continue;
     const result = castSpell(state, player, handIndex, target);

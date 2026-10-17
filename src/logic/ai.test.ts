@@ -1,6 +1,6 @@
 import { GameState, Phase } from '../types/gameState';
 import { runAiAttackPhase, runAiPlayPhase } from './ai';
-import { emptyState, fireSpell, healSpell, inPhase, monster, spell, withField, withPlayer } from './testUtils';
+import { drawSpell, emptyState, fireSpell, healSpell, inPhase, monster, spell, withField, withPlayer } from './testUtils';
 
 const aiTurn = (state: GameState, phase: Phase = 'Play'): GameState => inPhase(state, phase, 'player2');
 
@@ -80,6 +80,26 @@ describe('AI with unimplemented spells', () => {
     let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 5, hand: [custom] });
     state = withField(state, 'player1', 'frontRow', [monster('a', { cardHp: 1 }), null, null]);
     expect(runAiPlayPhase(state, 'player2').players.player2.hand).toHaveLength(1);
+  });
+});
+
+describe('AI with draw-then-discard spells', () => {
+  it('casts it when the deck has enough cards and discards unusable cards first', () => {
+    const custom = { ...spell, id: 'cx-0', effect: { kind: 'custom' as const } };
+    const state = withPlayer(aiTurn(emptyState()), 'player2', {
+      currentEnergy: 1,
+      hand: [drawSpell, custom, monster('strong', { frontAttack: 6, cardHp: 12, cost: 9 })],
+      deck: [monster('weak', { frontAttack: 0, backAttack: 0, cardHp: 1, cost: 9 }), monster('ok', { cost: 9 }), monster('rest')],
+    });
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.pendingDiscard).toBeNull();
+    expect(next.players.player2.hand.map(c => c.id).sort()).toEqual(['ok', 'strong']);
+    expect(next.players.player2.graveyard.map(c => c.id)).toEqual(expect.arrayContaining([drawSpell.id, 'cx-0', 'weak']));
+  });
+
+  it('keeps it when the deck is too small', () => {
+    const state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 1, hand: [drawSpell], deck: [monster('only')] });
+    expect(runAiPlayPhase(state, 'player2').players.player2.hand.map(c => c.id)).toEqual([drawSpell.id]);
   });
 });
 

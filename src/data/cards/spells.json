@@ -1,1 +1,19 @@
-[]
+[
+  {
+    "id": "cmvcejw05kll9",
+    "name": "恵の泉",
+    "race": "スペル",
+    "effectText": "カードを2枚引き、その後手札から2枚を選んで墓地に置く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "森の奥で、光る泉から澄んだ水が湧き出している。水面と周りに光の粒が舞う、やさしい雰囲気。",
+      "image": "blessing-spring.svg"
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-17T13:06:43.000Z",
+    "cost": 1,
+    "target": "none",
+    "effect": { "kind": "drawDiscard", "amount": 2 }
+  }
+]

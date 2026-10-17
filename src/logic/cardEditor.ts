@@ -39,6 +39,7 @@ export const EFFECT_OPTIONS: { kind: SpellEffect['kind']; label: string }[] = [
   { kind: 'damage', label: '相手のモンスターにダメージ' },
   { kind: 'heal', label: '味方のモンスターを回復' },
   { kind: 'buffFa', label: '味方のモンスターの FA を上げる' },
+  { kind: 'drawDiscard', label: '引いて同じ枚数を捨てる' },
   { kind: 'custom', label: 'まだない効果' },
 ];
 
@@ -59,6 +60,7 @@ export const getSpellTarget = (spell: SpellCard): SpellTarget => {
     case 'damage': return 'enemyMonster';
     case 'heal':
     case 'buffFa': return 'allyMonster';
+    case 'drawDiscard': return 'none';
     case 'custom': return spell.target ?? 'none';
   }
 };
@@ -178,6 +180,7 @@ export const finalizeDraft = (draft: Draft, previous?: Card | LeaderCard): Draft
     illustrationPrompt: (draft.card.illustrationPrompt ?? '').trim(),
     memo: (draft.card.memo ?? '').trim(),
     implementation,
+    updatedAt: new Date().toISOString(),
   };
   const description = composeDescription(common.effectText, common.flavorText);
   if (draft.kind === 'Spell') {

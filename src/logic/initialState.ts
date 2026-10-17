@@ -57,4 +57,5 @@ export const createInitialGameState = (playerDeck: DeckList = createDefaultDeckL
   phase: 'Draw',
   turnState: createInitialTurnState(),
   winner: null,
+  pendingDiscard: null,
 });

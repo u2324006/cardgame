@@ -20,6 +20,7 @@ interface RecordBase {
   illustration: Illustration;
   implementation: ImplementationStatus;
   memo: string;
+  updatedAt?: string; // 最後に保存・取り込みした日時（新しい方が使われる）
 }
 
 export interface MonsterRecord extends RecordBase {
@@ -73,6 +74,7 @@ const notesToRecord = (card: Card | LeaderCard) => ({
   illustration: { prompt: card.illustrationPrompt ?? '', image: imageToRecord(card.image) },
   implementation: card.implementation ?? (card.effectText ? '未実装' : '効果なし'),
   memo: card.memo ?? '',
+  ...(card.updatedAt ? { updatedAt: card.updatedAt } : {}),
 });
 
 export const toMonsterRecord = (card: MonsterCard): MonsterRecord => ({
@@ -88,6 +90,7 @@ const spellTarget = (card: SpellCard): SpellTarget => {
     case 'damage': return 'enemyMonster';
     case 'heal':
     case 'buffFa': return 'allyMonster';
+    case 'drawDiscard': return 'none';
     case 'custom': return card.target ?? 'none';
   }
 };
@@ -133,6 +136,7 @@ const notesFromRecord = (record: RecordBase) => ({
   illustrationPrompt: record.illustration.prompt,
   implementation: record.implementation,
   memo: record.memo,
+  ...(record.updatedAt ? { updatedAt: record.updatedAt } : {}),
 });
 
 export const fromMonsterRecord = (record: MonsterRecord): MonsterCard => ({
@@ -173,7 +177,8 @@ const isRecordBase = (r: RecordBase): boolean =>
   !!r && isText(r.id) && /^[A-Za-z0-9_]+$/.test(r.id) && isText(r.name) && isText(r.race)
   && isText(r.effectText) && isText(r.flavorText) && isText(r.memo)
   && !!r.illustration && isText(r.illustration.prompt) && isText(r.illustration.image)
-  && IMPLEMENTATION.includes(r.implementation);
+  && IMPLEMENTATION.includes(r.implementation)
+  && (r.updatedAt === undefined || isText(r.updatedAt));
 
 export const isMonsterRecord = (r: unknown): r is MonsterRecord => {
   const m = r as MonsterRecord;
@@ -183,7 +188,7 @@ export const isMonsterRecord = (r: unknown): r is MonsterRecord => {
 export const isSpellRecord = (r: unknown): r is SpellRecord => {
   const s = r as SpellRecord;
   const effectOk = s?.effect === null
-    || (!!s?.effect && ['damage', 'heal', 'buffFa'].includes(s.effect.kind) && isNumber(s.effect.amount));
+    || (!!s?.effect && ['damage', 'heal', 'buffFa', 'drawDiscard'].includes(s.effect.kind) && isNumber(s.effect.amount));
   return isRecordBase(s) && isNumber(s.cost) && TARGETS.includes(s.target) && effectOk;
 };
 

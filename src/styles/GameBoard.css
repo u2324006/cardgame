@@ -48,6 +48,31 @@
   align-self: stretch;
 }
 
+.cast-button {
+  width: 100%;
+}
+
+.discard-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--hp-damaged);
+  border-radius: 10px;
+  background: #2A1A12;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.discard-panel p {
+  margin: 0;
+}
+
+.discard-panel .primary-button {
+  height: 40px;
+  font-size: 14px;
+}
+
 .message-area {
   min-height: 4em;
 }

@@ -5,6 +5,7 @@ import {
   ActionResult,
   attack,
   castSpell,
+  discardCards,
   endTurn,
   canAttackThisTurn,
   getCardAt,
@@ -13,7 +14,7 @@ import {
   nextPhase,
   playCard,
 } from '../logic/gameLogic';
-import { getSpellTargetSide, isMonster } from '../types/card';
+import { getSpellTargetSide, isMonster, isUntargetedSpell } from '../types/card';
 import { DeckList } from '../logic/deck';
 import { FieldPosition, GameState, PlayerId, Row } from '../types/gameState';
 import { useAutoProgress } from '../hooks/useAutoProgress';
@@ -99,7 +100,31 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
   };
 
   // 手札のカードを選択（もう一度クリックで解除）
+  // 「引いて捨てる」効果で、墓地に置くカードを選んでいるところ
+  const pendingDiscard = gameState.pendingDiscard?.player === HUMAN ? gameState.pendingDiscard : null;
+  const [discardIndices, setDiscardIndices] = useState<number[]>([]);
+  useEffect(() => setDiscardIndices([]), [pendingDiscard]);
+
+  const handleConfirmDiscard = () => {
+    const result = discardCards(gameState, HUMAN, discardIndices);
+    if (!result.ok) {
+      showMessage(result.error);
+      return;
+    }
+    setGameState(result.state);
+  };
+
+  // 選んだ手札が、対象を選ばずに使うスペルなら「使う」ボタンを出す
+  const selectedHandCard = selection.kind === 'hand' ? players[HUMAN].hand[selection.index] : undefined;
+  const untargetedSpell = selectedHandCard && !isMonster(selectedHandCard) && isUntargetedSpell(selectedHandCard) ? selectedHandCard : null;
+
   const handleHandCardClick = (index: number) => {
+    if (pendingDiscard) {
+      setDiscardIndices(current => current.includes(index)
+        ? current.filter(i => i !== index)
+        : current.length < pendingDiscard.count ? [...current, index] : current);
+      return;
+    }
     if (!isPlayerTurn || phase !== 'Play') return;
     setSelection(selection.kind === 'hand' && selection.index === index ? NO_SELECTION : { kind: 'hand', index });
   };
@@ -170,6 +195,10 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
 
   const handleFieldClick = (player: PlayerId, row: Row, index: number) => {
     if (!isPlayerTurn) return;
+    if (pendingDiscard) {
+      showMessage(`先に、墓地に置くカードを${pendingDiscard.count}枚選んでください。`);
+      return;
+    }
     const position = { row, index };
     if (phase === 'Attack') handleAttackPhaseClick(player, position);
     else if (phase === 'Play' && player === HUMAN) handlePlayPhaseClick(position);
@@ -201,6 +230,24 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
         <div className="card-info">
           <CardPreview target={previewTarget} />
         </div>
+        {untargetedSpell && selection.kind === 'hand' && !pendingDiscard && (
+          <button type="button" className="primary-button cast-button" onClick={() => apply(castSpell(gameState, HUMAN, selection.index))}>
+            「{untargetedSpell.name}」を使う
+          </button>
+        )}
+        {pendingDiscard && (
+          <div className="discard-panel" role="alert">
+            <p>手札から墓地に置くカードを<b>{pendingDiscard.count}枚</b>選んでください（{discardIndices.length} / {pendingDiscard.count}）。</p>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={handleConfirmDiscard}
+              disabled={discardIndices.length !== pendingDiscard.count}
+            >
+              墓地に置く
+            </button>
+          </div>
+        )}
         <div className="message-area" role="status">
           {message && <div key={message.id} className="message">{message.text}</div>}
         </div>
@@ -224,6 +271,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
           selectedCardIndex={selection.kind === 'hand' ? selection.index : null}
           selectedPosition={selectedFieldPosition}
           usedLabels={usedLabels}
+          markedHandIndices={discardIndices}
         />
       </div>
       <ControlPanel
@@ -231,6 +279,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
         phase={phase}
         isPlayerTurn={isPlayerTurn}
         canAttack={canAttackThisTurn(gameState)}
+        isBusy={!!pendingDiscard}
         onNextPhase={() => setGameState(nextPhase)}
         onEndTurn={() => setGameState(endTurn)}
         onExit={onExit}

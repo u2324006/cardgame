@@ -31,6 +31,7 @@
 | `illustration.image` | 今使っている画像。用意されたイラストはファイル名（`public/images/cards/` にある）、アップロードした画像は `data:` で始まる文字列、なければ空 |
 | `implementation` | 効果の実装状況：`未実装`／`実装済み`／`効果なし` |
 | `memo` | 調整のメモなど |
+| `updatedAt` | 最後に保存・取り込みした日時（ISO 形式、省略可）。ブラウザに保存されたカードと同じ ID なら、新しい方が使われる |
 
 ### モンスターだけ
 
@@ -47,7 +48,16 @@
 |---|---|
 | `cost` | コスト |
 | `target` | 対象：`allyMonster`（味方のモンスター）、`enemyMonster`（相手のモンスター）、`anyMonster`（どちらかのモンスター）、`allyLeader`（自分の大将）、`enemyLeader`（相手の大将）、`none`（対象なし） |
-| `effect` | 実装済みの効果：`{ "kind": "damage" \| "heal" \| "buffFa", "amount": 数値 }`。まだない効果なら `null`（対戦では使えない） |
+| `effect` | 実装済みの効果：`{ "kind": 種類, "amount": 数値 }`。まだない効果なら `null`（対戦では使えない） |
+
+実装済みの効果の種類（`kind`）：
+
+| kind | 内容 | 対象 |
+|---|---|---|
+| `damage` | 相手のモンスター1体に amount ダメージ | 相手のモンスター |
+| `heal` | 味方のモンスター1体の HP を amount 回復（最大 HP まで） | 味方のモンスター |
+| `buffFa` | 味方のモンスター1体の FA をターン終了まで amount 上げる | 味方のモンスター |
+| `drawDiscard` | カードを amount 枚引き、その後手札から amount 枚を選んで墓地に置く | なし |
 
 ### 大将だけ
 
@@ -65,7 +75,8 @@
   `src/logic/spellEffects.ts`（効果の文章）、`src/logic/cardData.ts`（JSON との変換）、
   `src/logic/cardEditor.ts`（カード作成画面の選択肢 `EFFECT_OPTIONS`）も更新します。
 - モンスターや大将の効果（召喚したとき、攻撃したとき など）は、まだ仕組みがありません。最初に実装するときに仕組みを作ってください。
-- 実装したら、そのカードの `implementation` を `実装済み` にし、テスト（`src/logic/*.test.ts`）を追加してください。
+- 実装したら、そのカードの `implementation` を `実装済み` にし、`updatedAt` を今の日時にして、テスト（`src/logic/*.test.ts`）を追加してください。
+  `updatedAt` を新しくしないと、ユーザーのブラウザに残っている未実装の版が使われ続けます。
 - ゲームのルールが変わる場合は、`RULES.md` も更新してください。
 
 ## AI へのお願い（イラスト）

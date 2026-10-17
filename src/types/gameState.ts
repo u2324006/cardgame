@@ -28,6 +28,12 @@ export interface TurnState {
   attackBuffs: Record<string, number>; // { [cardId]: FA上昇値 }
 }
 
+// 「カードを引いてその後手札から墓地に置く」効果などで、捨てるカードを選んでいるところ
+export interface PendingDiscard {
+  player: PlayerId;
+  count: number;
+}
+
 export interface GameState {
   players: Record<PlayerId, PlayerState>;
   currentPlayer: PlayerId;
@@ -35,6 +41,7 @@ export interface GameState {
   phase: Phase;
   turnState: TurnState;
   winner: PlayerId | null;
+  pendingDiscard: PendingDiscard | null; // 手札から墓地に置くカードを選んでいる途中（その間はほかの行動ができない）
 }
 
 export type AttackTarget =

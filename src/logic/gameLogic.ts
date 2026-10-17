@@ -1,4 +1,4 @@
-import { MonsterCard, getSpellTargetSide, isMonster } from '../types/card';
+import { MonsterCard, getSpellTargetSide, isMonster, isUntargetedSpell } from '../types/card';
 import {
   AttackTarget,
   FieldPosition,
@@ -117,6 +117,7 @@ const damageSpecialCard = (state: GameState, player: PlayerId, amount: number): 
 const checkTurn = (state: GameState, player: PlayerId, phase: Phase): string | null => {
   if (state.winner) return 'ゲームは終了しています。';
   if (state.currentPlayer !== player) return '自分のターンではありません。';
+  if (state.pendingDiscard) return `先に、墓地に置くカードを${state.pendingDiscard.count}枚選んでください。`;
   if (state.phase !== phase) return `${phase} フェイズではありません。`;
   return null;
 };
@@ -148,7 +149,7 @@ const drawPhase = (state: GameState): GameState => {
 };
 
 export const endTurn = (state: GameState): GameState => {
-  if (state.winner) return state;
+  if (state.winner || state.pendingDiscard) return state;
   return {
     ...state,
     turn: state.turn + 1,
@@ -159,7 +160,7 @@ export const endTurn = (state: GameState): GameState => {
 };
 
 export const nextPhase = (state: GameState): GameState => {
-  if (state.winner) return state;
+  if (state.winner || state.pendingDiscard) return state;
   switch (state.phase) {
     case 'Draw': return drawPhase(state);
     case 'Play': return canAttackThisTurn(state) ? { ...state, phase: 'Attack' } : endTurn(state);
@@ -193,12 +194,54 @@ export const playCard = (
   }));
 };
 
-// スペルを使う。対象は効果に応じて、味方（ダメージ以外）または相手（ダメージ）の場のモンスター
+// 山札から枚数ぶん引く（山札が足りなければ、ある分だけ）
+const drawCards = (playerState: PlayerState, count: number): PlayerState => ({
+  ...playerState,
+  deck: playerState.deck.slice(count),
+  hand: [...playerState.hand, ...playerState.deck.slice(0, count)],
+});
+
+// 対象を選ばないスペルを使う（カードを引いて捨てる など）
+const castUntargetedSpell = (state: GameState, player: PlayerId, handIndex: number): ActionResult => {
+  const playerState = state.players[player];
+  const spell = playerState.hand[handIndex];
+  if (!spell || isMonster(spell)) return failure('スペルカードが選択されていません。');
+  if (playerState.currentEnergy < spell.cost) return failure('エネルギーが足りません！');
+  const { effect } = spell;
+  if (effect.kind !== 'drawDiscard') return failure('このスペルの効果はまだ実装されていません。');
+
+  const paid = updatePlayer(state, player, p => ({
+    ...payFromHand(p, handIndex, spell.cost),
+    graveyard: [...p.graveyard, spell],
+  }));
+  const drawn = updatePlayer(paid, player, p => drawCards(p, effect.amount));
+  const count = Math.min(effect.amount, drawn.players[player].hand.length);
+  return success(count > 0 ? { ...drawn, pendingDiscard: { player, count } } : drawn);
+};
+
+// 手札から選んだカードを墓地に置く（pendingDiscard の枚数ちょうど）
+export const discardCards = (state: GameState, player: PlayerId, handIndices: number[]): ActionResult => {
+  const pending = state.pendingDiscard;
+  if (!pending || pending.player !== player) return failure('いまは捨てるカードを選ぶ場面ではありません。');
+  const unique = Array.from(new Set(handIndices));
+  const hand = state.players[player].hand;
+  if (unique.length !== pending.count || unique.some(i => !hand[i])) {
+    return failure(`墓地に置くカードを${pending.count}枚選んでください。`);
+  }
+  const next = updatePlayer(state, player, p => ({
+    ...p,
+    hand: p.hand.filter((_, i) => !unique.includes(i)),
+    graveyard: [...p.graveyard, ...unique.map(i => p.hand[i])],
+  }));
+  return success({ ...next, pendingDiscard: null });
+};
+
+// スペルを使う。対象を選ぶスペルは、効果に応じて味方（ダメージ以外）または相手（ダメージ）の場のモンスターを targetPosition で指定する
 export const castSpell = (
   state: GameState,
   player: PlayerId,
   handIndex: number,
-  targetPosition: FieldPosition,
+  targetPosition?: FieldPosition,
 ): ActionResult => {
   const turnError = checkTurn(state, player, 'Play');
   if (turnError) return failure(turnError);
@@ -206,6 +249,8 @@ export const castSpell = (
   const spell = playerState.hand[handIndex];
   if (!spell || isMonster(spell)) return failure('スペルカードが選択されていません。');
   if (spell.effect.kind === 'custom') return failure('このスペルの効果はまだ実装されていません。');
+  if (isUntargetedSpell(spell)) return castUntargetedSpell(state, player, handIndex);
+  if (!targetPosition) return failure('対象のモンスターを選んでください。');
   const targetSide = getSpellTargetSide(spell);
   const targetPlayer = targetSide === 'ally' ? player : getOpponent(player);
   const target = getCardAt(state, targetPlayer, targetPosition);
@@ -236,6 +281,8 @@ export const castSpell = (
     }
     case 'damage':
       return success(damageMonster(paid, targetPlayer, targetPosition, effect.amount));
+    case 'drawDiscard':
+      return failure('このスペルは対象を選ばずに使います。'); // isUntargetedSpell で先に処理している
   }
 };
 

@@ -7,6 +7,7 @@ export interface CardNotes {
   illustrationPrompt?: string; // イラストのイメージ（AI に絵を描いてもらうための説明）
   implementation?: ImplementationStatus;
   memo?: string;
+  updatedAt?: string; // 最後に保存・取り込みした日時（ISO 形式）。ブラウザの変更とプログラムのカードで新しい方を使う
 }
 
 interface BaseCard extends CardNotes {
@@ -30,6 +31,7 @@ export type SpellEffect =
   | { kind: 'buffFa'; amount: number } // 味方モンスターのFAをターン終了まで上げる
   | { kind: 'heal'; amount: number } // 味方モンスターのHPを回復する（最大HPまで）
   | { kind: 'damage'; amount: number } // 相手のモンスターにダメージを与える
+  | { kind: 'drawDiscard'; amount: number } // カードを amount 枚引き、その後手札から amount 枚を選んで墓地に置く（対象なし）
   | { kind: 'custom' }; // まだ実装されていない効果（effectText に文章で書く。対戦では使えない）
 
 // スペルの対象（まだ実装されていない効果のときに指定する。実装済みの効果は効果の種類から決まる）
@@ -43,6 +45,10 @@ export interface SpellCard extends BaseCard {
 }
 
 // スペルの対象が味方モンスターか相手のモンスターか
+// 対象を選ばずに使うスペルか
+export const isUntargetedSpell = (spell: SpellCard): boolean =>
+  spell.effect.kind === 'drawDiscard' || (spell.effect.kind === 'custom' && (spell.target ?? 'none') === 'none');
+
 export const getSpellTargetSide = (spell: SpellCard): 'ally' | 'enemy' => {
   if (spell.effect.kind === 'damage') return 'enemy';
   if (spell.effect.kind === 'custom') return spell.target?.startsWith('enemy') ? 'enemy' : 'ally';

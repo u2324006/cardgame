@@ -23,6 +23,9 @@ export const spell: SpellCard = {
 export const healSpell: SpellCard = {
   id: 's002-0', name: '回復の呪文', type: 'Spell', description: '', cost: 1, effect: { kind: 'heal', amount: 3 },
 };
+export const drawSpell: SpellCard = {
+  id: 'cmvcejw05kll9-0', name: '恵の泉', type: 'Spell', description: '', cost: 1, effect: { kind: 'drawDiscard', amount: 2 },
+};
 export const fireSpell: SpellCard = {
   id: 's003-0', name: '炎の呪文', type: 'Spell', description: '', cost: 2, effect: { kind: 'damage', amount: 3 },
 };

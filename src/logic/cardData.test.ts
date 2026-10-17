@@ -89,4 +89,10 @@ describe('card records (JSON for AI)', () => {
     expect((spells as unknown[]).every(isSpellRecord)).toBe(true);
     expect((leaders as unknown[]).every(isLeaderRecord)).toBe(true);
   });
+
+  it('loads 恵の泉 from spells.json as an implemented spell', () => {
+    const spring = BUILTIN_CARD_SET.cards.find(c => c.id === 'cmvcejw05kll9') as SpellCard;
+    expect(spring).toMatchObject({ name: '恵の泉', cost: 1, effect: { kind: 'drawDiscard', amount: 2 }, implementation: '実装済み' });
+    expect(spring.image).toContain('/images/cards/blessing-spring.svg');
+  });
 });

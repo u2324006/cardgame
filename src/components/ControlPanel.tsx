@@ -8,6 +8,7 @@ interface ControlPanelProps {
   phase: Phase;
   isPlayerTurn: boolean;
   canAttack: boolean; // このターンにアタックフェイズがあるか（先手の1ターン目はない）
+  isBusy?: boolean; // 捨てるカードを選んでいる途中など、フェイズを進められないとき
   onNextPhase: () => void;
   onEndTurn: () => void;
   onExit?: () => void;
@@ -19,9 +20,9 @@ const PHASES: { phase: Phase; label: string }[] = [
   { phase: 'Attack', label: 'アタック' },
 ];
 
-const ControlPanel: React.FC<ControlPanelProps> = ({ turn, phase, isPlayerTurn, canAttack, onNextPhase, onEndTurn, onExit }) => {
+const ControlPanel: React.FC<ControlPanelProps> = ({ turn, phase, isPlayerTurn, canAttack, isBusy = false, onNextPhase, onEndTurn, onExit }) => {
   // ドローフェイズは自動で進むので、その間は操作できないようにする
-  const canAct = isPlayerTurn && phase !== 'Draw';
+  const canAct = isPlayerTurn && phase !== 'Draw' && !isBusy;
   // アタックフェイズがないターンのプレイフェイズでは「次のフェイズへ」は出さない（ターン終了のみ）
   const hasNextPhase = !(phase === 'Play' && !canAttack);
   const [isConfirmingExit, setIsConfirmingExit] = useState(false);

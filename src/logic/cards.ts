@@ -37,7 +37,8 @@ export const BUILTIN_CARD_SET: CardSet = {
 };
 
 const STORAGE_KEY = 'cardgame.cards';
-const VERSION = 1;
+// 1：カードの一覧をまるごと保存していた形 / 2：最初から入っているカードとの違いだけを保存する形
+const VERSION = 2;
 
 // --- 形のチェック（保存データや読み込んだ文字列が壊れていないか） ---
 
@@ -49,7 +50,7 @@ const isSpellEffect = (effect: unknown): effect is SpellEffect => {
   const e = effect as SpellEffect;
   if (!e) return false;
   if (e.kind === 'custom') return true;
-  return ['buffFa', 'heal', 'damage'].includes(e.kind) && isNumber(e.amount);
+  return ['buffFa', 'heal', 'damage', 'drawDiscard'].includes(e.kind) && isNumber(e.amount);
 };
 
 const isCard = (value: unknown): value is Card => {
@@ -78,13 +79,67 @@ export const isCardSet = (value: unknown): value is CardSet => {
 };
 
 // --- 読み込み・保存 ---
+// ブラウザには、最初から入っているカードとの「違い」（追加・変更したカードと、削除したカードの ID）だけを保存する。
+// こうしておくと、プログラム側でカードが追加・実装されても、そのブラウザに反映される。
+
+interface CardSetChanges {
+  cards: Card[]; // 追加・変更したカード
+  leaders: LeaderCard[];
+  deleted: string[]; // 削除した、最初から入っているカードの ID
+}
+
+const sameContent = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
+export const diffFromBuiltin = (set: CardSet, builtin: CardSet = BUILTIN_CARD_SET): CardSetChanges => {
+  const builtinById = new Map<string, Card | LeaderCard>([...builtin.cards, ...builtin.leaders].map(c => [c.id, c]));
+  const changed = <T extends { id: string }>(items: T[]) => items.filter(item => !sameContent(builtinById.get(item.id), item));
+  const ids = new Set([...set.cards, ...set.leaders].map(c => c.id));
+  return {
+    cards: changed(set.cards),
+    leaders: changed(set.leaders),
+    deleted: Array.from(builtinById.keys()).filter(id => !ids.has(id)),
+  };
+};
+
+// 同じ ID のカードがプログラム側にもあるときは、保存（更新）日時が新しい方を使う
+// （ブラウザで作ったカードを AI が実装して取り込んだ場合、取り込んだ方が新しい）
+const pickNewer = <T extends { id: string; updatedAt?: string }>(builtin: T[], local: T[]): T[] => {
+  const builtinById = new Map(builtin.map(item => [item.id, item]));
+  return local.filter(item => {
+    const fromProgram = builtinById.get(item.id);
+    return !fromProgram?.updatedAt || (!!item.updatedAt && item.updatedAt >= fromProgram.updatedAt);
+  });
+};
+
+export const applyChanges = (changes: CardSetChanges, builtin: CardSet = BUILTIN_CARD_SET): CardSet => {
+  const deleted = new Set(changes.deleted);
+  return {
+    cards: mergeById(builtin.cards.filter(c => !deleted.has(c.id)), pickNewer(builtin.cards, changes.cards)),
+    leaders: mergeById(builtin.leaders.filter(l => !deleted.has(l.id)), pickNewer(builtin.leaders, changes.leaders)),
+  };
+};
+
+const isChanges = (value: unknown): value is CardSetChanges => {
+  const c = value as CardSetChanges;
+  return !!c && Array.isArray(c.cards) && Array.isArray(c.leaders) && Array.isArray(c.deleted)
+    && c.cards.every(isCard) && c.leaders.every(isLeader) && c.deleted.every(isText);
+};
 
 const loadStoredCardSet = (): CardSet | null => {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const saved = JSON.parse(raw);
-    return saved?.version === VERSION && isCardSet(saved.cardSet) ? saved.cardSet : null;
+    if (saved?.version === VERSION && isChanges(saved.changes)) {
+      const set = applyChanges(saved.changes);
+      return isCardSet(set) ? set : null;
+    }
+    // 古い形（まるごと保存）は、違いに直してから使う
+    if (saved?.version === 1 && isCardSet(saved.cardSet)) {
+      const set = applyChanges(diffFromBuiltin(saved.cardSet));
+      return isCardSet(set) ? set : null;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -101,7 +156,7 @@ export const getCardSet = (): CardSet => {
 export const saveCardSet = (set: CardSet): boolean => {
   current = set;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: VERSION, cardSet: set }));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: VERSION, changes: diffFromBuiltin(set) }));
     return true;
   } catch {
     return false;

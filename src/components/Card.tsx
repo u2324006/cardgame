@@ -16,6 +16,7 @@ interface CardProps extends HoverHandlers {
   row?: Row; // 場にいる列。使われない方の攻撃力（前衛なら BA）を薄く表示する
   size?: 'normal' | 'large'; // large はカード情報欄用で、説明文も表示する
   usedLabel?: string; // 行動済みのとき（例: '攻撃済み'）。カードを薄く表示してラベルを出す
+  markLabel?: string; // 選んだ印（例: '墓地へ'）。カードに赤い枠とラベルを出す
 }
 
 // 裏向きのカード（相手の手札など）
@@ -33,13 +34,14 @@ export const CardArt: React.FC<{ image?: string; label?: string; children?: Reac
   </div>
 );
 
-const Card: React.FC<CardProps> = ({ card, onClick, isSelected = false, row, size = 'normal', usedLabel, onMouseEnter, onMouseLeave }) => {
+const Card: React.FC<CardProps> = ({ card, onClick, isSelected = false, row, size = 'normal', usedLabel, markLabel, onMouseEnter, onMouseLeave }) => {
   const monster = isMonster(card) ? card : null;
   const spell = isMonster(card) ? null : card;
-  const classes = ['card', card.type.toLowerCase(), size, isSelected && 'selected', usedLabel && 'used'].filter(Boolean).join(' ');
+  const classes = ['card', card.type.toLowerCase(), size, isSelected && 'selected', usedLabel && 'used', markLabel && 'marked'].filter(Boolean).join(' ');
   return (
     <div className={classes} onClick={onClick} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       {usedLabel && <div className="card-used-label">{usedLabel}</div>}
+      {markLabel && <div className="card-used-label mark">{markLabel}</div>}
       <div className="card-header">
         <div className="card-cost">{card.cost}</div>
         <div className="card-name">{card.name}</div>

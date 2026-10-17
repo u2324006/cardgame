@@ -4,12 +4,13 @@ import { createInitialGameState } from './initialState';
 import {
   attack,
   castSpell,
+  discardCards,
   endTurn,
   moveMonster,
   nextPhase,
   playCard,
 } from './gameLogic';
-import { emptyState, fireSpell, healSpell, inPhase, monster, spell, unwrap, withField, withPlayer } from './testUtils';
+import { drawSpell, emptyState, fireSpell, healSpell, inPhase, monster, spell, unwrap, withField, withPlayer } from './testUtils';
 
 describe('phase progression', () => {
   it('does not draw on the first player\'s first turn, but still gains energy', () => {
@@ -209,5 +210,41 @@ describe('unimplemented spells', () => {
     let state = withField(emptyState(), 'player2', 'frontRow', [monster('a', { cardHp: 1 }), null, null]);
     state = withPlayer(state, 'player1', { hand: [custom] });
     expect(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 })).toEqual({ ok: false, error: 'このスペルの効果はまだ実装されていません。' });
+  });
+});
+
+describe('draw then discard (恵の泉)', () => {
+  const setup = (deck = [monster('d1'), monster('d2'), monster('d3')]) =>
+    withPlayer(emptyState(), 'player1', { hand: [drawSpell, monster('h1'), monster('h2')], deck });
+
+  it('draws two cards without a target, then waits for two cards to be discarded', () => {
+    const next = unwrap(castSpell(setup(), 'player1', 0));
+    expect(next.players.player1.hand.map(c => c.id)).toEqual(['h1', 'h2', 'd1', 'd2']);
+    expect(next.players.player1.deck.map(c => c.id)).toEqual(['d3']);
+    expect(next.players.player1.graveyard.map(c => c.id)).toEqual([drawSpell.id]);
+    expect(next.pendingDiscard).toEqual({ player: 'player1', count: 2 });
+  });
+
+  it('blocks other actions and phase changes until the discard is done', () => {
+    const next = unwrap(castSpell(setup(), 'player1', 0));
+    expect(playCard(next, 'player1', 0, { row: 'frontRow', index: 0 }).ok).toBe(false);
+    expect(nextPhase(next)).toBe(next);
+    expect(endTurn(next)).toBe(next);
+  });
+
+  it('discards exactly the chosen cards', () => {
+    const next = unwrap(castSpell(setup(), 'player1', 0));
+    expect(discardCards(next, 'player1', [0]).ok).toBe(false);
+    expect(discardCards(next, 'player1', [0, 0]).ok).toBe(false);
+    const done = unwrap(discardCards(next, 'player1', [0, 3]));
+    expect(done.players.player1.hand.map(c => c.id)).toEqual(['h2', 'd1']);
+    expect(done.players.player1.graveyard.map(c => c.id)).toEqual([drawSpell.id, 'h1', 'd2']);
+    expect(done.pendingDiscard).toBeNull();
+  });
+
+  it('draws only what is left in the deck', () => {
+    const next = unwrap(castSpell(setup([monster('last')]), 'player1', 0));
+    expect(next.players.player1.hand).toHaveLength(3);
+    expect(next.pendingDiscard?.count).toBe(2);
   });
 });
