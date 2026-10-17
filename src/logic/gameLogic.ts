@@ -50,6 +50,9 @@ export const hasFrontRowMonsters = (playerState: PlayerState): boolean =>
   playerState.field.frontRow.some(card => card !== null);
 
 // 攻撃の呪文のバフはFA（前衛での攻撃力）にのみ適用される
+// 先手の1ターン目（ゲーム全体の1ターン目）は攻撃できない
+export const canAttackThisTurn = (state: GameState): boolean => state.turn > 1;
+
 export const getAttackPower = (state: GameState, card: MonsterCard, row: Row): number =>
   row === 'frontRow'
     ? card.frontAttack + (state.turnState.attackBuffs[card.id] ?? 0)
@@ -151,7 +154,7 @@ export const nextPhase = (state: GameState): GameState => {
   if (state.winner) return state;
   switch (state.phase) {
     case 'Draw': return drawPhase(state);
-    case 'Play': return { ...state, phase: 'Attack' };
+    case 'Play': return canAttackThisTurn(state) ? { ...state, phase: 'Attack' } : endTurn(state);
     case 'Attack': return endTurn(state);
   }
 };
@@ -259,6 +262,7 @@ export const attack = (
 ): ActionResult => {
   const turnError = checkTurn(state, attackerPlayer, 'Attack');
   if (turnError) return failure(turnError);
+  if (!canAttackThisTurn(state)) return failure('先手の1ターン目は攻撃できません。');
   const attacker = getCardAt(state, attackerPlayer, attackerPosition);
   if (!attacker) return failure('攻撃するモンスターがいません。');
   if (state.turnState.attackedMonsterIds.includes(attacker.id)) {

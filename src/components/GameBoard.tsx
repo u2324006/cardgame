@@ -6,6 +6,7 @@ import {
   attack,
   castSpell,
   endTurn,
+  canAttackThisTurn,
   getCardAt,
   hasFrontRowMonsters,
   moveMonster,
@@ -217,6 +218,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, onExit }) => {
         turn={turn}
         phase={phase}
         isPlayerTurn={isPlayerTurn}
+        canAttack={canAttackThisTurn(gameState)}
         onNextPhase={() => setGameState(nextPhase)}
         onEndTurn={() => setGameState(endTurn)}
         onExit={onExit}

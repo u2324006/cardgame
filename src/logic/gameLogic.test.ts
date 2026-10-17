@@ -178,3 +178,19 @@ describe('spell effects', () => {
     expect(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 }).ok).toBe(false);
   });
 });
+
+describe('first turn', () => {
+  it('skips the attack phase and forbids attacks on the first player\'s first turn', () => {
+    const base = withField({ ...emptyState(), turn: 1 }, 'player1', 'frontRow', [monster('a'), null, null]);
+    expect(attack(inPhase(base, 'Attack'), 'player1', { row: 'frontRow', index: 0 }, { type: 'player' }).ok).toBe(false);
+    const next = nextPhase(base); // Play → (Attack を飛ばして) 相手のターンへ
+    expect(next.currentPlayer).toBe('player2');
+    expect(next.phase).toBe('Draw');
+  });
+
+  it('allows attacks from the second turn on', () => {
+    const state = withField({ ...emptyState(), turn: 3 }, 'player1', 'frontRow', [monster('a'), null, null]);
+    expect(nextPhase(state).phase).toBe('Attack');
+    expect(attack(inPhase(state, 'Attack'), 'player1', { row: 'frontRow', index: 0 }, { type: 'player' }).ok).toBe(true);
+  });
+});
