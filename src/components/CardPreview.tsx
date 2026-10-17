@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card as CardType, LeaderCard as LeaderCardType } from '../types/card';
+import { Card as CardType, LeaderCard as LeaderCardType, isMonster } from '../types/card';
 import { Row } from '../types/gameState';
 import Card from './Card';
 import LeaderCard from './LeaderCard';
@@ -8,6 +8,12 @@ import LeaderCard from './LeaderCard';
 export type InspectTarget =
   | { kind: 'card'; card: CardType; row?: Row }
   | { kind: 'leader'; leader: LeaderCardType; hp: number };
+
+const previewNote = (target: InspectTarget): string => {
+  if (target.kind === 'leader') return '大将カードのHPが0になると負けです。';
+  if (!isMonster(target.card)) return '手札で選んでから、対象の味方モンスターをクリックして使います。';
+  return '前衛にいるときは FA、後衛にいるときは BA で攻撃します。';
+};
 
 const CardPreview: React.FC<{ target: InspectTarget | null }> = ({ target }) => {
   if (!target) {
@@ -18,11 +24,7 @@ const CardPreview: React.FC<{ target: InspectTarget | null }> = ({ target }) => 
       {target.kind === 'leader'
         ? <LeaderCard leader={target.leader} hp={target.hp} size="large" />
         : <Card card={target.card} row={target.row} size="large" />}
-      <div className="card-preview-note">
-        {target.kind === 'leader'
-          ? '大将カードのHPが0になると負けです。'
-          : '前衛にいるときは FA、後衛にいるときは BA で攻撃します。'}
-      </div>
+      <div className="card-preview-note">{previewNote(target)}</div>
     </>
   );
 };

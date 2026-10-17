@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4E6B55"/>
+      <stop offset="1" stop-color="#16241C"/>
+    </linearGradient>
+  </defs>
+  <rect width="160" height="120" fill="url(#sky)"/>
+  <path d="M10 104 L22 40 L34 104 Z M128 104 L142 30 L156 104 Z M140 104 L150 60 L160 104 Z" fill="#1E3326"/>
+  <path d="M0 104 L160 100 L160 120 L0 120 Z" fill="#132018"/>
+  <!-- マント -->
+  <path d="M66 46 Q58 76 54 108 L94 108 Q88 76 82 46 Z" fill="#3E5A34"/>
+  <!-- フード -->
+  <path d="M62 52 Q64 28 76 26 Q88 28 88 50 L82 56 L70 56 Z" fill="#4E6B3E"/>
+  <path d="M72 42 Q76 38 82 42 L82 52 L72 52 Z" fill="#1A140F"/>
+  <circle cx="79" cy="46" r="1.4" fill="#F2C14E"/>
+  <!-- 弓 -->
+  <path d="M108 30 Q128 62 108 94" stroke="#8A6239" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M108 30 L92 62 L108 94" stroke="#E9E4D8" stroke-width="1" fill="none"/>
+  <!-- 矢と腕 -->
+  <path d="M84 62 L138 62" stroke="#C9A45C" stroke-width="2"/>
+  <path d="M138 62 L130 58 L130 66 Z" fill="#D9DDE2"/>
+  <path d="M86 62 L80 58 M86 62 L80 66" stroke="#B4471F" stroke-width="2"/>
+  <path d="M80 58 L92 62 L80 66 Z" fill="#4E6B3E"/>
+  <path d="M84 58 L114 60 L114 64 L84 66 Z" fill="#4E6B3E"/>
+</svg>

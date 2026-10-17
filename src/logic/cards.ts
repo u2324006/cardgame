@@ -3,9 +3,13 @@ import { Card, LeaderCard, MonsterCard, SpellCard } from '../types/card';
 // デッキに入るカードの元データ。デッキ作成時に `${id}-${番号}` の形で個別IDが振られる。
 export const ATTACK_SPELL_ID = 's001';
 
+// public/images/cards/ に置いたイラストの URL
+const cardImage = (fileName: string): string => `${process.env.PUBLIC_URL}/images/cards/${fileName}`;
+
 const monsterCard1: MonsterCard = {
   id: 'm001',
   name: 'ゴブリンアタッカー',
+  image: cardImage('goblin.svg'),
   type: 'Monster',
   description: '前衛でも後衛でも同じ力で戦える、身軽なゴブリン。',
   frontAttack: 2,
@@ -18,6 +22,7 @@ const monsterCard1: MonsterCard = {
 const monsterCard2: MonsterCard = {
   id: 'm002',
   name: 'ストーンゴーレム',
+  image: cardImage('stone-golem.svg'),
   type: 'Monster',
   description: '岩の体で攻撃を受け止める。後衛では攻撃できない。',
   frontAttack: 3,
@@ -30,6 +35,7 @@ const monsterCard2: MonsterCard = {
 const monsterCard3: MonsterCard = {
   id: 'm003',
   name: 'プテ',
+  image: cardImage('pute.svg'),
   type: 'Monster',
   description: '前衛で鋭く攻める。後衛では攻撃できない。',
   frontAttack: 4,
@@ -42,6 +48,7 @@ const monsterCard3: MonsterCard = {
 const monsterCard4: MonsterCard = {
   id: 'm004',
   name: 'ハンター',
+  image: cardImage('hunter.svg'),
   type: 'Monster',
   description: '後衛から獲物を狙い撃つ。前衛では攻撃できない。',
   frontAttack: 0,
@@ -54,6 +61,7 @@ const monsterCard4: MonsterCard = {
 const monsterCard5: MonsterCard = {
   id: 'm005',
   name: '戦士',
+  image: cardImage('warrior.svg'),
   type: 'Monster',
   description: '前衛で力を発揮する。後衛では攻撃できない。',
   frontAttack: 5,
@@ -66,6 +74,7 @@ const monsterCard5: MonsterCard = {
 const monsterCard6: MonsterCard = {
   id: 'm006',
   name: '魔術師',
+  image: cardImage('mage.svg'),
   type: 'Monster',
   description: '後衛から強力な魔術を放つ。前衛では攻撃できない。',
   frontAttack: 0,
@@ -78,6 +87,7 @@ const monsterCard6: MonsterCard = {
 const monsterCard7: MonsterCard = {
   id: 'm007',
   name: 'バラン',
+  image: cardImage('baran.svg'),
   type: 'Monster',
   description: '前衛でも後衛でも安定して戦える。',
   frontAttack: 3,
@@ -90,6 +100,7 @@ const monsterCard7: MonsterCard = {
 const attackSpell: SpellCard = {
   id: ATTACK_SPELL_ID,
   name: '攻撃の呪文',
+  image: cardImage('attack-spell.svg'),
   type: 'Spell',
   description: '味方モンスター1体のFAを、ターン終了まで1上げる。',
   race: 'スペル',
@@ -103,6 +114,7 @@ export const BASE_CARDS: Card[] = [monsterCard1, monsterCard2, monsterCard3, mon
 export const DEFAULT_LEADER: LeaderCard = {
   id: 'l001',
   name: '大将',
+  image: cardImage('leader.svg'),
   description: '大将固有の効果は未設定です。',
   maxHp: 20,
 };

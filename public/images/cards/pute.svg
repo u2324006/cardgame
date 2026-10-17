@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E8A15C"/>
+      <stop offset="1" stop-color="#7A3B4A"/>
+    </linearGradient>
+  </defs>
+  <rect width="160" height="120" fill="url(#sky)"/>
+  <circle cx="40" cy="82" r="22" fill="#F6C27A" opacity="0.6"/>
+  <path d="M0 104 L28 96 L56 106 L96 98 L130 106 L160 100 L160 120 L0 120 Z" fill="#4A2330"/>
+  <path d="M112 120 L118 78 L132 70 L146 76 L160 72 L160 120 Z" fill="#3A1B26"/>
+  <!-- 翼 -->
+  <path d="M80 58 L22 30 L34 44 L18 52 L40 58 L30 66 L78 66 Z" fill="#3B2A3A"/>
+  <path d="M80 58 L138 30 L126 44 L142 52 L120 58 L130 66 L82 66 Z" fill="#3B2A3A"/>
+  <path d="M80 60 L30 36 M80 60 L130 36" stroke="#8C5A6E" stroke-width="1.5"/>
+  <!-- 胴体 -->
+  <ellipse cx="80" cy="64" rx="9" ry="13" fill="#4B3446"/>
+  <path d="M76 76 L72 90 M84 76 L88 90" stroke="#3B2A3A" stroke-width="3" stroke-linecap="round"/>
+  <!-- 頭・とさか・くちばし -->
+  <path d="M74 50 L64 34 L80 44 Z" fill="#B4471F"/>
+  <ellipse cx="80" cy="48" rx="7" ry="6" fill="#4B3446"/>
+  <path d="M84 47 L108 52 L84 52 Z" fill="#D4AF6A"/>
+  <circle cx="81" cy="46" r="1.6" fill="#F3E3B8"/>
+</svg>

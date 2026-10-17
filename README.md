@@ -61,13 +61,14 @@ AI もプレイヤーと同じ関数を通して行動するので、ルール�
 
 ### 絵を入れるには
 
-画像を `public/images/` に置き、カードの定義に `image` を追加します。
+画像を `public/images/cards/` に置き、`src/logic/cards.ts` のカードの定義の `image` にファイル名を指定します。
+今入っているイラストは SVG で、同じ名前の PNG などに差し替えることもできます。
 
 ```ts
 const monsterCard1: MonsterCard = {
   id: 'm001',
   name: 'ゴブリンアタッカー',
-  image: '/images/goblin.png',
+  image: cardImage('goblin.svg'),
   // ...
 };
 ```
