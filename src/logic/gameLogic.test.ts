@@ -277,6 +277,15 @@ describe('leader ability (マウンテンゴーレム)', () => {
     expect(next.players.player2.field.frontRow[1]).toBeNull(); // ゴーレム以外は倒される
   });
 
+  it('heals golems up to their max HP plus the bonus', () => {
+    let state = withGolemLeader(emptyState(), 'player1');
+    state = withField(state, 'player1', 'frontRow', [{ ...monster('m002-0', { race: 'ゴーレム' }), cardHp: 12 }, null, null]); // ストーンゴーレム（最大HP 13）
+    state = withPlayer(state, 'player1', { hand: [healSpell, healSpell] });
+    const next = unwrap(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 }));
+    expect(getEffectiveHp(next, 'player1', next.players.player1.field.frontRow[0]!)).toBe(14);
+    expect(castSpell(next, 'player1', 0, { row: 'frontRow', index: 0 }).ok).toBe(false); // 満タンなので使えない
+  });
+
   it('is cancelled by 指揮低下 for this turn: golems left at 0 HP are destroyed', () => {
     let state = withGolemLeader(emptyState(), 'player2');
     state = withField(state, 'player2', 'frontRow', [golem('weak', 0), golem('strong', 5), null]);
