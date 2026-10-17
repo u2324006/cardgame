@@ -1,10 +1,9 @@
 import {
   BUILTIN_CARD_SET,
   clearCardSetCache,
-  exportCardSet,
   findBaseCard,
   getCardSet,
-  parseCardSet,
+  mergeById,
   resetCardSet,
   saveCardSet,
 } from './cards';
@@ -30,10 +29,9 @@ describe('card set storage', () => {
     expect(findBaseCard('m001')?.name).toBe('ゴブリンアタッカー');
   });
 
-  it('exports and imports a card set as text', () => {
-    expect(parseCardSet(exportCardSet(BUILTIN_CARD_SET))).toEqual(BUILTIN_CARD_SET);
-    expect(parseCardSet('{"cards": [], "leaders": []}')).toBeNull(); // 大将がいない
-    expect(parseCardSet('not json')).toBeNull();
+  it('merges cards by id, replacing same ids and appending new ones', () => {
+    const merged = mergeById([{ id: 'a', v: 1 }, { id: 'b', v: 1 }], [{ id: 'b', v: 2 }, { id: 'c', v: 2 }]);
+    expect(merged).toEqual([{ id: 'a', v: 1 }, { id: 'b', v: 2 }, { id: 'c', v: 2 }]);
   });
 
   it('ignores broken saved data', () => {

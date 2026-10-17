@@ -1,8 +1,12 @@
 import { Card, LeaderCard, MonsterCard, SpellEffect } from '../types/card';
 import { BUILTIN_LEADER_CARDS, BUILTIN_MONSTER_CARDS, BUILTIN_SPELL_CARDS } from './builtinCards';
+import { CardRecords, isLeaderRecord, isMonsterRecord, isSpellRecord, recordsToCards } from './cardData';
+import monsterRecords from '../data/cards/monsters.json';
+import spellRecords from '../data/cards/spells.json';
+import leaderRecords from '../data/cards/leaders.json';
 
 // 今使っているカードの一覧（カードセット）。
-// 最初から入っているカードに、カード作成画面で変更・追加した内容を反映したもの。
+// 最初から入っているカード（builtinCards.ts と src/data/cards/*.json）に、カード作成画面で変更・追加した内容を反映したもの。
 // 変更はこのブラウザの localStorage に保存する。
 // デッキ作成時には、カードの ID に `-番号` を付けて1枚ごとの個別IDにする（例: 'm001-2'）。
 
@@ -11,9 +15,25 @@ export interface CardSet {
   leaders: LeaderCard[];
 }
 
+// 同じ ID のカードは後のもので置き換え、新しい ID のカードは後ろに足す
+export const mergeById = <T extends { id: string }>(base: T[], extra: T[]): T[] => {
+  const extraById = new Map(extra.map(item => [item.id, item]));
+  const merged = base.map(item => extraById.get(item.id) ?? item);
+  const baseIds = new Set(base.map(item => item.id));
+  return [...merged, ...extra.filter(item => !baseIds.has(item.id))];
+};
+
+// src/data/cards/*.json（カード作成で作ったカードを取り込んだもの）。形が正しくないものは読み込まない
+const dataRecords: CardRecords = {
+  monsters: (monsterRecords as unknown[]).filter(isMonsterRecord),
+  spells: (spellRecords as unknown[]).filter(isSpellRecord),
+  leaders: (leaderRecords as unknown[]).filter(isLeaderRecord),
+};
+const dataCards = recordsToCards(dataRecords);
+
 export const BUILTIN_CARD_SET: CardSet = {
-  cards: [...BUILTIN_MONSTER_CARDS, ...BUILTIN_SPELL_CARDS],
-  leaders: BUILTIN_LEADER_CARDS,
+  cards: mergeById([...BUILTIN_MONSTER_CARDS, ...BUILTIN_SPELL_CARDS], dataCards.cards),
+  leaders: mergeById(BUILTIN_LEADER_CARDS, dataCards.leaders),
 };
 
 const STORAGE_KEY = 'cardgame.cards';
@@ -27,7 +47,9 @@ const isValidId = (id: unknown): id is string => isText(id) && /^[A-Za-z0-9_]+$/
 
 const isSpellEffect = (effect: unknown): effect is SpellEffect => {
   const e = effect as SpellEffect;
-  return !!e && ['buffFa', 'heal', 'damage'].includes(e.kind) && isNumber(e.amount);
+  if (!e) return false;
+  if (e.kind === 'custom') return true;
+  return ['buffFa', 'heal', 'damage'].includes(e.kind) && isNumber(e.amount);
 };
 
 const isCard = (value: unknown): value is Card => {
@@ -99,18 +121,6 @@ export const resetCardSet = (): void => {
 // テスト用：次に読むときに保存データを読み直す
 export const clearCardSetCache = (): void => {
   current = null;
-};
-
-// 他の人に渡したり、プログラムに取り込んだりするための文字列（JSON）
-export const exportCardSet = (set: CardSet = getCardSet()): string => JSON.stringify(set, null, 2);
-
-export const parseCardSet = (text: string): CardSet | null => {
-  try {
-    const parsed = JSON.parse(text);
-    return isCardSet(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
 };
 
 // --- カードを引く ---

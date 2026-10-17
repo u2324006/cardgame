@@ -86,6 +86,8 @@ const findSpellTarget = (state: GameState, player: PlayerId, spell: SpellCard): 
   const { effect } = spell;
   const defender = getOpponent(player);
   switch (effect.kind) {
+    case 'custom':
+      return null; // まだ実装されていない効果は使わない
     case 'buffFa': {
       const defenderFront = monstersOnField(state, defender, ['frontRow']).map(({ card }) => card);
       const target = monstersOnField(state, player, ['frontRow']).find(({ card }) => {

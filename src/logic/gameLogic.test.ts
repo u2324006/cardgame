@@ -202,3 +202,12 @@ describe('first turn', () => {
     expect(attack(inPhase(state, 'Attack'), 'player1', { row: 'frontRow', index: 0 }, { type: 'player' }).ok).toBe(true);
   });
 });
+
+describe('unimplemented spells', () => {
+  it('cannot be cast and the AI does not try', () => {
+    const custom = { ...spell, id: 'cx-0', effect: { kind: 'custom' as const }, target: 'enemyMonster' as const };
+    let state = withField(emptyState(), 'player2', 'frontRow', [monster('a', { cardHp: 1 }), null, null]);
+    state = withPlayer(state, 'player1', { hand: [custom] });
+    expect(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 })).toEqual({ ok: false, error: 'このスペルの効果はまだ実装されていません。' });
+  });
+});

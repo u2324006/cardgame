@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { LeaderCard as LeaderCardType, MonsterCard } from '../types/card';
-import { CardSet, getCardSet, resetCardSet, saveCardSet } from '../logic/cards';
+import { LeaderCard as LeaderCardType, MonsterCard, SpellCard } from '../types/card';
+import { CardSet, getCardSet, mergeById, resetCardSet, saveCardSet } from '../logic/cards';
+import { CardRecords, recordsToCards } from '../logic/cardData';
 import {
   Draft,
   EditorKind,
@@ -11,6 +12,9 @@ import {
   draftFromLeader,
   duplicateDraft,
   finalizeDraft,
+  getImplementationStatus,
+  summarizeEffect,
+  LIMITS,
   findBuiltin,
   getBalance,
   getCardStatus,
@@ -59,12 +63,15 @@ const PreviewCard: React.FC<{ draft: Draft }> = ({ draft }) => {
     const leader: LeaderCardType = { ...draft.card, name: draft.card.name || 'カード名', maxHp: safe(draft.card.maxHp) };
     return <LeaderCard leader={leader} hp={leader.maxHp} />;
   }
-  const base = { ...draft.card, name: draft.card.name || 'カード名', cost: safe(draft.card.cost) };
+  const name = draft.card.name || 'カード名';
+  const cost = safe(draft.card.cost);
   if (draft.kind === 'Monster') {
-    const card = base as MonsterCard;
-    return <Card card={{ ...card, frontAttack: safe(card.frontAttack), backAttack: safe(card.backAttack), cardHp: safe(card.cardHp) }} />;
+    const { frontAttack, backAttack, cardHp } = draft.card;
+    const card: MonsterCard = { ...draft.card, name, cost, frontAttack: safe(frontAttack), backAttack: safe(backAttack), cardHp: safe(cardHp) };
+    return <Card card={card} />;
   }
-  return <Card card={{ ...draft.card, ...base }} />;
+  const spell: SpellCard = { ...draft.card, name, cost, summary: summarizeEffect(draft.card.effect) };
+  return <Card card={spell} />;
 };
 
 interface CardEditorScreenProps {
@@ -86,7 +93,13 @@ const CardEditorScreen: React.FC<CardEditorScreenProps> = ({ onBack }) => {
   const isDirty = !sameDraft(draft, baseline);
   const errors = validateDraft(draft);
   const builtin = findBuiltin(draft.card.id);
-  const isModifiedBuiltin = !!builtin && JSON.stringify(builtin) !== JSON.stringify(draft.card);
+  const builtinDraft = builtin ? (isMonsterOrSpell(builtin) ? draftFromCard(builtin) : draftFromLeader(builtin)) : null;
+  const isModifiedBuiltin = !!builtinDraft && !sameDraft(builtinDraft, draft);
+  // 前に保存したときの内容（効果の実装状況を引き継ぐのに使う）
+  const storedCard = [...cardSet.cards, ...cardSet.leaders].find(c => c.id === draft.card.id);
+  const implementation = getImplementationStatus(draft, storedCard);
+  const updateNotes = (changes: { illustrationPrompt?: string; memo?: string }) =>
+    setDraft({ ...draft, card: { ...draft.card, ...changes } } as Draft);
   const listed = allDrafts(cardSet).filter(d => filter === 'all' || d.kind === filter);
   const balance = draft.kind === 'Monster' && errors.length === 0 ? getBalance(draft.card, cardSet) : null;
 
@@ -114,7 +127,7 @@ const CardEditorScreen: React.FC<CardEditorScreenProps> = ({ onBack }) => {
 
   const handleSave = () => {
     if (errors.length > 0) return;
-    const finalized = finalizeDraft(draft);
+    const finalized = finalizeDraft(draft, storedCard);
     open(finalized);
     applySet(upsertDraft(cardSet, finalized), `「${finalized.card.name}」を保存しました。デッキ作成と対戦にすぐ反映されます。`);
   };
@@ -203,7 +216,9 @@ const CardEditorScreen: React.FC<CardEditorScreenProps> = ({ onBack }) => {
               </li>
             )}
             {listed.map(item => {
-              const status = getCardStatus(item.card);
+              // 状態は保存されているカードで判定する（編集用の形には空の項目が足されているため）
+              const stored = [...cardSet.cards, ...cardSet.leaders].find(c => c.id === item.card.id) ?? item.card;
+              const status = getCardStatus(stored);
               const itemBalance = item.kind === 'Monster' ? getBalance(item.card, cardSet) : null;
               const selected = !isNew && item.card.id === draft.card.id;
               return (
@@ -219,6 +234,7 @@ const CardEditorScreen: React.FC<CardEditorScreenProps> = ({ onBack }) => {
                     {itemBalance && (itemBalance.label === '強め' || itemBalance.label === '弱め') && (
                       <span className={`editor-tag ${itemBalance.label === '強め' ? 'strong' : 'weak'}`}>{itemBalance.label}</span>
                     )}
+                    {item.card.implementation === '未実装' && <span className="editor-tag pending">未実装</span>}
                     {STATUS_LABELS[status] && <span className={`editor-tag ${status}`}>{STATUS_LABELS[status]}</span>}
                   </button>
                 </li>
@@ -282,6 +298,36 @@ const CardEditorScreen: React.FC<CardEditorScreenProps> = ({ onBack }) => {
           )}
 
           <section className="editor-section">
+            <h3 className="editor-section-title">AI に渡す情報</h3>
+            <label className="editor-field">
+              <span>イラストのイメージ</span>
+              <textarea
+                value={draft.card.illustrationPrompt ?? ''}
+                maxLength={LIMITS.illustrationPromptLength}
+                placeholder="例：夕焼けの火山を背に、赤い竜が翼を広げて炎を吐いている"
+                onChange={e => updateNotes({ illustrationPrompt: e.target.value })}
+              />
+            </label>
+            <label className="editor-field">
+              <span>メモ</span>
+              <textarea
+                className="short"
+                value={draft.card.memo ?? ''}
+                maxLength={LIMITS.memoLength}
+                placeholder="調整の予定など自由に"
+                onChange={e => updateNotes({ memo: e.target.value })}
+              />
+            </label>
+            <div className="implementation-row">
+              <span>効果の実装</span>
+              <span className={`editor-tag ${implementation === '未実装' ? 'pending' : implementation === '実装済み' ? 'done' : 'neutral'}`}>{implementation}</span>
+            </div>
+            {implementation === '未実装' && (
+              <p className="step-hint">「効果」の文章は、AI に実装してもらうまで対戦では働きません。</p>
+            )}
+          </section>
+
+          <section className="editor-section">
             <h3 className="editor-section-title">対戦での見た目</h3>
             <div className="editor-preview"><PreviewCard draft={draft} /></div>
           </section>
@@ -298,11 +344,11 @@ const CardEditorScreen: React.FC<CardEditorScreenProps> = ({ onBack }) => {
             {isDirty && !isNew && (
               <button type="button" className="secondary-button" onClick={() => open(baseline)}>変更を取り消す</button>
             )}
-            {isModifiedBuiltin && builtin && (
+            {isModifiedBuiltin && (
               <button
                 type="button"
                 className="secondary-button"
-                onClick={() => setDraft(isMonsterOrSpell(builtin) ? draftFromCard(builtin) : draftFromLeader(builtin))}
+                onClick={() => builtinDraft && setDraft(builtinDraft)}
               >
                 最初の内容に戻す
               </button>
@@ -335,9 +381,11 @@ const CardEditorScreen: React.FC<CardEditorScreenProps> = ({ onBack }) => {
       {isTransferring && (
         <CardSetTransferDialog
           cardSet={cardSet}
-          onImport={set => {
+          onImport={(records: CardRecords) => {
+            const imported = recordsToCards(records);
+            const set = { cards: mergeById(cardSet.cards, imported.cards), leaders: mergeById(cardSet.leaders, imported.leaders) };
             open(allDrafts(set)[0]);
-            applySet(set, 'カードを読み込みました。');
+            applySet(set, `${imported.cards.length + imported.leaders.length}枚のカードを取り込みました。`);
             setIsTransferring(false);
           }}
           onClose={() => setIsTransferring(false)}

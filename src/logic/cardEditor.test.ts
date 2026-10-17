@@ -7,8 +7,10 @@ import {
   deleteFromSet,
   describeEffect,
   duplicateDraft,
+  draftFromCard,
   finalizeDraft,
   getBalance,
+  getImplementationStatus,
   getCardStatus,
   hasEnoughKinds,
   upsertDraft,
@@ -90,5 +92,34 @@ describe('card editor', () => {
   it('warns when there are not enough kinds of cards for a 40-card deck', () => {
     expect(hasEnoughKinds(BUILTIN_CARD_SET)).toBe(true);
     expect(hasEnoughKinds({ ...BUILTIN_CARD_SET, cards: BUILTIN_CARD_SET.cards.slice(0, 13) })).toBe(false);
+  });
+
+  it('requires an effect text for a spell whose effect does not exist yet', () => {
+    const spell = createBlankDraft('Spell');
+    if (spell.kind !== 'Spell') throw new Error('spell expected');
+    const custom: Draft = { kind: 'Spell', card: { ...spell.card, name: '時止め', effect: { kind: 'custom' }, effectText: '' } };
+    expect(validateDraft(custom)).toEqual(['まだない効果のスペルは、効果を文章で書いてください。']);
+  });
+
+  it('tracks whether the written effect has been implemented', () => {
+    const plain = blankMonster({ name: 'A' });
+    expect(getImplementationStatus(plain)).toBe('効果なし');
+    const withEffect = blankMonster({ name: 'A', effectText: '召喚時に1枚引く。' });
+    expect(getImplementationStatus(withEffect)).toBe('未実装');
+    const implemented = { ...withEffect.card, implementation: '実装済み' as const };
+    expect(getImplementationStatus(withEffect, implemented)).toBe('実装済み');
+    const changed = blankMonster({ name: 'A', effectText: '召喚時に2枚引く。' });
+    expect(getImplementationStatus(changed, implemented)).toBe('未実装');
+  });
+
+  it('builds the card text from the effect and flavor text when saving', () => {
+    const saved = finalizeDraft(blankMonster({ name: '剣士', effectText: ' 召喚時に1ダメージ。 ', flavorText: '勇敢な剣士。' }));
+    expect(saved.card).toMatchObject({ description: '召喚時に1ダメージ。 勇敢な剣士。', effectText: '召喚時に1ダメージ。', implementation: '未実装' });
+  });
+
+  it('opens built-in cards with their text in the right field', () => {
+    expect(draftFromCard(dragon).card).toMatchObject({ flavorText: dragon.description, effectText: '' });
+    const fire = BUILTIN_CARD_SET.cards.find(c => c.id === 's003')!;
+    expect(draftFromCard(fire).card).toMatchObject({ effectText: fire.description, flavorText: '' });
   });
 });

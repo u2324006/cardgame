@@ -1,5 +1,16 @@
-import { Card, LeaderCard, MonsterCard, SpellCard, SpellEffect, isMonster } from '../types/card';
+import {
+  Card,
+  ImplementationStatus,
+  LeaderCard,
+  MonsterCard,
+  SpellCard,
+  SpellEffect,
+  SpellTarget,
+  isImplementedEffect,
+  isMonster,
+} from '../types/card';
 import { BUILTIN_CARD_SET, CardSet, createCardId } from './cards';
+import { describeEffect, summarizeEffect } from './spellEffects';
 import { RULES } from './rules';
 
 // カード作成画面で使う、カードの作成・チェック・強さの目安などの処理
@@ -14,7 +25,10 @@ export type Draft =
 export const LIMITS = {
   nameLength: 20,
   raceLength: 10,
-  descriptionLength: 80,
+  effectTextLength: 120,
+  flavorTextLength: 60,
+  illustrationPromptLength: 300,
+  memoLength: 300,
   cost: { min: 0, max: 10 },
   attack: { min: 0, max: 20 },
   hp: { min: 1, max: 99 },
@@ -25,60 +39,78 @@ export const EFFECT_OPTIONS: { kind: SpellEffect['kind']; label: string }[] = [
   { kind: 'damage', label: '相手のモンスターにダメージ' },
   { kind: 'heal', label: '味方のモンスターを回復' },
   { kind: 'buffFa', label: '味方のモンスターの FA を上げる' },
+  { kind: 'custom', label: 'まだない効果' },
 ];
 
-// 効果の説明文（カードに表示し、対戦でもこのとおりに動く）
-export const describeEffect = (effect: SpellEffect): string => {
-  switch (effect.kind) {
-    case 'damage': return `相手のモンスター1体に${effect.amount}ダメージを与える。`;
-    case 'heal': return `味方モンスター1体のHPを${effect.amount}回復する（最大HPまで）。`;
-    case 'buffFa': return `味方モンスター1体のFAを、ターン終了まで${effect.amount}上げる。`;
-  }
-};
+export const TARGET_OPTIONS: { target: SpellTarget; label: string }[] = [
+  { target: 'enemyMonster', label: '相手のモンスター' },
+  { target: 'allyMonster', label: '味方のモンスター' },
+  { target: 'anyMonster', label: 'どちらかのモンスター' },
+  { target: 'enemyLeader', label: '相手の大将' },
+  { target: 'allyLeader', label: '自分の大将' },
+  { target: 'none', label: '対象なし' },
+];
 
-// 手札の小さいカードに出す効果の要約
-export const summarizeEffect = (effect: SpellEffect): string => {
-  switch (effect.kind) {
-    case 'damage': return `${effect.amount}ダメージ`;
-    case 'heal': return `HP +${effect.amount}`;
-    case 'buffFa': return `FA +${effect.amount}`;
+export { describeEffect, summarizeEffect };
+
+// 実装済みの効果の対象（まだない効果は card.target を使う）
+export const getSpellTarget = (spell: SpellCard): SpellTarget => {
+  switch (spell.effect.kind) {
+    case 'damage': return 'enemyMonster';
+    case 'heal':
+    case 'buffFa': return 'allyMonster';
+    case 'custom': return spell.target ?? 'none';
   }
 };
 
 // --- 白紙のカード ---
+
+const blankNotes = { effectText: '', flavorText: '', illustrationPrompt: '', memo: '' };
 
 export const createBlankDraft = (kind: EditorKind): Draft => {
   switch (kind) {
     case 'Monster':
       return {
         kind,
-        card: { id: createCardId('c'), type: 'Monster', name: '', race: '', description: '', cost: 1, frontAttack: 0, backAttack: 0, cardHp: 1 },
+        card: { id: createCardId('c'), type: 'Monster', name: '', race: '', description: '', cost: 1, frontAttack: 0, backAttack: 0, cardHp: 1, ...blankNotes },
       };
     case 'Spell': {
       const effect: SpellEffect = { kind: 'damage', amount: 1 };
       return {
         kind,
-        card: { id: createCardId('c'), type: 'Spell', name: '', race: 'スペル', description: describeEffect(effect), cost: 1, effect, summary: summarizeEffect(effect) },
+        card: {
+          id: createCardId('c'), type: 'Spell', name: '', race: 'スペル', description: '', cost: 1, effect,
+          ...blankNotes, effectText: describeEffect(effect),
+        },
       };
     }
     case 'Leader':
-      return { kind, card: { id: createCardId('l'), name: '', description: '', maxHp: 20 } };
+      return { kind, card: { id: createCardId('l'), name: '', description: '', maxHp: 20, ...blankNotes } };
   }
 };
 
-// モンスターとスペルを切り替える（名前・コスト・説明・絵は引き継ぐ）
-export const changeCardType = (draft: Draft, kind: 'Monster' | 'Spell'): Draft => {
-  if (draft.kind === kind || draft.kind === 'Leader') return draft;
-  const { id, name, cost, image } = draft.card;
-  const blank = createBlankDraft(kind);
-  if (blank.kind === 'Leader') return blank;
-  return { ...blank, card: { ...blank.card, id, name, cost, image } } as Draft;
+// 最初から入っているカードなど、効果の文章・雰囲気の文がまだないカードを編集できる形にする
+// （スペルは効果の説明を「効果」に、それ以外は今の説明文を「雰囲気の文」に入れる）
+const withNotes = <T extends Card | LeaderCard>(card: T, isSpell: boolean): T => {
+  if (card.effectText !== undefined || card.flavorText !== undefined) return { ...blankNotes, ...card };
+  return isSpell
+    ? { ...blankNotes, ...card, effectText: card.description }
+    : { ...blankNotes, ...card, flavorText: card.description };
 };
 
 export const draftFromCard = (card: Card): Draft =>
-  isMonster(card) ? { kind: 'Monster', card } : { kind: 'Spell', card };
+  isMonster(card) ? { kind: 'Monster', card: withNotes(card, false) } : { kind: 'Spell', card: withNotes(card, true) };
 
-export const draftFromLeader = (card: LeaderCard): Draft => ({ kind: 'Leader', card });
+export const draftFromLeader = (card: LeaderCard): Draft => ({ kind: 'Leader', card: withNotes(card, false) });
+
+// モンスターとスペルを切り替える（名前・コスト・絵・AI に渡す情報は引き継ぐ）
+export const changeCardType = (draft: Draft, kind: 'Monster' | 'Spell'): Draft => {
+  if (draft.kind === kind || draft.kind === 'Leader') return draft;
+  const { id, name, cost, image, flavorText, illustrationPrompt, memo } = draft.card;
+  const blank = createBlankDraft(kind);
+  if (blank.kind === 'Leader') return blank;
+  return { ...blank, card: { ...blank.card, id, name, cost, image, flavorText, illustrationPrompt, memo } } as Draft;
+};
 
 // --- チェック ---
 
@@ -91,7 +123,12 @@ export const validateDraft = (draft: Draft): string[] => {
   const name = card.name.trim();
   if (!name) errors.push('カード名を入力してください。');
   if (name.length > LIMITS.nameLength) errors.push(`カード名は${LIMITS.nameLength}文字以内にしてください。`);
-  if (card.description.length > LIMITS.descriptionLength) errors.push(`説明は${LIMITS.descriptionLength}文字以内にしてください。`);
+  if ((card.effectText ?? '').length > LIMITS.effectTextLength) errors.push(`効果は${LIMITS.effectTextLength}文字以内にしてください。`);
+  if ((card.flavorText ?? '').length > LIMITS.flavorTextLength) errors.push(`雰囲気の文は${LIMITS.flavorTextLength}文字以内にしてください。`);
+  if ((card.illustrationPrompt ?? '').length > LIMITS.illustrationPromptLength) {
+    errors.push(`イラストのイメージは${LIMITS.illustrationPromptLength}文字以内にしてください。`);
+  }
+  if ((card.memo ?? '').length > LIMITS.memoLength) errors.push(`メモは${LIMITS.memoLength}文字以内にしてください。`);
 
   if (draft.kind === 'Leader') {
     if (!inRange(draft.card.maxHp, LIMITS.hp)) errors.push(`HPは${LIMITS.hp.min}〜${LIMITS.hp.max}の整数にしてください。`);
@@ -106,18 +143,51 @@ export const validateDraft = (draft: Draft): string[] => {
     if (!inRange(frontAttack, LIMITS.attack)) errors.push(`FAは${LIMITS.attack.min}〜${LIMITS.attack.max}の整数にしてください。`);
     if (!inRange(backAttack, LIMITS.attack)) errors.push(`BAは${LIMITS.attack.min}〜${LIMITS.attack.max}の整数にしてください。`);
     if (!inRange(cardHp, LIMITS.hp)) errors.push(`HPは${LIMITS.hp.min}〜${LIMITS.hp.max}の整数にしてください。`);
-  } else if (!inRange(draft.card.effect.amount, LIMITS.effectAmount)) {
-    errors.push(`効果の数値は${LIMITS.effectAmount.min}〜${LIMITS.effectAmount.max}の整数にしてください。`);
+  } else if (isImplementedEffect(draft.card.effect)) {
+    if (!inRange(draft.card.effect.amount, LIMITS.effectAmount)) {
+      errors.push(`効果の数値は${LIMITS.effectAmount.min}〜${LIMITS.effectAmount.max}の整数にしてください。`);
+    }
+  } else if (!(draft.card.effectText ?? '').trim()) {
+    errors.push('まだない効果のスペルは、効果を文章で書いてください。');
   }
   return errors;
 };
 
-// 保存する形に整える（名前の前後の空白を取り、スペルの要約を効果から作り直す）
-export const finalizeDraft = (draft: Draft): Draft => {
+// --- 保存する形に整える ---
+
+// 効果の実装状況：実装済みの効果のスペルは「実装済み」、効果の文章がなければ「効果なし」、
+// それ以外は、前に保存したときと効果の文章が同じなら前の状態を引き継ぎ、変わっていれば「未実装」
+export const getImplementationStatus = (draft: Draft, previous?: Card | LeaderCard): ImplementationStatus => {
+  if (draft.kind === 'Spell' && isImplementedEffect(draft.card.effect)) return '実装済み';
+  const effectText = (draft.card.effectText ?? '').trim();
+  if (!effectText) return '効果なし';
+  if (previous?.implementation && (previous.effectText ?? '').trim() === effectText) return previous.implementation;
+  return '未実装';
+};
+
+// カードに表示する説明文：効果の文章と雰囲気の文をつなげる
+export const composeDescription = (effectText = '', flavorText = ''): string =>
+  [effectText.trim(), flavorText.trim()].filter(Boolean).join(' ');
+
+export const finalizeDraft = (draft: Draft, previous?: Card | LeaderCard): Draft => {
+  const implementation = getImplementationStatus(draft, previous);
+  const common = {
+    name: draft.card.name.trim(),
+    effectText: (draft.card.effectText ?? '').trim(),
+    flavorText: (draft.card.flavorText ?? '').trim(),
+    illustrationPrompt: (draft.card.illustrationPrompt ?? '').trim(),
+    memo: (draft.card.memo ?? '').trim(),
+    implementation,
+  };
+  const description = composeDescription(common.effectText, common.flavorText);
   if (draft.kind === 'Spell') {
-    return { ...draft, card: { ...draft.card, name: draft.card.name.trim(), summary: summarizeEffect(draft.card.effect) } };
+    const { effect } = draft.card;
+    const card: SpellCard = { ...draft.card, ...common, description, summary: summarizeEffect(effect) };
+    if (isImplementedEffect(effect)) delete card.target;
+    else card.target = draft.card.target ?? 'none';
+    return { kind: 'Spell', card };
   }
-  return { ...draft, card: { ...draft.card, name: draft.card.name.trim() } } as Draft;
+  return { ...draft, card: { ...draft.card, ...common, description } } as Draft;
 };
 
 // --- カードセットの更新 ---

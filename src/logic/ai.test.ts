@@ -74,6 +74,15 @@ describe('AI spells', () => {
   });
 });
 
+describe('AI with unimplemented spells', () => {
+  it('keeps them in hand', () => {
+    const custom = { ...spell, id: 'cx-0', effect: { kind: 'custom' as const }, target: 'enemyMonster' as const };
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 5, hand: [custom] });
+    state = withField(state, 'player1', 'frontRow', [monster('a', { cardHp: 1 }), null, null]);
+    expect(runAiPlayPhase(state, 'player2').players.player2.hand).toHaveLength(1);
+  });
+});
+
 describe('AI attack phase', () => {
   it('kills the most valuable monster it can and chips the rest', () => {
     let state = withField(aiTurn(emptyState(), 'Attack'), 'player2', 'frontRow', [monster('x', { frontAttack: 5 }), monster('y', { frontAttack: 2 }), null]);

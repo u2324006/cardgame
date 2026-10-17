@@ -205,6 +205,7 @@ export const castSpell = (
   const playerState = state.players[player];
   const spell = playerState.hand[handIndex];
   if (!spell || isMonster(spell)) return failure('スペルカードが選択されていません。');
+  if (spell.effect.kind === 'custom') return failure('このスペルの効果はまだ実装されていません。');
   const targetSide = getSpellTargetSide(spell);
   const targetPlayer = targetSide === 'ally' ? player : getOpponent(player);
   const target = getCardAt(state, targetPlayer, targetPosition);

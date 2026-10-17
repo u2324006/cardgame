@@ -1,6 +1,6 @@
 import React from 'react';
-import { SpellEffect } from '../types/card';
-import { Draft, EFFECT_OPTIONS, LIMITS, describeEffect } from '../logic/cardEditor';
+import { SpellEffect, SpellTarget, isImplementedEffect } from '../types/card';
+import { Draft, EFFECT_OPTIONS, LIMITS, TARGET_OPTIONS, describeEffect } from '../logic/cardEditor';
 import '../styles/CardEditor.css';
 
 interface EditableCardProps {
@@ -17,12 +17,12 @@ interface NumberFieldProps {
   value: number;
   onChange: (value: number) => void;
   label: string;
-  className: string;
+  className?: string;
   min: number;
   max: number;
 }
 
-const NumberField: React.FC<NumberFieldProps> = ({ value, onChange, label, className, min, max }) => (
+const NumberField: React.FC<NumberFieldProps> = ({ value, onChange, label, className = '', min, max }) => (
   <input
     type="number"
     inputMode="numeric"
@@ -37,25 +37,30 @@ const NumberField: React.FC<NumberFieldProps> = ({ value, onChange, label, class
   />
 );
 
+// 効果の種類を変えたときの新しい効果（数値は前の値を引き継ぐ）
+const switchEffect = (current: SpellEffect, kind: SpellEffect['kind']): SpellEffect => {
+  if (kind === 'custom') return { kind };
+  const amount = isImplementedEffect(current) ? current.amount : 1;
+  return { kind, amount };
+};
+
 // カードの見た目のまま、文字や数値を直接書き込める白紙のカード
 const EditableCard: React.FC<EditableCardProps> = ({ draft, onChange, onPickImage }) => {
   const { card } = draft;
   const update = (changes: Record<string, unknown>) => onChange({ ...draft, card: { ...card, ...changes } } as Draft);
 
-  // 効果を変えたとき、説明文が自動の文のままなら一緒に書き換える
+  // 実装済みの効果を選んだときは、効果の文章を自動で書く。まだない効果に変えたときは、自動の文章を消して書いてもらう
   const updateEffect = (effect: SpellEffect) => {
     if (draft.kind !== 'Spell') return;
-    const { effect: before, description: current } = draft.card;
-    const wasAutoText = current === '' || (Number.isFinite(before.amount) && current === describeEffect(before));
-    const description = wasAutoText && Number.isFinite(effect.amount) ? describeEffect(effect) : current;
-    onChange({ ...draft, card: { ...draft.card, effect, description } });
+    const wasAuto = isImplementedEffect(draft.card.effect);
+    const effectText = isImplementedEffect(effect)
+      ? (Number.isFinite(effect.amount) ? describeEffect(effect) : draft.card.effectText)
+      : (wasAuto ? '' : draft.card.effectText);
+    const target = isImplementedEffect(effect) ? undefined : draft.card.target ?? 'enemyMonster';
+    onChange({ ...draft, card: { ...draft.card, effect, effectText, target } });
   };
 
-  const art = (
-    <button type="button" className="edit-art" onClick={onPickImage} aria-label="イラストを選ぶ">
-      {card.image ? <img src={card.image} alt="" /> : <span className="edit-art-placeholder">クリックしてイラストを選ぶ</span>}
-    </button>
-  );
+  const isAutoEffectText = draft.kind === 'Spell' && isImplementedEffect(draft.card.effect);
 
   return (
     <div className={`edit-card ${draft.kind.toLowerCase()}`}>
@@ -78,49 +83,61 @@ const EditableCard: React.FC<EditableCardProps> = ({ draft, onChange, onPickImag
       </div>
 
       <div className="edit-art-area">
-        {art}
+        <button type="button" className="edit-art" onClick={onPickImage} aria-label="イラストを選ぶ">
+          {card.image ? <img src={card.image} alt="" /> : <span className="edit-art-placeholder">クリックしてイラストを選ぶ</span>}
+        </button>
         {draft.kind === 'Monster' && (
           <label className="edit-hp">
             HP
-            <NumberField value={draft.card.cardHp} onChange={cardHp => update({ cardHp })} label="HP" className="" min={LIMITS.hp.min} max={LIMITS.hp.max} />
+            <NumberField value={draft.card.cardHp} onChange={cardHp => update({ cardHp })} label="HP" min={LIMITS.hp.min} max={LIMITS.hp.max} />
           </label>
         )}
         {draft.kind === 'Leader' && (
           <label className="edit-hp">
             HP
-            <NumberField value={draft.card.maxHp} onChange={maxHp => update({ maxHp })} label="大将のHP" className="" min={LIMITS.hp.min} max={LIMITS.hp.max} />
+            <NumberField value={draft.card.maxHp} onChange={maxHp => update({ maxHp })} label="大将のHP" min={LIMITS.hp.min} max={LIMITS.hp.max} />
           </label>
         )}
-        {draft.kind !== 'Leader' && (
-          <input
-            className="edit-race"
-            aria-label="種族"
-            placeholder="種族"
-            maxLength={LIMITS.raceLength}
-            value={draft.card.race ?? ''}
-            onChange={e => update({ race: e.target.value })}
-          />
-        )}
+        <input
+          className="edit-race"
+          aria-label="種族"
+          placeholder="種族"
+          maxLength={LIMITS.raceLength}
+          value={draft.card.race ?? ''}
+          onChange={e => update({ race: e.target.value })}
+        />
       </div>
 
-      <textarea
-        className="edit-description"
-        aria-label="説明"
-        placeholder={draft.kind === 'Leader' ? '大将の効果（今は表示のみ）' : '説明やフレーバーテキスト'}
-        maxLength={LIMITS.descriptionLength}
-        value={card.description}
-        onChange={e => update({ description: e.target.value })}
-      />
+      <div className="edit-texts">
+        <textarea
+          className="edit-effect-text"
+          aria-label="効果"
+          placeholder={draft.kind === 'Spell' ? '効果を文章で書く' : '効果を文章で書く（なければ空のまま）'}
+          maxLength={LIMITS.effectTextLength}
+          value={card.effectText ?? ''}
+          readOnly={isAutoEffectText}
+          title={isAutoEffectText ? '実装済みの効果は、種類と数値から自動で書かれます' : undefined}
+          onChange={e => update({ effectText: e.target.value })}
+        />
+        <textarea
+          className="edit-flavor-text"
+          aria-label="雰囲気の文"
+          placeholder="雰囲気の文（ルールには関係しない）"
+          maxLength={LIMITS.flavorTextLength}
+          value={card.flavorText ?? ''}
+          onChange={e => update({ flavorText: e.target.value })}
+        />
+      </div>
 
       {draft.kind === 'Monster' && (
         <div className="edit-stats">
           <label className="edit-stat fa">
             FA
-            <NumberField value={draft.card.frontAttack} onChange={frontAttack => update({ frontAttack })} label="FA（前衛での攻撃力）" className="" min={LIMITS.attack.min} max={LIMITS.attack.max} />
+            <NumberField value={draft.card.frontAttack} onChange={frontAttack => update({ frontAttack })} label="FA（前衛での攻撃力）" min={LIMITS.attack.min} max={LIMITS.attack.max} />
           </label>
           <label className="edit-stat ba">
             BA
-            <NumberField value={draft.card.backAttack} onChange={backAttack => update({ backAttack })} label="BA（後衛での攻撃力）" className="" min={LIMITS.attack.min} max={LIMITS.attack.max} />
+            <NumberField value={draft.card.backAttack} onChange={backAttack => update({ backAttack })} label="BA（後衛での攻撃力）" min={LIMITS.attack.min} max={LIMITS.attack.max} />
           </label>
         </div>
       )}
@@ -130,18 +147,29 @@ const EditableCard: React.FC<EditableCardProps> = ({ draft, onChange, onPickImag
           <select
             aria-label="効果の種類"
             value={draft.card.effect.kind}
-            onChange={e => updateEffect({ ...draft.card.effect, kind: e.target.value as SpellEffect['kind'] })}
+            onChange={e => updateEffect(switchEffect(draft.card.effect, e.target.value as SpellEffect['kind']))}
           >
             {EFFECT_OPTIONS.map(option => <option key={option.kind} value={option.kind}>{option.label}</option>)}
           </select>
-          <NumberField
-            value={draft.card.effect.amount}
-            onChange={amount => updateEffect({ ...draft.card.effect, amount })}
-            label="効果の数値"
-            className="edit-effect-amount"
-            min={LIMITS.effectAmount.min}
-            max={LIMITS.effectAmount.max}
-          />
+          {isImplementedEffect(draft.card.effect) ? (
+            <NumberField
+              value={draft.card.effect.amount}
+              onChange={amount => updateEffect({ ...(draft.card.effect as Exclude<SpellEffect, { kind: 'custom' }>), amount })}
+              label="効果の数値"
+              className="edit-effect-amount"
+              min={LIMITS.effectAmount.min}
+              max={LIMITS.effectAmount.max}
+            />
+          ) : (
+            <select
+              aria-label="効果の対象"
+              className="edit-effect-target"
+              value={draft.card.target ?? 'none'}
+              onChange={e => update({ target: e.target.value as SpellTarget })}
+            >
+              {TARGET_OPTIONS.map(option => <option key={option.target} value={option.target}>{option.label}</option>)}
+            </select>
+          )}
         </div>
       )}
     </div>
