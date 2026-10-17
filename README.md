@@ -58,3 +58,18 @@ AI もプレイヤーと同じ関数を通して行動するので、ルール�
 
 `src/logic/cards.ts` にカードを定義し、`BASE_CARDS` に加えます。
 デッキは `BASE_CARDS` を順番に複製して 40 枚にし、シャッフルして作られます。
+
+### 絵を入れるには
+
+画像を `public/images/` に置き、カードの定義に `image` を追加します。
+
+```ts
+const monsterCard1: MonsterCard = {
+  id: 'm001',
+  name: 'ゴブリンアタッカー',
+  image: '/images/goblin.png',
+  // ...
+};
+```
+
+大将カードは `src/logic/cards.ts` の `DEFAULT_LEADER` で、名前・説明・最大HP・`image` を設定できます。
