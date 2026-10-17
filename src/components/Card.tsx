@@ -13,7 +13,7 @@ const Card: React.FC<CardProps> = ({ card, onClick, isSelected }) => {
     <div className={`card ${card.type.toLowerCase()} ${isSelected ? 'selected' : ''}`} onClick={onClick}>
       {/* Top section: HP, Race, Cost */}
       <div className="card-top-section">
-        <div className="card-hp">HP: {card.cardHp}</div>
+        <div className="card-hp">{card.cardHp !== undefined ? `HP: ${card.cardHp}` : ''}</div>
         <div className="card-race">{card.race}</div>
         <div className="card-cost-circle">
           <div className="card-cost-value">{card.cost}</div>

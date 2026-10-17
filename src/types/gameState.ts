@@ -1,5 +1,14 @@
 import { Card } from './card';
 
+export type PlayerId = 'player1' | 'player2';
+export type Row = 'frontRow' | 'backRow';
+export type Phase = 'Draw' | 'Play' | 'Attack' | 'EndTurnPhase';
+
+export interface FieldPosition {
+  row: Row;
+  index: number;
+}
+
 export interface PlayerState {
   hp: number;
   specialCardHp: number;
@@ -8,18 +17,26 @@ export interface PlayerState {
   deck: Card[];
   hand: Card[];
   graveyard: Card[];
-  field: {
-    frontRow: (Card | null)[];
-    backRow: (Card | null)[];
-  };
+  field: Record<Row, (Card | null)[]>;
+}
+
+// ターン終了時にリセットされる状態
+export interface TurnState {
+  attackedMonsterIds: string[];
+  summonedThisTurnIds: string[];
+  hasMoved: boolean;
+  attackBuffs: Record<string, number>; // { [cardId]: FA上昇値 }
 }
 
 export interface GameState {
-  players: {
-    player1: PlayerState;
-    player2: PlayerState;
-  };
-  currentPlayer: 'player1' | 'player2';
+  players: Record<PlayerId, PlayerState>;
+  currentPlayer: PlayerId;
   turn: number;
-  phase: 'Draw' | 'Play' | 'Attack' | 'EndTurnPhase';
+  phase: Phase;
+  turnState: TurnState;
+  winner: PlayerId | null;
 }
+
+export type AttackTarget =
+  | { type: 'monster'; position: FieldPosition }
+  | { type: 'player' };

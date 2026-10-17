@@ -1,4 +1,4 @@
-import { GameState, PlayerState } from '../types/gameState';
+import { GameState, PlayerState, TurnState } from '../types/gameState';
 import { Card } from '../types/card';
 
 // --- Sample Cards ---
@@ -75,7 +75,7 @@ const monsterCard6: Card = {
 };
 
 const monsterCard7: Card = {
-  id: 'm002',
+  id: 'm007',
   name: 'baran',
   type: 'Monster',
   description: 'A creature made of living rock.',
@@ -147,16 +147,24 @@ const createInitialPlayerState = (fullDeck: Card[]): PlayerState => {
 
 // --- Create Decks ---
 const baseCards = [monsterCard1, monsterCard2, monsterCard3, monsterCard4, monsterCard5, monsterCard6, monsterCard7, attackSpell]; // Cards to duplicate
-const fullDeck1 = createDeck(baseCards);
-const fullDeck2 = createDeck(baseCards);
+
+export const createInitialTurnState = (): TurnState => ({
+  attackedMonsterIds: [],
+  summonedThisTurnIds: [],
+  hasMoved: false,
+  attackBuffs: {},
+});
 
 // --- Initial Game State ---
-export const initialGameState: GameState = {
+// 呼び出すたびに新しいデッキでゲームを作成する（リスタート用）
+export const createInitialGameState = (): GameState => ({
   players: {
-    player1: createInitialPlayerState(fullDeck1),
-    player2: createInitialPlayerState(fullDeck2),
+    player1: createInitialPlayerState(createDeck(baseCards)),
+    player2: createInitialPlayerState(createDeck(baseCards)),
   },
   currentPlayer: 'player1',
   turn: 1,
   phase: 'Draw',
-};
+  turnState: createInitialTurnState(),
+  winner: null,
+});
