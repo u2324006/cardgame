@@ -1,6 +1,6 @@
 import { GameState, PlayerState, TurnState } from '../types/gameState';
 import { Card, LeaderCard, MonsterCard } from '../types/card';
-import { DEFAULT_LEADER, findLeader } from './cards';
+import { findLeader, getDefaultLeader } from './cards';
 import { DeckList, createDefaultDeckList, expandDeck } from './deck';
 import { RULES } from './rules';
 
@@ -17,7 +17,7 @@ export const shuffle = <T,>(items: T[], random: () => number = Math.random): T[]
 // デッキの構成からカードを作ってシャッフルする
 export const createDeck = (deck: DeckList = createDefaultDeckList()): Card[] => shuffle(expandDeck(deck));
 
-const createInitialPlayerState = (fullDeck: Card[], leader: LeaderCard = DEFAULT_LEADER): PlayerState => {
+const createInitialPlayerState = (fullDeck: Card[], leader: LeaderCard = getDefaultLeader()): PlayerState => {
   const emptyRow = () => Array<MonsterCard | null>(RULES.slotsPerRow).fill(null);
   return {
     leader,
@@ -43,7 +43,7 @@ export const createInitialTurnState = (): TurnState => ({
 });
 
 const createPlayerFromDeck = (deck: DeckList): PlayerState =>
-  createInitialPlayerState(createDeck(deck), findLeader(deck.leaderId) ?? DEFAULT_LEADER);
+  createInitialPlayerState(createDeck(deck), findLeader(deck.leaderId) ?? getDefaultLeader());
 
 // 呼び出すたびに新しくシャッフルしたデッキでゲームを作成する（リスタート用）
 // player1 は渡されたデッキ（なければ自動のデッキ）、player2（AI）は自動のデッキを使う

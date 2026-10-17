@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BASE_CARDS, LEADER_CARDS } from '../logic/cards';
+import { getBaseCards, getLeaderCards } from '../logic/cards';
 import Card from '../components/Card';
 import LeaderCard from '../components/LeaderCard';
 import ScreenHeader from './ScreenHeader';
@@ -16,8 +16,9 @@ const FILTERS: { value: Filter; label: string }[] = [
 const CardListScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [filter, setFilter] = useState<Filter>('all');
   const showLeaders = filter === 'all' || filter === 'leader';
-  const cards = filter === 'leader' ? [] : BASE_CARDS.filter(card => filter === 'all' || card.type === filter);
-  const total = cards.length + (showLeaders ? LEADER_CARDS.length : 0);
+  const leaders = getLeaderCards();
+  const cards = filter === 'leader' ? [] : getBaseCards().filter(card => filter === 'all' || card.type === filter);
+  const total = cards.length + (showLeaders ? leaders.length : 0);
 
   return (
     <div className="screen">
@@ -38,7 +39,7 @@ const CardListScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         ))}
       </div>
       <div className="card-gallery">
-        {showLeaders && LEADER_CARDS.map(leader => (
+        {showLeaders && leaders.map(leader => (
           <LeaderCard key={leader.id} leader={leader} hp={leader.maxHp} size="large" />
         ))}
         {cards.map(card => <Card key={card.id} card={card} size="large" />)}

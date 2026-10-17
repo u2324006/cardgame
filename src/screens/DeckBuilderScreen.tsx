@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card as CardType } from '../types/card';
-import { BASE_CARDS, LEADER_CARDS, findLeader } from '../logic/cards';
+import { getBaseCards, getLeaderCards, findLeader } from '../logic/cards';
 import {
   DeckList,
   addCard,
@@ -33,10 +33,8 @@ interface DeckBuilderScreenProps {
   onBack: () => void;
 }
 
-const COSTS = Array.from(new Set(BASE_CARDS.map(card => card.cost))).sort((a, b) => a - b);
-
 const sameDeck = (a: DeckList, b: DeckList) =>
-  a.leaderId === b.leaderId && BASE_CARDS.every(card => getCardCount(a, card.id) === getCardCount(b, card.id));
+  a.leaderId === b.leaderId && getBaseCards().every(card => getCardCount(a, card.id) === getCardCount(b, card.id));
 
 const DeckBuilderScreen: React.FC<DeckBuilderScreenProps> = ({ initialDeck, isSaved, onSave, onBack }) => {
   // 最後に保存した（または開いた時点の）デッキと、それが保存済みかどうか
@@ -54,11 +52,13 @@ const DeckBuilderScreen: React.FC<DeckBuilderScreenProps> = ({ initialDeck, isSa
   const hasEdits = !sameDeck(deck, baseline);
   const canSave = errors.length === 0 && (hasEdits || !isBaselineSaved);
   const leader = findLeader(deck.leaderId);
-  const pool = BASE_CARDS.filter(card => filter === 'all' || card.type === filter);
-  const deckEntries = BASE_CARDS
+  const allCards = getBaseCards();
+  const costs = Array.from(new Set(allCards.map(card => card.cost))).sort((a, b) => a - b);
+  const pool = allCards.filter(card => filter === 'all' || card.type === filter);
+  const deckEntries = allCards
     .filter(card => getCardCount(deck, card.id) > 0)
     .sort((a, b) => a.cost - b.cost);
-  const costCurve = COSTS.map(cost => ({
+  const costCurve = costs.map(cost => ({
     cost,
     count: deckEntries.filter(card => card.cost === cost).reduce((sum, card) => sum + getCardCount(deck, card.id), 0),
   }));
@@ -130,7 +130,7 @@ const DeckBuilderScreen: React.FC<DeckBuilderScreenProps> = ({ initialDeck, isSa
         <section className="leader-step" aria-label="大将を選ぶ">
           <p className="step-hint">デッキの大将カードを1枚選んでください。</p>
           <div className="leader-choices">
-            {LEADER_CARDS.map(l => (
+            {getLeaderCards().map(l => (
               <button
                 key={l.id}
                 type="button"

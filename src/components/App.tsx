@@ -3,6 +3,7 @@ import GameBoard from './GameBoard';
 import MenuScreen, { Destination } from '../screens/MenuScreen';
 import CardListScreen from '../screens/CardListScreen';
 import DeckBuilderScreen from '../screens/DeckBuilderScreen';
+import CardEditorScreen from '../screens/CardEditorScreen';
 import {
   DeckList,
   createDefaultDeckList,
@@ -15,7 +16,7 @@ import { clearSavedBattle, loadSavedBattle, saveBattle } from '../logic/savedBat
 import { GameState } from '../types/gameState';
 import '../styles/Screens.css';
 
-type Screen = 'menu' | 'cards' | 'deck' | 'battle';
+type Screen = 'menu' | 'cards' | 'deck' | 'editor' | 'battle';
 
 // 'saved'：保存したデッキを使う / 'auto'：保存したデッキがない / 'invalid'：保存したデッキがルールに合わなくなった
 export type DeckStatus = 'saved' | 'auto' | 'invalid';
@@ -68,12 +69,19 @@ function App() {
 
   const toMenu = () => setScreen('menu');
 
+  // カードを変更・削除すると保存したデッキが使えなくなることがあるので、デッキの状態を読み直す
+  const leaveEditor = () => {
+    setDeckState(loadInitialDeck());
+    toMenu();
+  };
+
   return (
     <div className="App">
       {screen === 'menu' && (
         <MenuScreen deck={deck} deckStatus={status} savedBattle={savedBattle} onNavigate={handleNavigate} />
       )}
       {screen === 'cards' && <CardListScreen onBack={toMenu} />}
+      {screen === 'editor' && <CardEditorScreen onBack={leaveEditor} />}
       {screen === 'deck' && (
         <DeckBuilderScreen initialDeck={draft} isSaved={status === 'saved'} onSave={handleSaveDeck} onBack={toMenu} />
       )}

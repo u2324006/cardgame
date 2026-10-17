@@ -1,4 +1,4 @@
-import { BASE_CARDS, DEFAULT_LEADER } from './cards';
+import { getBaseCards, getDefaultLeader } from './cards';
 import {
   DeckList,
   addCard,
@@ -12,11 +12,11 @@ import {
 } from './deck';
 import { createInitialGameState } from './initialState';
 
-const emptyDeck = (): DeckList => ({ leaderId: DEFAULT_LEADER.id, cards: {} });
+const emptyDeck = (): DeckList => ({ leaderId: getDefaultLeader().id, cards: {} });
 
 describe('deck rules', () => {
   it('has enough kinds of cards to build a 40-card deck with 3 copies each', () => {
-    expect(BASE_CARDS.length * 3).toBeGreaterThanOrEqual(40);
+    expect(getBaseCards().length * 3).toBeGreaterThanOrEqual(40);
   });
 
   it('builds a legal default deck', () => {
@@ -59,8 +59,8 @@ describe('deck rules', () => {
 
   it('starts a game with the chosen deck for the player', () => {
     let deck = emptyDeck();
-    for (const card of BASE_CARDS.slice(0, 14)) for (let i = 0; i < 3; i++) deck = addCard(deck, card.id);
-    const usedIds = new Set(BASE_CARDS.slice(0, 14).map(c => c.id));
+    for (const card of getBaseCards().slice(0, 14)) for (let i = 0; i < 3; i++) deck = addCard(deck, card.id);
+    const usedIds = new Set(getBaseCards().slice(0, 14).map(c => c.id));
     const state = createInitialGameState(deck);
     const player = state.players.player1;
     expect(player.deck.length + player.hand.length).toBe(40);
@@ -69,6 +69,6 @@ describe('deck rules', () => {
 
   it('sanitizes a saved deck that no longer follows the rules', () => {
     const fixed = sanitizeDeck({ leaderId: 'gone', cards: { m001: 5, x999: 2, m002: 2 } });
-    expect(fixed).toEqual({ leaderId: DEFAULT_LEADER.id, cards: { m001: 3, m002: 2 } });
+    expect(fixed).toEqual({ leaderId: getDefaultLeader().id, cards: { m001: 3, m002: 2 } });
   });
 });

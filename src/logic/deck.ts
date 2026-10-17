@@ -1,5 +1,5 @@
 import { Card } from '../types/card';
-import { BASE_CARDS, DEFAULT_LEADER, findBaseCard, findLeader } from './cards';
+import { findBaseCard, findLeader, getBaseCards, getDefaultLeader } from './cards';
 import { RULES } from './rules';
 
 // デッキの構成：大将カード1種類と、元カードのIDごとの枚数
@@ -44,7 +44,7 @@ export const removeCard = (deck: DeckList, baseId: string): DeckList => {
 };
 
 // 空いている枠を、カード一覧の順に1枚ずつ配って埋める（全カードが上限ならそこで止まる）
-export const fillDeck = (deck: DeckList, pool: Card[] = BASE_CARDS): DeckList => {
+export const fillDeck = (deck: DeckList, pool: Card[] = getBaseCards()): DeckList => {
   let current = deck;
   while (countDeckCards(current) < RULES.deckSize) {
     const before = countDeckCards(current);
@@ -56,11 +56,11 @@ export const fillDeck = (deck: DeckList, pool: Card[] = BASE_CARDS): DeckList =>
 
 // 自動で作るデッキ（AI と、デッキを作っていないときに使う）
 export const createDefaultDeckList = (): DeckList =>
-  fillDeck({ leaderId: DEFAULT_LEADER.id, cards: {} });
+  fillDeck({ leaderId: getDefaultLeader().id, cards: {} });
 
 // デッキの構成から、1枚ごとに個別IDを振ったカードの並びを作る（シャッフル前）
 export const expandDeck = (deck: DeckList): Card[] =>
-  BASE_CARDS.flatMap(card =>
+  getBaseCards().flatMap(card =>
     Array.from({ length: getCardCount(deck, card.id) }, (_, i) => ({ ...card, id: `${card.id}-${i}` })),
   );
 
@@ -71,9 +71,9 @@ export const sanitizeDeck = (deck: DeckList): DeckList => {
   for (const [baseId, count] of Object.entries(deck.cards)) {
     if (findBaseCard(baseId) && count > 0) cards[baseId] = Math.min(count, RULES.maxCopiesPerCard);
   }
-  let sanitized: DeckList = { leaderId: findLeader(deck.leaderId) ? deck.leaderId : DEFAULT_LEADER.id, cards: {} };
+  let sanitized: DeckList = { leaderId: findLeader(deck.leaderId) ? deck.leaderId : getDefaultLeader().id, cards: {} };
   // 40枚を超えている場合は先頭のカードから入れられる分だけ入れる
-  for (const card of BASE_CARDS) {
+  for (const card of getBaseCards()) {
     for (let i = 0; i < (cards[card.id] ?? 0); i++) sanitized = addCard(sanitized, card.id);
   }
   return sanitized;

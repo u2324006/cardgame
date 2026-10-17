@@ -1,113 +1,126 @@
-import { Card, LeaderCard, MonsterCard, SpellCard } from '../types/card';
+import { Card, LeaderCard, MonsterCard, SpellEffect } from '../types/card';
+import { BUILTIN_LEADER_CARDS, BUILTIN_MONSTER_CARDS, BUILTIN_SPELL_CARDS } from './builtinCards';
 
-// カードの元データ。デッキ作成時に `${id}-${番号}` の形で1枚ごとの個別IDが振られる。
+// 今使っているカードの一覧（カードセット）。
+// 最初から入っているカードに、カード作成画面で変更・追加した内容を反映したもの。
+// 変更はこのブラウザの localStorage に保存する。
+// デッキ作成時には、カードの ID に `-番号` を付けて1枚ごとの個別IDにする（例: 'm001-2'）。
 
-// public/images/cards/ に置いたイラストの URL
-const cardImage = (fileName: string): string => `${process.env.PUBLIC_URL}/images/cards/${fileName}`;
+export interface CardSet {
+  cards: Card[]; // モンスターとスペル
+  leaders: LeaderCard[];
+}
 
-const monster = (card: Omit<MonsterCard, 'type'>): MonsterCard => ({ type: 'Monster', ...card });
-const spell = (card: Omit<SpellCard, 'type' | 'race'>): SpellCard => ({ type: 'Spell', race: 'スペル', ...card });
+export const BUILTIN_CARD_SET: CardSet = {
+  cards: [...BUILTIN_MONSTER_CARDS, ...BUILTIN_SPELL_CARDS],
+  leaders: BUILTIN_LEADER_CARDS,
+};
 
-export const MONSTER_CARDS: MonsterCard[] = [
-  monster({
-    id: 'm001', name: 'ゴブリンアタッカー', image: cardImage('goblin.svg'), race: 'ゴブリン',
-    cost: 1, frontAttack: 2, backAttack: 2, cardHp: 6,
-    description: '前衛でも後衛でも同じ力で戦える、身軽なゴブリン。',
-  }),
-  monster({
-    id: 'm002', name: 'ストーンゴーレム', image: cardImage('stone-golem.svg'), race: 'ゴーレム',
-    cost: 2, frontAttack: 3, backAttack: 0, cardHp: 13,
-    description: '岩の体で攻撃を受け止める。後衛では攻撃できない。',
-  }),
-  monster({
-    id: 'm003', name: 'プテ', image: cardImage('pute.svg'), race: 'ゴーレム',
-    cost: 1, frontAttack: 4, backAttack: 0, cardHp: 5,
-    description: '前衛で鋭く攻める。後衛では攻撃できない。',
-  }),
-  monster({
-    id: 'm004', name: 'ハンター', image: cardImage('hunter.svg'), race: 'ゴーレム',
-    cost: 1, frontAttack: 0, backAttack: 4, cardHp: 3,
-    description: '後衛から獲物を狙い撃つ。前衛では攻撃できない。',
-  }),
-  monster({
-    id: 'm005', name: '戦士', image: cardImage('warrior.svg'), race: 'ゴーレム',
-    cost: 2, frontAttack: 5, backAttack: 0, cardHp: 7,
-    description: '前衛で力を発揮する。後衛では攻撃できない。',
-  }),
-  monster({
-    id: 'm006', name: '魔術師', image: cardImage('mage.svg'), race: 'ゴーレム',
-    cost: 2, frontAttack: 0, backAttack: 5, cardHp: 6,
-    description: '後衛から強力な魔術を放つ。前衛では攻撃できない。',
-  }),
-  monster({
-    id: 'm007', name: 'バラン', image: cardImage('baran.svg'), race: 'ゴーレム',
-    cost: 2, frontAttack: 3, backAttack: 3, cardHp: 9,
-    description: '前衛でも後衛でも安定して戦える。',
-  }),
-  // --- 以下は仮のカード（デッキ40枚・同名3枚までを満たすために追加。差し替え可） ---
-  monster({
-    id: 'm008', name: 'スライム', image: cardImage('slime.svg'), race: 'スライム',
-    cost: 1, frontAttack: 1, backAttack: 1, cardHp: 4,
-    description: 'どこにでもいる小さなモンスター。どちらの列でも少しだけ戦える。',
-  }),
-  monster({
-    id: 'm009', name: '妖精', image: cardImage('fairy.svg'), race: '妖精',
-    cost: 1, frontAttack: 0, backAttack: 3, cardHp: 2,
-    description: '後衛から光の矢を放つ。体はとても弱い。',
-  }),
-  monster({
-    id: 'm010', name: 'オーク兵', image: cardImage('orc.svg'), race: 'オーク',
-    cost: 2, frontAttack: 4, backAttack: 1, cardHp: 8,
-    description: '前衛で斧を振るう荒くれ者。',
-  }),
-  monster({
-    id: 'm011', name: '騎士', image: cardImage('knight.svg'), race: '人間',
-    cost: 3, frontAttack: 5, backAttack: 2, cardHp: 14,
-    description: '重い鎧で前線を守り抜く。',
-  }),
-  monster({
-    id: 'm012', name: 'ドラゴン', image: cardImage('dragon.svg'), race: 'ドラゴン',
-    cost: 3, frontAttack: 6, backAttack: 4, cardHp: 12,
-    description: '前衛でも後衛でも強力な、竜の王。',
-  }),
-];
+const STORAGE_KEY = 'cardgame.cards';
+const VERSION = 1;
 
-export const SPELL_CARDS: SpellCard[] = [
-  spell({
-    id: 's001', name: '攻撃の呪文', image: cardImage('attack-spell.svg'),
-    cost: 1, effect: { kind: 'buffFa', amount: 1 }, summary: 'FA +1',
-    description: '味方モンスター1体のFAを、ターン終了まで1上げる。',
-  }),
-  // --- 以下は仮のカード ---
-  spell({
-    id: 's002', name: '回復の呪文', image: cardImage('heal-spell.svg'),
-    cost: 1, effect: { kind: 'heal', amount: 3 }, summary: 'HP +3',
-    description: '味方モンスター1体のHPを3回復する（最大HPまで）。',
-  }),
-  spell({
-    id: 's003', name: '炎の呪文', image: cardImage('fire-spell.svg'),
-    cost: 2, effect: { kind: 'damage', amount: 3 }, summary: '3ダメージ',
-    description: '相手のモンスター1体に3ダメージを与える。',
-  }),
-];
+// --- 形のチェック（保存データや読み込んだ文字列が壊れていないか） ---
 
-export const BASE_CARDS: Card[] = [...MONSTER_CARDS, ...SPELL_CARDS];
+const isNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+const isText = (value: unknown): value is string => typeof value === 'string';
+const isValidId = (id: unknown): id is string => isText(id) && /^[A-Za-z0-9_]+$/.test(id);
 
-// 大将カード（今は1種類。効果は今後追加予定）
-export const LEADER_CARDS: LeaderCard[] = [
-  {
-    id: 'l001',
-    name: '大将',
-    image: cardImage('leader.svg'),
-    description: '大将固有の効果は未設定です。',
-    maxHp: 20,
-  },
-];
+const isSpellEffect = (effect: unknown): effect is SpellEffect => {
+  const e = effect as SpellEffect;
+  return !!e && ['buffFa', 'heal', 'damage'].includes(e.kind) && isNumber(e.amount);
+};
 
-export const DEFAULT_LEADER = LEADER_CARDS[0];
+const isCard = (value: unknown): value is Card => {
+  const card = value as Card;
+  if (!card || !isValidId(card.id) || !isText(card.name) || !isText(card.description) || !isNumber(card.cost)) return false;
+  if (card.type === 'Monster') return isNumber(card.frontAttack) && isNumber(card.backAttack) && isNumber(card.cardHp);
+  if (card.type === 'Spell') return isSpellEffect(card.effect);
+  return false;
+};
 
-export const findBaseCard = (baseId: string): Card | undefined => BASE_CARDS.find(c => c.id === baseId);
-export const findLeader = (leaderId: string): LeaderCard | undefined => LEADER_CARDS.find(l => l.id === leaderId);
+const isLeader = (value: unknown): value is LeaderCard => {
+  const leader = value as LeaderCard;
+  return !!leader && isValidId(leader.id) && isText(leader.name) && isText(leader.description) && isNumber(leader.maxHp);
+};
+
+const hasUniqueIds = (set: CardSet) => {
+  const ids = [...set.cards, ...set.leaders].map(c => c.id);
+  return new Set(ids).size === ids.length;
+};
+
+export const isCardSet = (value: unknown): value is CardSet => {
+  const set = value as CardSet;
+  return !!set && Array.isArray(set.cards) && Array.isArray(set.leaders)
+    && set.cards.every(isCard) && set.leaders.every(isLeader)
+    && set.leaders.length > 0 && hasUniqueIds(set);
+};
+
+// --- 読み込み・保存 ---
+
+const loadStoredCardSet = (): CardSet | null => {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    return saved?.version === VERSION && isCardSet(saved.cardSet) ? saved.cardSet : null;
+  } catch {
+    return null;
+  }
+};
+
+let current: CardSet | null = null;
+
+export const getCardSet = (): CardSet => {
+  if (!current) current = loadStoredCardSet() ?? BUILTIN_CARD_SET;
+  return current;
+};
+
+// カードセットを保存して、すぐにゲーム全体へ反映する
+export const saveCardSet = (set: CardSet): boolean => {
+  current = set;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: VERSION, cardSet: set }));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+// 変更をすべて捨てて、最初から入っているカードに戻す
+export const resetCardSet = (): void => {
+  current = BUILTIN_CARD_SET;
+  try {
+    window.localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // 何もしない
+  }
+};
+
+// テスト用：次に読むときに保存データを読み直す
+export const clearCardSetCache = (): void => {
+  current = null;
+};
+
+// 他の人に渡したり、プログラムに取り込んだりするための文字列（JSON）
+export const exportCardSet = (set: CardSet = getCardSet()): string => JSON.stringify(set, null, 2);
+
+export const parseCardSet = (text: string): CardSet | null => {
+  try {
+    const parsed = JSON.parse(text);
+    return isCardSet(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
+// --- カードを引く ---
+
+export const getBaseCards = (): Card[] => getCardSet().cards;
+export const getLeaderCards = (): LeaderCard[] => getCardSet().leaders;
+export const getDefaultLeader = (): LeaderCard => getLeaderCards()[0];
+
+export const findBaseCard = (baseId: string): Card | undefined => getBaseCards().find(c => c.id === baseId);
+export const findLeader = (leaderId: string): LeaderCard | undefined => getLeaderCards().find(l => l.id === leaderId);
 
 // 個別IDから元カードのIDを取り出す（例: 's001-12' → 's001'）
 export const getBaseCardId = (card: Card): string => card.id.split('-')[0];
@@ -115,8 +128,15 @@ export const getBaseCardId = (card: Card): string => card.id.split('-')[0];
 // ダメージなどで変化したカードを、個別IDはそのままに元の能力値へ戻す（墓地へ送るときに使う）
 export const toOriginalCard = <T extends Card>(card: T): T => {
   const base = findBaseCard(getBaseCardId(card));
-  return base ? ({ ...base, id: card.id } as T) : card;
+  return base && base.type === card.type ? ({ ...base, id: card.id } as T) : card;
 };
 
-// ダメージを受ける前の最大HP
-export const getMaxHp = (card: MonsterCard): number => toOriginalCard(card).cardHp;
+// ダメージを受ける前の最大HP（元のカードが見つからなければ今のHP）
+export const getMaxHp = (card: MonsterCard): number => {
+  const original = toOriginalCard(card);
+  return Math.max(original.cardHp, card.cardHp);
+};
+
+// 新しいカードのID（'-' は個別IDの区切りに使うので含めない）
+export const createCardId = (prefix: 'c' | 'l'): string =>
+  `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;

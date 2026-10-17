@@ -5,7 +5,7 @@ import { getRound } from '../logic/gameLogic';
 import { GameState } from '../types/gameState';
 import type { DeckStatus } from '../components/App';
 
-export type Destination = 'resume' | 'battle' | 'deck' | 'cards';
+export type Destination = 'resume' | 'battle' | 'deck' | 'cards' | 'editor';
 
 interface MenuScreenProps {
   deck: DeckList;
@@ -31,6 +31,7 @@ const MenuScreen: React.FC<MenuScreenProps> = ({ deck, deckStatus, savedBattle, 
       : [{ destination: 'battle' as const, label: '対戦', description: 'AI と対戦する' }]),
     { destination: 'deck', label: 'デッキ作成', description: '大将とカードを選んでデッキを組む' },
     { destination: 'cards', label: 'カード一覧', description: 'すべてのカードを見る' },
+    { destination: 'editor', label: 'カード作成', description: 'カードを作る・能力を調整する' },
   ];
 
   return (
