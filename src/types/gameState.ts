@@ -10,7 +10,6 @@ export interface FieldPosition {
 }
 
 export interface PlayerState {
-  hp: number;
   specialCardHp: number;
   currentEnergy: number;
   maxEnergy: number;

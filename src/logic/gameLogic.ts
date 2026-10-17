@@ -137,7 +137,7 @@ export const playCard = (
   });
 };
 
-const isAttackSpell = (card: Card) => getBaseCardId(card) === ATTACK_SPELL_ID;
+export const isAttackSpell = (card: Card) => getBaseCardId(card) === ATTACK_SPELL_ID;
 
 export const castSpell = (
   state: GameState,
@@ -237,49 +237,4 @@ export const attack = (
       attackedMonsterIds: [...next.turnState.attackedMonsterIds, attacker.id],
     },
   });
-};
-
-// --- AI ---
-
-const findEmptySlot = (playerState: PlayerState, row: Row): FieldPosition | null => {
-  const index = playerState.field[row].findIndex(slot => slot === null);
-  return index === -1 ? null : { row, index };
-};
-
-// 出せるモンスターを手札の先頭から順に、BAが高ければ後衛、そうでなければ前衛に出す
-export const runAiPlayPhase = (state: GameState, player: PlayerId): GameState => {
-  let current = state;
-  let handIndex = 0;
-  while (handIndex < current.players[player].hand.length) {
-    const playerState = current.players[player];
-    const card = playerState.hand[handIndex];
-    const preferredRow: Row = (card.backAttack ?? 0) > (card.frontAttack ?? 0) ? 'backRow' : 'frontRow';
-    const slot = findEmptySlot(playerState, preferredRow);
-    const result = card.type === 'Monster' && slot ? playCard(current, player, handIndex, slot) : null;
-    if (result?.ok) {
-      current = result.state; // 手札が1枚減るので同じ index を再確認する
-    } else {
-      handIndex++;
-    }
-  }
-  return current;
-};
-
-// 攻撃可能な全モンスターで、相手の前衛（いなければプレイヤー本体）を攻撃する
-export const runAiAttackPhase = (state: GameState, player: PlayerId): GameState => {
-  const defender = getOpponent(player);
-  const attackerPositions = ROWS.flatMap(row =>
-    state.players[player].field[row].map((_, index): FieldPosition => ({ row, index })),
-  );
-  return attackerPositions.reduce((current, attackerPosition) => {
-    const attacker = getCardAt(current, player, attackerPosition);
-    if (!attacker || current.winner || getAttackPower(current, attacker, attackerPosition.row) <= 0) return current;
-
-    const targetIndex = current.players[defender].field.frontRow.findIndex(card => card !== null);
-    const target: AttackTarget = targetIndex === -1
-      ? { type: 'player' }
-      : { type: 'monster', position: { row: 'frontRow', index: targetIndex } };
-    const result = attack(current, player, attackerPosition, target);
-    return result.ok ? result.state : current;
-  }, state);
 };

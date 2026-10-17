@@ -1,5 +1,5 @@
 import { Card } from '../types/card';
-import { GameState, PlayerId, PlayerState } from '../types/gameState';
+import { GameState } from '../types/gameState';
 import { createInitialGameState } from './initialState';
 import {
   attack,
@@ -8,53 +8,8 @@ import {
   moveMonster,
   nextPhase,
   playCard,
-  runAiAttackPhase,
-  runAiPlayPhase,
 } from './gameLogic';
-
-const monster = (id: string, overrides: Partial<Card> = {}): Card => ({
-  id,
-  name: id,
-  type: 'Monster',
-  description: '',
-  frontAttack: 3,
-  backAttack: 1,
-  cardHp: 5,
-  cost: 1,
-  ...overrides,
-});
-
-const spell: Card = { id: 's001-0', name: '攻撃の呪文', type: 'Spell', description: '', cost: 1 };
-
-// 両プレイヤーの手札・フィールドを空にした、テスト用の状態を作る
-const emptyState = (): GameState => {
-  const base = createInitialGameState();
-  const clear = (player: PlayerId) => ({
-    ...base.players[player],
-    hand: [],
-    currentEnergy: 5,
-    field: { frontRow: [null, null, null], backRow: [null, null, null] },
-  });
-  return { ...base, phase: 'Play', players: { player1: clear('player1'), player2: clear('player2') } };
-};
-
-const withField = (state: GameState, player: PlayerId, row: 'frontRow' | 'backRow', cards: (Card | null)[]): GameState => ({
-  ...state,
-  players: {
-    ...state.players,
-    [player]: { ...state.players[player], field: { ...state.players[player].field, [row]: cards } },
-  },
-});
-
-const withPlayer = (state: GameState, player: PlayerId, changes: Partial<PlayerState>): GameState => ({
-  ...state,
-  players: { ...state.players, [player]: { ...state.players[player], ...changes } },
-});
-
-const unwrap = (result: ReturnType<typeof attack>): GameState => {
-  if (!result.ok) throw new Error(result.error);
-  return result.state;
-};
+import { emptyState, monster, spell, unwrap, withField, withPlayer } from './testUtils';
 
 describe('phase progression', () => {
   it('draws a card and gains energy in the draw phase', () => {
@@ -171,27 +126,5 @@ describe('attack', () => {
     const state = withField(emptyState(), 'player1', 'frontRow', [monster('a', { frontAttack: 20 }), null, null]);
     const next = unwrap(attack(state, 'player1', { row: 'frontRow', index: 0 }, { type: 'player' }));
     expect(next.winner).toBe('player1');
-  });
-});
-
-describe('AI', () => {
-  it('plays affordable monsters into their preferred row', () => {
-    const state = withPlayer(emptyState(), 'player2', {
-      currentEnergy: 2,
-      hand: [spell, monster('front'), monster('back', { frontAttack: 0, backAttack: 4 }), monster('extra')],
-    });
-    const next = runAiPlayPhase(state, 'player2');
-    expect(next.players.player2.field.frontRow[0]?.id).toBe('front');
-    expect(next.players.player2.field.backRow[0]?.id).toBe('back');
-    expect(next.players.player2.hand.map(c => c.id)).toEqual(['s001-0', 'extra']);
-    expect(next.players.player2.currentEnergy).toBe(0);
-  });
-
-  it('attacks with every monster, retargeting after a kill', () => {
-    let state = withField(emptyState(), 'player2', 'frontRow', [monster('x', { frontAttack: 5 }), monster('y', { frontAttack: 2 }), null]);
-    state = withField(state, 'player1', 'frontRow', [monster('a', { cardHp: 5 }), monster('b', { cardHp: 9 }), null]);
-    const next = runAiAttackPhase({ ...state, currentPlayer: 'player2' }, 'player2');
-    expect(next.players.player1.field.frontRow[0]).toBeNull();
-    expect(next.players.player1.field.frontRow[1]?.cardHp).toBe(7);
   });
 });

@@ -10,9 +10,8 @@ import {
   moveMonster,
   nextPhase,
   playCard,
-  runAiAttackPhase,
-  runAiPlayPhase,
 } from '../logic/gameLogic';
+import { runAiAttackPhase, runAiPlayPhase } from '../logic/ai';
 import { FieldPosition, GameState, PlayerId, Row } from '../types/gameState';
 import PlayerArea from './PlayerArea';
 import ControlPanel from './ControlPanel';
@@ -21,6 +20,7 @@ const HUMAN: PlayerId = 'player1';
 const AI: PlayerId = 'player2';
 const AI_STEP_DELAY_MS = 1000;
 const AUTO_DRAW_DELAY_MS = 500;
+const MESSAGE_DURATION_MS = 3000;
 
 const GameBoard: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(createInitialGameState);
@@ -28,6 +28,8 @@ const GameBoard: React.FC = () => {
   const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null);
   const [attackerPosition, setAttackerPosition] = useState<FieldPosition | null>(null);
   const [movingFrom, setMovingFrom] = useState<FieldPosition | null>(null);
+  // 画面に一定時間表示するメッセージ（id は同じ文言が続いたときもタイマーを延長するため）
+  const [message, setMessage] = useState<{ id: number; text: string } | null>(null);
 
   const { players, turn, phase, currentPlayer, winner } = gameState;
   const isPlayer1Turn = currentPlayer === HUMAN;
@@ -39,6 +41,14 @@ const GameBoard: React.FC = () => {
     setAttackerPosition(null);
     setMovingFrom(null);
   }, [turn]);
+
+  useEffect(() => {
+    if (!message) return;
+    const timerId = setTimeout(() => setMessage(null), MESSAGE_DURATION_MS);
+    return () => clearTimeout(timerId);
+  }, [message]);
+
+  const showMessage = (text: string) => setMessage(prev => ({ id: (prev?.id ?? 0) + 1, text }));
 
   // ドローフェイズの自動進行と AI の行動
   useEffect(() => {
@@ -64,7 +74,7 @@ const GameBoard: React.FC = () => {
   // ルール違反ならメッセージを表示し、成功なら state を更新する
   const apply = (result: ActionResult): boolean => {
     if (!result.ok) {
-      alert(result.error);
+      showMessage(result.error);
       return false;
     }
     setGameState(result.state);
@@ -73,7 +83,10 @@ const GameBoard: React.FC = () => {
 
   const handleNextPhase = () => setGameState(nextPhase);
   const handleEndTurn = () => setGameState(endTurn);
-  const handleRestart = () => setGameState(createInitialGameState());
+  const handleRestart = () => {
+    setGameState(createInitialGameState());
+    setMessage(null);
+  };
 
   // 手札のカードを選択
   const handleSelectCard = (cardIndex: number) => {
@@ -94,7 +107,7 @@ const GameBoard: React.FC = () => {
     // 移動するモンスターを選択
     if (clickedCard) {
       if (gameState.turnState.summonedThisTurnIds.includes(clickedCard.id)) {
-        alert('このモンスターは召喚されたターンには移動できません。');
+        showMessage('このモンスターは召喚されたターンには移動できません。');
         return;
       }
       setMovingFrom(position);
@@ -121,7 +134,7 @@ const GameBoard: React.FC = () => {
     const clickedCard = getCardAt(gameState, player, position);
     if (player === HUMAN && clickedCard) {
       if (gameState.turnState.attackedMonsterIds.includes(clickedCard.id)) {
-        alert('このモンスターは既に攻撃済みです。');
+        showMessage('このモンスターは既に攻撃済みです。');
         return;
       }
       setAttackerPosition(position);
@@ -159,7 +172,12 @@ const GameBoard: React.FC = () => {
 
   return (
     <div className="game-board">
-      <div className="info-panel"><div className="card-info">カード情報 {attackerCard ? `${attackerCard.name}を選択中` : ''}</div></div>
+      <div className="info-panel">
+        <div className="card-info">カード情報 {attackerCard ? `${attackerCard.name}を選択中` : ''}</div>
+        <div className="message-area" role="status">
+          {message && <div key={message.id} className="message">{message.text}</div>}
+        </div>
+      </div>
       <div className="main-area">
         <PlayerArea
           playerState={players[AI]}

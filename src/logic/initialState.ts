@@ -27,7 +27,6 @@ const createDeck = (baseCards: Card[]): Card[] => {
 const createInitialPlayerState = (fullDeck: Card[]): PlayerState => {
   const emptyRow = () => Array<Card | null>(RULES.slotsPerRow).fill(null);
   return {
-    hp: 2000,
     specialCardHp: RULES.initialSpecialCardHp,
     currentEnergy: 0,
     maxEnergy: RULES.maxEnergy,
