@@ -1,51 +1,45 @@
-import { Card } from '../types/card';
+import { MonsterCard, isMonster } from '../types/card';
 import { AttackTarget, FieldPosition, GameState, PlayerId, Row } from '../types/gameState';
 import {
   ActionResult,
-  ROWS,
   attack,
   castSpell,
+  findEmptySlot,
   getAttackPower,
   getCardAt,
+  getMonsterPositions,
   getOpponent,
   isAttackSpell,
   moveMonster,
+  otherRow,
   playCard,
 } from './gameLogic';
 
 // AI（相手プレイヤー）の思考ルーチン。
 // 各行動はプレイヤーと同じ gameLogic の関数を通すので、ルール違反の手は打てない。
 
-const otherRow = (row: Row): Row => (row === 'frontRow' ? 'backRow' : 'frontRow');
-
 const applyIfOk = (state: GameState, result: ActionResult): GameState => (result.ok ? result.state : state);
 
-const monsterPositions = (state: GameState, player: PlayerId, rows: Row[] = ROWS): FieldPosition[] =>
-  rows.flatMap(row =>
-    state.players[player].field[row]
-      .map((card, index) => (card ? { row, index } : null))
-      .filter((position): position is FieldPosition => position !== null),
-  );
-
-const findEmptySlot = (state: GameState, player: PlayerId, row: Row): FieldPosition | null => {
-  const index = state.players[player].field[row].findIndex(slot => slot === null);
-  return index === -1 ? null : { row, index };
-};
+// 場のモンスターを、位置とカードの組で取り出す
+const monstersOnField = (state: GameState, player: PlayerId, rows?: Row[]) =>
+  getMonsterPositions(state, player, rows).map(position => ({
+    position,
+    card: getCardAt(state, player, position) as MonsterCard,
+  }));
 
 // モンスターの強さの目安（召喚の優先度・攻撃対象の優先度に使う）
-const monsterValue = (card: Card): number =>
-  Math.max(card.frontAttack ?? 0, card.backAttack ?? 0) * 2 + (card.cardHp ?? 0) + card.cost;
+const monsterValue = (card: MonsterCard): number =>
+  Math.max(card.frontAttack, card.backAttack) * 2 + card.cardHp + card.cost;
 
-const preferredRow = (card: Card): Row =>
-  (card.backAttack ?? 0) > (card.frontAttack ?? 0) ? 'backRow' : 'frontRow';
+const preferredRow = (card: MonsterCard): Row =>
+  card.backAttack > card.frontAttack ? 'backRow' : 'frontRow';
 
 // --- Play フェイズ ---
 
 // 今いる列より攻撃力が上がる列へ、最も効果の大きいモンスターを1体移動する
 const aiMove = (state: GameState, player: PlayerId): GameState => {
   let best: { from: FieldPosition; to: FieldPosition; gain: number } | null = null;
-  for (const from of monsterPositions(state, player)) {
-    const card = getCardAt(state, player, from)!;
+  for (const { position: from, card } of monstersOnField(state, player)) {
     if (state.turnState.summonedThisTurnIds.includes(card.id)) continue;
     const to = findEmptySlot(state, player, otherRow(from.row));
     if (!to) continue;
@@ -63,7 +57,7 @@ const aiSummon = (state: GameState, player: PlayerId): GameState => {
     const { hand, currentEnergy } = current.players[player];
     const candidates = hand
       .map((card, handIndex) => ({ card, handIndex }))
-      .filter(({ card }) => card.type === 'Monster' && card.cost <= currentEnergy)
+      .flatMap(({ card, handIndex }) => (isMonster(card) && card.cost <= currentEnergy ? [{ card, handIndex }] : []))
       .sort((a, b) => monsterValue(b.card) - monsterValue(a.card));
 
     let summoned = false;
@@ -87,13 +81,13 @@ const aiSummon = (state: GameState, player: PlayerId): GameState => {
 // 攻撃の呪文は、+1 で相手の前衛モンスターを倒せるようになるとき、
 // または相手の前衛が空で大将カードへのダメージが増えるときだけ使う
 const findSpellTarget = (state: GameState, player: PlayerId): FieldPosition | null => {
-  const defenderFront = state.players[getOpponent(player)].field.frontRow.filter((card): card is Card => card !== null);
-  const target = monsterPositions(state, player, ['frontRow']).find(position => {
-    const power = getAttackPower(state, getCardAt(state, player, position)!, 'frontRow');
+  const defenderFront = monstersOnField(state, getOpponent(player), ['frontRow']).map(({ card }) => card);
+  const target = monstersOnField(state, player, ['frontRow']).find(({ card }) => {
+    const power = getAttackPower(state, card, 'frontRow');
     if (power <= 0) return false;
     return defenderFront.length === 0 || defenderFront.some(enemy => enemy.cardHp === power + 1);
   });
-  return target ?? null;
+  return target?.position ?? null;
 };
 
 const aiCastSpells = (state: GameState, player: PlayerId): GameState => {
@@ -128,24 +122,18 @@ interface AttackPlan {
 // 倒せなければ、一番HPの低いモンスターを一番強い攻撃役で削り、後続の攻撃で倒しやすくする。
 const chooseAttack = (state: GameState, player: PlayerId): AttackPlan | null => {
   const defender = getOpponent(player);
-  const attackers = monsterPositions(state, player)
-    .map(position => {
-      const card = getCardAt(state, player, position)!;
-      return { position, card, power: getAttackPower(state, card, position.row) };
-    })
+  const attackers = monstersOnField(state, player)
+    .map(({ position, card }) => ({ position, card, power: getAttackPower(state, card, position.row) }))
     .filter(({ card, power }) => power > 0 && !state.turnState.attackedMonsterIds.includes(card.id));
   if (attackers.length === 0) return null;
 
-  const targets = monsterPositions(state, defender, ['frontRow']).map(position => ({
-    position,
-    card: getCardAt(state, defender, position)!,
-  }));
+  const targets = monstersOnField(state, defender, ['frontRow']);
   if (targets.length === 0) return { attacker: attackers[0].position, target: { type: 'player' } };
 
   let bestKill: { plan: AttackPlan; value: number; overkill: number } | null = null;
   for (const attacker of attackers) {
     for (const target of targets) {
-      const hp = target.card.cardHp ?? 0;
+      const hp = target.card.cardHp;
       if (attacker.power < hp) continue;
       const value = monsterValue(target.card);
       const overkill = attacker.power - hp;
@@ -157,7 +145,7 @@ const chooseAttack = (state: GameState, player: PlayerId): AttackPlan | null => 
   if (bestKill) return bestKill.plan;
 
   const strongest = attackers.reduce((a, b) => (b.power > a.power ? b : a));
-  const weakest = targets.reduce((a, b) => ((b.card.cardHp ?? 0) < (a.card.cardHp ?? 0) ? b : a));
+  const weakest = targets.reduce((a, b) => (b.card.cardHp < a.card.cardHp ? b : a));
   return { attacker: strongest.position, target: { type: 'monster', position: weakest.position } };
 };
 

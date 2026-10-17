@@ -9,7 +9,7 @@ import {
   nextPhase,
   playCard,
 } from './gameLogic';
-import { emptyState, monster, spell, unwrap, withField, withPlayer } from './testUtils';
+import { emptyState, inPhase, monster, spell, unwrap, withField, withPlayer } from './testUtils';
 
 describe('phase progression', () => {
   it('draws a card and gains energy in the draw phase', () => {
@@ -87,7 +87,7 @@ describe('castSpell', () => {
     let next = unwrap(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 }));
     expect(next.players.player1.graveyard).toContainEqual(spell);
 
-    next = unwrap(attack({ ...next, phase: 'Attack' }, 'player1', { row: 'frontRow', index: 0 }, { type: 'player' }));
+    next = unwrap(attack(inPhase(next, 'Attack'), 'player1', { row: 'frontRow', index: 0 }, { type: 'player' }));
     expect(next.players.player2.specialCardHp).toBe(20 - 4);
   });
 });
@@ -106,7 +106,7 @@ describe('attack', () => {
   it('destroys a monster whose HP drops to 0', () => {
     let state = withField(emptyState(), 'player1', 'frontRow', [monster('a', { frontAttack: 5 }), null, null]);
     state = withField(state, 'player2', 'frontRow', [monster('b', { cardHp: 5 }), null, null]);
-    const next = unwrap(attack(state, 'player1', { row: 'frontRow', index: 0 }, { type: 'monster', position: { row: 'frontRow', index: 0 } }));
+    const next = unwrap(attack(inPhase(state, 'Attack'), 'player1', { row: 'frontRow', index: 0 }, { type: 'monster', position: { row: 'frontRow', index: 0 } }));
     expect(next.players.player2.field.frontRow[0]).toBeNull();
     expect(next.players.player2.graveyard.map(c => c.id)).toEqual(['b']);
   });
@@ -116,15 +116,32 @@ describe('attack', () => {
     state = withField(state, 'player2', 'frontRow', [monster('b'), null, null]);
     state = withField(state, 'player2', 'backRow', [monster('c'), null, null]);
     const attacker = { row: 'frontRow' as const, index: 0 };
-    expect(attack(state, 'player1', attacker, { type: 'player' }).ok).toBe(false);
-    expect(attack(state, 'player1', attacker, { type: 'monster', position: { row: 'backRow', index: 0 } }).ok).toBe(false);
-    const next = unwrap(attack(state, 'player1', attacker, { type: 'monster', position: { row: 'frontRow', index: 0 } }));
+    expect(attack(inPhase(state, 'Attack'), 'player1', attacker, { type: 'player' }).ok).toBe(false);
+    expect(attack(inPhase(state, 'Attack'), 'player1', attacker, { type: 'monster', position: { row: 'backRow', index: 0 } }).ok).toBe(false);
+    const next = unwrap(attack(inPhase(state, 'Attack'), 'player1', attacker, { type: 'monster', position: { row: 'frontRow', index: 0 } }));
     expect(attack(next, 'player1', attacker, { type: 'monster', position: { row: 'frontRow', index: 0 } }).ok).toBe(false);
   });
 
   it('declares a winner when the special card HP reaches 0', () => {
     const state = withField(emptyState(), 'player1', 'frontRow', [monster('a', { frontAttack: 20 }), null, null]);
-    const next = unwrap(attack(state, 'player1', { row: 'frontRow', index: 0 }, { type: 'player' }));
+    const next = unwrap(attack(inPhase(state, 'Attack'), 'player1', { row: 'frontRow', index: 0 }, { type: 'player' }));
     expect(next.winner).toBe('player1');
+  });
+});
+
+describe('turn and phase checks', () => {
+  it('rejects actions outside the player\'s own turn or the right phase', () => {
+    const state = withField(withPlayer(emptyState(), 'player1', { hand: [monster('a')] }), 'player1', 'frontRow', [monster('b'), null, null]);
+    const slot = { row: 'frontRow' as const, index: 1 };
+    expect(playCard(state, 'player2', 0, slot).ok).toBe(false);
+    expect(playCard(inPhase(state, 'Attack'), 'player1', 0, slot).ok).toBe(false);
+    expect(attack(state, 'player1', { row: 'frontRow', index: 0 }, { type: 'player' }).ok).toBe(false);
+  });
+
+  it('returns a destroyed monster to the graveyard with its original stats', () => {
+    let state = withField(emptyState(), 'player1', 'frontRow', [monster('a', { frontAttack: 5 }), null, null]);
+    state = withField(state, 'player2', 'frontRow', [{ ...monster('m001-3'), name: 'Goblin Attacker', cardHp: 2 }, null, null]);
+    const next = unwrap(attack(inPhase(state, 'Attack'), 'player1', { row: 'frontRow', index: 0 }, { type: 'monster', position: { row: 'frontRow', index: 0 } }));
+    expect(next.players.player2.graveyard[0]).toMatchObject({ id: 'm001-3', cardHp: 6 });
   });
 });

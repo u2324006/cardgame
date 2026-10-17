@@ -1,46 +1,60 @@
-# Getting Started with Create React App
+# Card Game
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+AI と対戦するターン制カードゲームです（React + TypeScript / Create React App）。
 
-## Available Scripts
+## 遊び方
 
-In the project directory, you can run:
+```bash
+npm install
+npm start      # http://localhost:3000 で起動
+npm test       # テストを実行
+npm run build  # 本番用ビルド
+```
 
-### `npm start`
+## ルール
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- 各プレイヤーは 40 枚のデッキと 5 枚の初期手札で始めます。大将カードの HP は 20。
+- ターンは **Draw → Play → Attack** の順に進みます。
+  - **Draw**: カードを 1 枚引き、エネルギーが 1 増えます（最大 10）。
+    山札が尽きた状態で自分のターンを迎えると、代わりに大将カードの HP が 1 減ります。
+  - **Play**: エネルギーを払ってモンスターを前衛 / 後衛に召喚したり、スペルを使ったりします。
+    モンスターは 1 ターンに 1 回、前衛と後衛のあいだを移動できます（召喚したターンは不可）。
+  - **Attack**: 各モンスターは 1 ターンに 1 回攻撃できます。攻撃力は前衛なら FA、後衛なら BA。
+    相手の前衛にモンスターがいる間は、後衛や大将カードを攻撃できません。
+- 相手の大将カードの HP を 0 にしたら勝ちです。
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+### 操作
 
-### `npm test`
+| やりたいこと | 操作 |
+|---|---|
+| 召喚 | 手札のモンスター → 自分の空きスロット |
+| スペル | 手札のスペル → 対象の味方モンスター |
+| 移動 | 自分のモンスター → 反対の列の空きスロット |
+| 攻撃 | 自分のモンスター → 相手のモンスター、または相手の大将カード（HP） |
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+選んだものをもう一度クリックすると選択を解除できます。
 
-### `npm run build`
+## ディレクトリ構成
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```
+src/
+├── types/        型定義（カード・ゲーム状態）
+├── logic/        ゲームのルール（React に依存しない純粋関数）
+│   ├── rules.ts       ルールの数値（デッキ枚数・HP など）
+│   ├── cards.ts       カードのデータ
+│   ├── initialState.ts デッキ作成・初期状態
+│   ├── gameLogic.ts   フェイズ進行と各行動（召喚・スペル・移動・攻撃）
+│   └── ai.ts          AI の思考ルーチン
+├── hooks/        画面用のフック（AI の自動進行・メッセージ表示）
+├── components/   画面の部品
+└── styles/       CSS
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+ルールの処理はすべて `src/logic/` にあり、state を書き換えずに新しい state を返します。
+行動がルール違反のときは `{ ok: false, error }` を返し、画面はそのメッセージを表示します。
+AI もプレイヤーと同じ関数を通して行動するので、ルール違反の手は打てません。
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### カードを追加するには
 
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+`src/logic/cards.ts` にカードを定義し、`BASE_CARDS` に加えます。
+デッキは `BASE_CARDS` を順番に複製して 40 枚にし、シャッフルして作られます。

@@ -1,9 +1,9 @@
-import { Card } from '../types/card';
+import { Card, MonsterCard, SpellCard } from '../types/card';
 
 // デッキに入るカードの元データ。デッキ作成時に `${id}-${番号}` の形で個別IDが振られる。
 export const ATTACK_SPELL_ID = 's001';
 
-const monsterCard1: Card = {
+const monsterCard1: MonsterCard = {
   id: 'm001',
   name: 'Goblin Attacker',
   type: 'Monster',
@@ -15,7 +15,7 @@ const monsterCard1: Card = {
   cost: 1,
 };
 
-const monsterCard2: Card = {
+const monsterCard2: MonsterCard = {
   id: 'm002',
   name: 'Stone Golem',
   type: 'Monster',
@@ -27,7 +27,7 @@ const monsterCard2: Card = {
   cost: 2,
 };
 
-const monsterCard3: Card = {
+const monsterCard3: MonsterCard = {
   id: 'm003',
   name: 'pute',
   type: 'Monster',
@@ -39,7 +39,7 @@ const monsterCard3: Card = {
   cost: 1,
 };
 
-const monsterCard4: Card = {
+const monsterCard4: MonsterCard = {
   id: 'm004',
   name: 'hanta-',
   type: 'Monster',
@@ -51,7 +51,7 @@ const monsterCard4: Card = {
   cost: 1,
 };
 
-const monsterCard5: Card = {
+const monsterCard5: MonsterCard = {
   id: 'm005',
   name: 'sennsi',
   type: 'Monster',
@@ -63,7 +63,7 @@ const monsterCard5: Card = {
   cost: 2,
 };
 
-const monsterCard6: Card = {
+const monsterCard6: MonsterCard = {
   id: 'm006',
   name: 'majutu',
   type: 'Monster',
@@ -75,7 +75,7 @@ const monsterCard6: Card = {
   cost: 2,
 };
 
-const monsterCard7: Card = {
+const monsterCard7: MonsterCard = {
   id: 'm007',
   name: 'baran',
   type: 'Monster',
@@ -87,7 +87,7 @@ const monsterCard7: Card = {
   cost: 2,
 };
 
-const attackSpell: Card = {
+const attackSpell: SpellCard = {
   id: ATTACK_SPELL_ID,
   name: '攻撃の呪文',
   type: 'Spell',
@@ -100,3 +100,9 @@ export const BASE_CARDS: Card[] = [monsterCard1, monsterCard2, monsterCard3, mon
 
 // 個別IDから元カードのIDを取り出す（例: 's001-12' → 's001'）
 export const getBaseCardId = (card: Card): string => card.id.split('-')[0];
+
+// ダメージなどで変化したカードを、個別IDはそのままに元の能力値へ戻す（墓地へ送るときに使う）
+export const toOriginalCard = <T extends Card>(card: T): T => {
+  const base = BASE_CARDS.find(c => c.id === getBaseCardId(card));
+  return base ? ({ ...base, id: card.id } as T) : card;
+};

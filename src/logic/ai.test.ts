@@ -1,8 +1,8 @@
-import { GameState } from '../types/gameState';
+import { GameState, Phase } from '../types/gameState';
 import { runAiAttackPhase, runAiPlayPhase } from './ai';
-import { emptyState, monster, spell, withField, withPlayer } from './testUtils';
+import { emptyState, inPhase, monster, spell, withField, withPlayer } from './testUtils';
 
-const aiTurn = (state: GameState): GameState => ({ ...state, currentPlayer: 'player2' });
+const aiTurn = (state: GameState, phase: Phase = 'Play'): GameState => inPhase(state, phase, 'player2');
 
 describe('AI play phase', () => {
   it('summons the strongest affordable monsters into their preferred row', () => {
@@ -58,7 +58,7 @@ describe('AI play phase', () => {
 
 describe('AI attack phase', () => {
   it('kills the most valuable monster it can and chips the rest', () => {
-    let state = withField(aiTurn(emptyState()), 'player2', 'frontRow', [monster('x', { frontAttack: 5 }), monster('y', { frontAttack: 2 }), null]);
+    let state = withField(aiTurn(emptyState(), 'Attack'), 'player2', 'frontRow', [monster('x', { frontAttack: 5 }), monster('y', { frontAttack: 2 }), null]);
     state = withField(state, 'player1', 'frontRow', [
       monster('weak', { frontAttack: 1, cardHp: 3 }),
       monster('strong', { frontAttack: 6, cardHp: 5 }),
@@ -72,7 +72,7 @@ describe('AI attack phase', () => {
   });
 
   it('uses the attacker with the least overkill and attacks directly once the front row is clear', () => {
-    let state = withField(aiTurn(emptyState()), 'player2', 'frontRow', [monster('big', { frontAttack: 9 }), monster('small', { frontAttack: 3 }), null]);
+    let state = withField(aiTurn(emptyState(), 'Attack'), 'player2', 'frontRow', [monster('big', { frontAttack: 9 }), monster('small', { frontAttack: 3 }), null]);
     state = withField(state, 'player1', 'frontRow', [monster('a', { cardHp: 3 }), null, null]);
     const next = runAiAttackPhase(state, 'player2');
     expect(next.players.player1.field.frontRow[0]).toBeNull();
@@ -80,7 +80,7 @@ describe('AI attack phase', () => {
   });
 
   it('attacks the special card directly with every monster when the front row is empty', () => {
-    let state = withField(aiTurn(emptyState()), 'player2', 'frontRow', [monster('x', { frontAttack: 4 }), null, null]);
+    let state = withField(aiTurn(emptyState(), 'Attack'), 'player2', 'frontRow', [monster('x', { frontAttack: 4 }), null, null]);
     state = withField(state, 'player2', 'backRow', [monster('y', { backAttack: 2 }), null, null]);
     state = withField(state, 'player1', 'backRow', [monster('b'), null, null]);
     const next = runAiAttackPhase(state, 'player2');

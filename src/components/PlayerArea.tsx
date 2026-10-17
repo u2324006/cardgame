@@ -1,5 +1,5 @@
 import React from 'react';
-import { PlayerState, Row } from '../types/gameState';
+import { FieldPosition, PlayerState, Row } from '../types/gameState';
 import Hand from './Hand';
 import CardSlot from './CardSlot';
 import EnergyZone from './EnergyZone';
@@ -11,6 +11,7 @@ interface PlayerAreaProps {
   onSpecialCardClick?: () => void;
   onHandCardClick?: (index: number) => void;
   selectedCardIndex?: number | null;
+  selectedPosition?: FieldPosition | null;
 }
 
 // 1人分の盤面（手札・フィールド・山札/墓地・大将カード・エネルギー）
@@ -21,6 +22,7 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
   onSpecialCardClick,
   onHandCardClick,
   selectedCardIndex,
+  selectedPosition,
 }) => {
   // 自分から見て前衛が中央側になるよう、相手は後衛→前衛の順に並べる
   const rows: Row[] = isOpponent ? ['backRow', 'frontRow'] : ['frontRow', 'backRow'];
@@ -36,7 +38,12 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
           {rows.map(row => (
             <div key={row} className={`row ${row === 'frontRow' ? 'front-row' : 'back-row'}`}>
               {playerState.field[row].map((card, i) => (
-                <CardSlot key={i} card={card} onClick={() => onSlotClick(row, i)} />
+                <CardSlot
+                  key={i}
+                  card={card}
+                  onClick={() => onSlotClick(row, i)}
+                  isSelected={selectedPosition?.row === row && selectedPosition.index === i}
+                />
               ))}
             </div>
           ))}

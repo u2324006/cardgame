@@ -1,4 +1,4 @@
-import { Card } from './card';
+import { Card, MonsterCard } from './card';
 
 export type PlayerId = 'player1' | 'player2';
 export type Row = 'frontRow' | 'backRow';
@@ -16,7 +16,7 @@ export interface PlayerState {
   deck: Card[];
   hand: Card[];
   graveyard: Card[];
-  field: Record<Row, (Card | null)[]>;
+  field: Record<Row, (MonsterCard | null)[]>; // 場に出せるのはモンスターのみ
 }
 
 // ターン終了時にリセットされる状態

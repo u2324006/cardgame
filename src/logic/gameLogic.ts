@@ -1,18 +1,20 @@
-import { Card } from '../types/card';
+import { Card, MonsterCard, isMonster } from '../types/card';
 import {
   AttackTarget,
   FieldPosition,
   GameState,
+  Phase,
   PlayerId,
   PlayerState,
   Row,
 } from '../types/gameState';
-import { ATTACK_SPELL_ID, getBaseCardId } from './cards';
+import { ATTACK_SPELL_ID, getBaseCardId, toOriginalCard } from './cards';
 import { createInitialTurnState } from './initialState';
 import { RULES } from './rules';
 
 // ゲームのルールをまとめた純粋関数群。
 // どの関数も引数の state を書き換えず、新しい state を返す。
+// プレイヤーの行動はルール違反なら { ok: false, error } を返す（AI も同じ関数を使う）。
 
 export type ActionResult =
   | { ok: true; state: GameState }
@@ -26,6 +28,37 @@ export const ROWS: Row[] = ['frontRow', 'backRow'];
 export const getOpponent = (player: PlayerId): PlayerId =>
   player === 'player1' ? 'player2' : 'player1';
 
+export const otherRow = (row: Row): Row => (row === 'frontRow' ? 'backRow' : 'frontRow');
+
+// --- 状態の参照 ---
+
+export const getCardAt = (state: GameState, player: PlayerId, position: FieldPosition): MonsterCard | null =>
+  state.players[player].field[position.row][position.index] ?? null;
+
+// 場にいるモンスターの位置の一覧（rows で列を絞り込める）
+export const getMonsterPositions = (state: GameState, player: PlayerId, rows: Row[] = ROWS): FieldPosition[] =>
+  rows.flatMap(row =>
+    state.players[player].field[row].flatMap((card, index) => (card ? [{ row, index }] : [])),
+  );
+
+export const findEmptySlot = (state: GameState, player: PlayerId, row: Row): FieldPosition | null => {
+  const index = state.players[player].field[row].findIndex(slot => slot === null);
+  return index === -1 ? null : { row, index };
+};
+
+export const hasFrontRowMonsters = (playerState: PlayerState): boolean =>
+  playerState.field.frontRow.some(card => card !== null);
+
+// 攻撃の呪文のバフはFA（前衛での攻撃力）にのみ適用される
+export const getAttackPower = (state: GameState, card: MonsterCard, row: Row): number =>
+  row === 'frontRow'
+    ? card.frontAttack + (state.turnState.attackBuffs[card.id] ?? 0)
+    : card.backAttack;
+
+export const isAttackSpell = (card: Card): boolean => getBaseCardId(card) === ATTACK_SPELL_ID;
+
+// --- 状態の更新ヘルパー ---
+
 const updatePlayer = (
   state: GameState,
   player: PlayerId,
@@ -35,13 +68,25 @@ const updatePlayer = (
   players: { ...state.players, [player]: update(state.players[player]) },
 });
 
+const updateTurnState = (state: GameState, update: Partial<GameState['turnState']>): GameState => ({
+  ...state,
+  turnState: { ...state.turnState, ...update },
+});
+
 const setSlot = (
   field: PlayerState['field'],
   position: FieldPosition,
-  card: Card | null,
+  card: MonsterCard | null,
 ): PlayerState['field'] => ({
   ...field,
   [position.row]: field[position.row].map((slot, i) => (i === position.index ? card : slot)),
+});
+
+// 手札からカードを取り除き、コストを支払う
+const payFromHand = (playerState: PlayerState, handIndex: number, cost: number): PlayerState => ({
+  ...playerState,
+  currentEnergy: playerState.currentEnergy - cost,
+  hand: playerState.hand.filter((_, i) => i !== handIndex),
 });
 
 // 大将カードにダメージを与え、HPが0以下になったら相手の勝利とする
@@ -52,18 +97,12 @@ const damageSpecialCard = (state: GameState, player: PlayerId, amount: number): 
     : next;
 };
 
-export const getCardAt = (state: GameState, player: PlayerId, position: FieldPosition): Card | null =>
-  state.players[player].field[position.row][position.index] ?? null;
-
-export const hasFrontRowMonsters = (playerState: PlayerState): boolean =>
-  playerState.field.frontRow.some(card => card !== null);
-
-// 攻撃の呪文のバフはFA（前衛での攻撃力）にのみ適用される
-export const getAttackPower = (state: GameState, card: Card, row: Row): number => {
-  if (row === 'frontRow') {
-    return (card.frontAttack ?? 0) + (state.turnState.attackBuffs[card.id] ?? 0);
-  }
-  return card.backAttack ?? 0;
+// 行動できるのは、自分のターンの指定フェイズ中だけ
+const checkTurn = (state: GameState, player: PlayerId, phase: Phase): string | null => {
+  if (state.winner) return 'ゲームは終了しています。';
+  if (state.currentPlayer !== player) return '自分のターンではありません。';
+  if (state.phase !== phase) return `${phase} フェイズではありません。`;
+  return null;
 };
 
 // --- フェイズ・ターン進行 ---
@@ -103,7 +142,7 @@ export const nextPhase = (state: GameState): GameState => {
   switch (state.phase) {
     case 'Draw': return drawPhase(state);
     case 'Play': return { ...state, phase: 'Attack' };
-    default: return endTurn(state);
+    case 'Attack': return endTurn(state);
   }
 };
 
@@ -115,29 +154,23 @@ export const playCard = (
   handIndex: number,
   position: FieldPosition,
 ): ActionResult => {
+  const turnError = checkTurn(state, player, 'Play');
+  if (turnError) return failure(turnError);
   const playerState = state.players[player];
   const card = playerState.hand[handIndex];
   if (!card) return failure('カードが選択されていません。');
-  if (card.type !== 'Monster') return failure('スペルカードは味方モンスターを選んで使用してください。');
+  if (!isMonster(card)) return failure('スペルカードは味方モンスターを選んで使用してください。');
   if (playerState.currentEnergy < card.cost) return failure('エネルギーが足りません！');
   if (getCardAt(state, player, position)) return failure('そのスロットには既にカードがあります。');
 
   const next = updatePlayer(state, player, p => ({
-    ...p,
-    currentEnergy: p.currentEnergy - card.cost,
-    hand: p.hand.filter((_, i) => i !== handIndex),
+    ...payFromHand(p, handIndex, card.cost),
     field: setSlot(p.field, position, card),
   }));
-  return success({
-    ...next,
-    turnState: {
-      ...next.turnState,
-      summonedThisTurnIds: [...next.turnState.summonedThisTurnIds, card.id],
-    },
-  });
+  return success(updateTurnState(next, {
+    summonedThisTurnIds: [...next.turnState.summonedThisTurnIds, card.id],
+  }));
 };
-
-export const isAttackSpell = (card: Card) => getBaseCardId(card) === ATTACK_SPELL_ID;
 
 export const castSpell = (
   state: GameState,
@@ -145,31 +178,25 @@ export const castSpell = (
   handIndex: number,
   targetPosition: FieldPosition,
 ): ActionResult => {
+  const turnError = checkTurn(state, player, 'Play');
+  if (turnError) return failure(turnError);
   const playerState = state.players[player];
   const spell = playerState.hand[handIndex];
   const target = getCardAt(state, player, targetPosition);
-  if (!spell || spell.type !== 'Spell') return failure('スペルカードが選択されていません。');
+  if (!spell || isMonster(spell)) return failure('スペルカードが選択されていません。');
   if (!target) return failure('対象のモンスターがいません。');
   if (playerState.currentEnergy < spell.cost) return failure('エネルギーが足りません！');
 
-  let next = updatePlayer(state, player, p => ({
-    ...p,
-    currentEnergy: p.currentEnergy - spell.cost,
-    hand: p.hand.filter((_, i) => i !== handIndex),
+  const next = updatePlayer(state, player, p => ({
+    ...payFromHand(p, handIndex, spell.cost),
     graveyard: [...p.graveyard, spell],
   }));
 
-  if (isAttackSpell(spell)) {
-    const { attackBuffs } = next.turnState;
-    next = {
-      ...next,
-      turnState: {
-        ...next.turnState,
-        attackBuffs: { ...attackBuffs, [target.id]: (attackBuffs[target.id] ?? 0) + 1 },
-      },
-    };
-  }
-  return success(next);
+  if (!isAttackSpell(spell)) return success(next);
+  const { attackBuffs } = next.turnState;
+  return success(updateTurnState(next, {
+    attackBuffs: { ...attackBuffs, [target.id]: (attackBuffs[target.id] ?? 0) + 1 },
+  }));
 };
 
 export const moveMonster = (
@@ -178,6 +205,8 @@ export const moveMonster = (
   from: FieldPosition,
   to: FieldPosition,
 ): ActionResult => {
+  const turnError = checkTurn(state, player, 'Play');
+  if (turnError) return failure(turnError);
   const card = getCardAt(state, player, from);
   if (!card) return failure('移動するモンスターがいません。');
   if (state.turnState.hasMoved) return failure('モンスターの移動は1ターンに1回までです。');
@@ -191,7 +220,7 @@ export const moveMonster = (
     ...p,
     field: setSlot(setSlot(p.field, from, null), to, card),
   }));
-  return success({ ...next, turnState: { ...next.turnState, hasMoved: true } });
+  return success(updateTurnState(next, { hasMoved: true }));
 };
 
 export const attack = (
@@ -200,29 +229,29 @@ export const attack = (
   attackerPosition: FieldPosition,
   target: AttackTarget,
 ): ActionResult => {
-  if (state.winner) return failure('ゲームは終了しています。');
+  const turnError = checkTurn(state, attackerPlayer, 'Attack');
+  if (turnError) return failure(turnError);
   const attacker = getCardAt(state, attackerPlayer, attackerPosition);
-  if (!attacker || attacker.type !== 'Monster') return failure('攻撃するモンスターがいません。');
+  if (!attacker) return failure('攻撃するモンスターがいません。');
   if (state.turnState.attackedMonsterIds.includes(attacker.id)) {
     return failure('このモンスターは既に攻撃済みです。');
   }
 
   const defender = getOpponent(attackerPlayer);
-  const defenderState = state.players[defender];
-  const frontRowBlocked = hasFrontRowMonsters(defenderState);
+  const frontRowBlocked = hasFrontRowMonsters(state.players[defender]);
   const attackPower = getAttackPower(state, attacker, attackerPosition.row);
 
   let next: GameState;
   if (target.type === 'monster') {
     const targetCard = getCardAt(state, defender, target.position);
-    if (!targetCard || targetCard.cardHp === undefined) return failure('攻撃対象のモンスターがいません。');
+    if (!targetCard) return failure('攻撃対象のモンスターがいません。');
     if (target.position.row === 'backRow' && frontRowBlocked) {
       return failure('前衛にモンスターがいるため、後衛を攻撃できません。');
     }
     const newHp = targetCard.cardHp - attackPower;
     next = updatePlayer(state, defender, p =>
       newHp <= 0
-        ? { ...p, field: setSlot(p.field, target.position, null), graveyard: [...p.graveyard, targetCard] }
+        ? { ...p, field: setSlot(p.field, target.position, null), graveyard: [...p.graveyard, toOriginalCard(targetCard)] }
         : { ...p, field: setSlot(p.field, target.position, { ...targetCard, cardHp: newHp }) },
     );
   } else {
@@ -230,11 +259,7 @@ export const attack = (
     next = damageSpecialCard(state, defender, attackPower);
   }
 
-  return success({
-    ...next,
-    turnState: {
-      ...next.turnState,
-      attackedMonsterIds: [...next.turnState.attackedMonsterIds, attacker.id],
-    },
-  });
+  return success(updateTurnState(next, {
+    attackedMonsterIds: [...next.turnState.attackedMonsterIds, attacker.id],
+  }));
 };

@@ -1,11 +1,11 @@
-import { Card } from '../types/card';
-import { GameState, PlayerId, PlayerState } from '../types/gameState';
+import { MonsterCard, SpellCard } from '../types/card';
+import { GameState, Phase, PlayerId, PlayerState } from '../types/gameState';
 import { ActionResult } from './gameLogic';
 import { createInitialGameState } from './initialState';
 
 // テスト用のカード・盤面を作るヘルパー
 
-export const monster = (id: string, overrides: Partial<Card> = {}): Card => ({
+export const monster = (id: string, overrides: Partial<MonsterCard> = {}): MonsterCard => ({
   id,
   name: id,
   type: 'Monster',
@@ -17,7 +17,7 @@ export const monster = (id: string, overrides: Partial<Card> = {}): Card => ({
   ...overrides,
 });
 
-export const spell: Card = { id: 's001-0', name: '攻撃の呪文', type: 'Spell', description: '', cost: 1 };
+export const spell: SpellCard = { id: 's001-0', name: '攻撃の呪文', type: 'Spell', description: '', cost: 1 };
 
 // 両プレイヤーの手札・フィールドを空にした、テスト用の状態を作る
 export const emptyState = (): GameState => {
@@ -31,7 +31,7 @@ export const emptyState = (): GameState => {
   return { ...base, phase: 'Play', players: { player1: clear('player1'), player2: clear('player2') } };
 };
 
-export const withField = (state: GameState, player: PlayerId, row: 'frontRow' | 'backRow', cards: (Card | null)[]): GameState => ({
+export const withField = (state: GameState, player: PlayerId, row: 'frontRow' | 'backRow', cards: (MonsterCard | null)[]): GameState => ({
   ...state,
   players: {
     ...state.players,
@@ -48,3 +48,10 @@ export const unwrap = (result: ActionResult): GameState => {
   if (!result.ok) throw new Error(result.error);
   return result.state;
 };
+
+// 指定プレイヤーのターンの指定フェイズにする
+export const inPhase = (state: GameState, phase: Phase, player: PlayerId = 'player1'): GameState => ({
+  ...state,
+  phase,
+  currentPlayer: player,
+});

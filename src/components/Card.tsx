@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card as CardType } from '../types/card';
+import { Card as CardType, isMonster } from '../types/card';
 import '../styles/Card.css';
 
 interface CardProps {
@@ -12,11 +12,12 @@ interface CardProps {
 export const CardBack: React.FC = () => <div className="card card-back" />;
 
 const Card: React.FC<CardProps> = ({ card, onClick, isSelected = false }) => {
+  const monster = isMonster(card) ? card : null;
   return (
     <div className={`card ${card.type.toLowerCase()} ${isSelected ? 'selected' : ''}`} onClick={onClick}>
       {/* Top section: HP, Race, Cost */}
       <div className="card-top-section">
-        <div className="card-hp" style={{ visibility: card.cardHp === undefined ? 'hidden' : undefined }}>HP: {card.cardHp}</div>
+        <div className="card-hp" style={{ visibility: monster ? undefined : 'hidden' }}>HP: {monster?.cardHp}</div>
         <div className="card-race">{card.race}</div>
         <div className="card-cost-circle">
           <div className="card-cost-value">{card.cost}</div>
@@ -34,10 +35,10 @@ const Card: React.FC<CardProps> = ({ card, onClick, isSelected = false }) => {
       </div>
 
       {/* Bottom section: FA/BA */}
-      {card.type === 'Monster' && (
+      {monster && (
         <div className="card-stats-bottom">
-          <span>FA: {card.frontAttack}</span>
-          <span>BA: {card.backAttack}</span>
+          <span>FA: {monster.frontAttack}</span>
+          <span>BA: {monster.backAttack}</span>
         </div>
       )}
     </div>

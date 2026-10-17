@@ -13,7 +13,8 @@
 }
 
 .card.selected {
-  border: 2px solid blue; /* Example selected border */
+  border-color: #1E6FFF;
+  box-shadow: 0 0 0 3px #1E6FFF, 0 0 12px 4px rgba(30, 111, 255, 0.7);
 }
 
 .card-top-section {
