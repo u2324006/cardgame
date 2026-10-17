@@ -333,12 +333,26 @@
   left: 50%;
   bottom: 8px;
   transform: translateX(-50%);
-  width: 110px;
-  padding: 2px 4px;
-  border-radius: 4px;
-  background: rgba(239, 229, 207, 0.85);
+  width: 120px;
+  padding: 3px 6px;
+  border: 1px solid var(--gold-frame);
+  border-radius: 6px;
+  /* 絵や背景の色に関係なく読めるよう、濃い色の札にする */
+  background: rgba(42, 33, 24, 0.88);
+  color: var(--gold-text);
   font-size: 12px;
   text-align: center;
+}
+
+.edit-card .edit-race::placeholder {
+  color: rgba(243, 227, 184, 0.6);
+}
+
+/* 入力中も背景を保ち、枠を光らせて入力中だと分かるようにする */
+.edit-card .edit-race:focus {
+  border-color: var(--selected);
+  background: var(--ink);
+  box-shadow: 0 0 0 2px rgba(245, 210, 122, 0.45);
 }
 
 .edit-texts {
