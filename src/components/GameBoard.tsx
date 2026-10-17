@@ -12,7 +12,8 @@ import {
   nextPhase,
   playCard,
 } from '../logic/gameLogic';
-import { isMonster } from '../types/card';
+import { getSpellTargetSide, isMonster } from '../types/card';
+import { DeckList } from '../logic/deck';
 import { FieldPosition, GameState, PlayerId, Row } from '../types/gameState';
 import { useAutoProgress } from '../hooks/useAutoProgress';
 import { useTimedMessage } from '../hooks/useTimedMessage';
@@ -35,8 +36,13 @@ const NO_SELECTION: Selection = { kind: 'none' };
 
 const samePosition = (a: FieldPosition, b: FieldPosition) => a.row === b.row && a.index === b.index;
 
-const GameBoard: React.FC = () => {
-  const [gameState, setGameState] = useState<GameState>(createInitialGameState);
+interface GameBoardProps {
+  deck?: DeckList; // プレイヤーが使うデッキ（なければ自動のデッキ）
+  onExit?: () => void; // メニューへ戻る
+}
+
+const GameBoard: React.FC<GameBoardProps> = ({ deck, onExit }) => {
+  const [gameState, setGameState] = useState<GameState>(() => createInitialGameState(deck));
   const [selection, setSelection] = useState<Selection>(NO_SELECTION);
   const [hovered, setHovered] = useState<InspectTarget | null>(null); // マウスを乗せているカード
   const { message, showMessage, clearMessage } = useTimedMessage(MESSAGE_DURATION_MS);
@@ -74,7 +80,7 @@ const GameBoard: React.FC = () => {
   };
 
   const handleRestart = () => {
-    setGameState(createInitialGameState());
+    setGameState(createInitialGameState(deck));
     setSelection(NO_SELECTION);
     setHovered(null);
     clearMessage();
@@ -142,11 +148,20 @@ const GameBoard: React.FC = () => {
     }
   };
 
+  // 相手のモンスターを対象にするスペル（炎の呪文など）
+  const handleEnemyTargetSpell = (position: FieldPosition) => {
+    if (selection.kind !== 'hand') return;
+    const selectedCard = players[HUMAN].hand[selection.index];
+    if (!selectedCard || isMonster(selectedCard) || getSpellTargetSide(selectedCard) !== 'enemy') return;
+    apply(castSpell(gameState, HUMAN, selection.index, position));
+  };
+
   const handleFieldClick = (player: PlayerId, row: Row, index: number) => {
     if (!isPlayerTurn) return;
     const position = { row, index };
     if (phase === 'Attack') handleAttackPhaseClick(player, position);
     else if (phase === 'Play' && player === HUMAN) handlePlayPhaseClick(position);
+    else if (phase === 'Play' && player === AI) handleEnemyTargetSpell(position);
   };
 
   // 相手の大将カードをクリック（ダイレクトアタック）
@@ -159,7 +174,10 @@ const GameBoard: React.FC = () => {
     return (
       <div className="game-over-message">
         {winner === HUMAN ? 'あなたの勝利！' : '相手の勝利…'}
-        <button onClick={handleRestart} className="primary-button">もう一度遊ぶ</button>
+        <div className="game-over-actions">
+          <button onClick={handleRestart} className="primary-button">もう一度遊ぶ</button>
+          {onExit && <button onClick={onExit} className="secondary-button">メニューへ戻る</button>}
+        </div>
       </div>
     );
   }
@@ -201,6 +219,7 @@ const GameBoard: React.FC = () => {
         isPlayerTurn={isPlayerTurn}
         onNextPhase={() => setGameState(nextPhase)}
         onEndTurn={() => setGameState(endTurn)}
+        onExit={onExit}
       />
     </div>
   );

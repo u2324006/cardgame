@@ -9,7 +9,7 @@ import {
   nextPhase,
   playCard,
 } from './gameLogic';
-import { emptyState, inPhase, monster, spell, unwrap, withField, withPlayer } from './testUtils';
+import { emptyState, fireSpell, healSpell, inPhase, monster, spell, unwrap, withField, withPlayer } from './testUtils';
 
 describe('phase progression', () => {
   it('draws a card and gains energy in the draw phase', () => {
@@ -143,5 +143,38 @@ describe('turn and phase checks', () => {
     state = withField(state, 'player2', 'frontRow', [{ ...monster('m001-3'), name: 'ゴブリンアタッカー', cardHp: 2 }, null, null]);
     const next = unwrap(attack(inPhase(state, 'Attack'), 'player1', { row: 'frontRow', index: 0 }, { type: 'monster', position: { row: 'frontRow', index: 0 } }));
     expect(next.players.player2.graveyard[0]).toMatchObject({ id: 'm001-3', cardHp: 6 });
+  });
+});
+
+describe('spell effects', () => {
+  it('heals an ally up to its max HP and rejects an undamaged target', () => {
+    const damaged = { ...monster('m001-0'), cardHp: 2 }; // ゴブリンアタッカー（最大HP 6）
+    let state = withField(emptyState(), 'player1', 'frontRow', [damaged, monster('m001-1', { cardHp: 6 }), null]);
+    state = withPlayer(state, 'player1', { hand: [healSpell, healSpell] });
+    const next = unwrap(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 }));
+    expect(next.players.player1.field.frontRow[0]?.cardHp).toBe(5);
+    const full = unwrap(castSpell(next, 'player1', 0, { row: 'frontRow', index: 0 }));
+    expect(full.players.player1.field.frontRow[0]?.cardHp).toBe(6);
+    expect(castSpell(state, 'player1', 0, { row: 'frontRow', index: 1 }).ok).toBe(false);
+  });
+
+  it('damages an enemy monster, destroying it at 0 HP', () => {
+    let state = withField(emptyState(), 'player2', 'backRow', [monster('a', { cardHp: 3 }), monster('b', { cardHp: 9 }), null]);
+    state = withPlayer(state, 'player1', { hand: [fireSpell, fireSpell] });
+    let next = unwrap(castSpell(state, 'player1', 0, { row: 'backRow', index: 0 }));
+    expect(next.players.player2.field.backRow[0]).toBeNull();
+    expect(next.players.player2.graveyard.map(c => c.id)).toEqual(['a']);
+    next = unwrap(castSpell(next, 'player1', 0, { row: 'backRow', index: 1 }));
+    expect(next.players.player2.field.backRow[1]?.cardHp).toBe(6);
+  });
+
+  it('requires a target on the correct side', () => {
+    const state = withPlayer(
+      withField(emptyState(), 'player1', 'frontRow', [monster('mine'), null, null]),
+      'player1',
+      { hand: [fireSpell] },
+    );
+    // 炎の呪文は相手のモンスターが対象なので、相手の同じ位置が空なら失敗する
+    expect(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 }).ok).toBe(false);
   });
 });

@@ -1,6 +1,7 @@
 import { GameState, PlayerState, TurnState } from '../types/gameState';
 import { Card, LeaderCard, MonsterCard } from '../types/card';
-import { BASE_CARDS, DEFAULT_LEADER } from './cards';
+import { DEFAULT_LEADER, findLeader } from './cards';
+import { DeckList, createDefaultDeckList, expandDeck } from './deck';
 import { RULES } from './rules';
 
 // Fisher–Yates シャッフル（元の配列は変更しない）
@@ -13,13 +14,8 @@ export const shuffle = <T,>(items: T[], random: () => number = Math.random): T[]
   return result;
 };
 
-// 元カードを順番に複製してデッキ枚数をそろえ、シャッフルする。
-// 複製したカードには `${元のID}-${番号}` の個別IDを振る。
-export const createDeck = (baseCards: Card[] = BASE_CARDS): Card[] =>
-  shuffle(Array.from({ length: RULES.deckSize }, (_, i) => {
-    const card = baseCards[i % baseCards.length];
-    return { ...card, id: `${card.id}-${i}` };
-  }));
+// デッキの構成からカードを作ってシャッフルする
+export const createDeck = (deck: DeckList = createDefaultDeckList()): Card[] => shuffle(expandDeck(deck));
 
 const createInitialPlayerState = (fullDeck: Card[], leader: LeaderCard = DEFAULT_LEADER): PlayerState => {
   const emptyRow = () => Array<MonsterCard | null>(RULES.slotsPerRow).fill(null);
@@ -46,11 +42,15 @@ export const createInitialTurnState = (): TurnState => ({
   attackBuffs: {},
 });
 
-// 呼び出すたびに新しいデッキでゲームを作成する（リスタート用）
-export const createInitialGameState = (): GameState => ({
+const createPlayerFromDeck = (deck: DeckList): PlayerState =>
+  createInitialPlayerState(createDeck(deck), findLeader(deck.leaderId) ?? DEFAULT_LEADER);
+
+// 呼び出すたびに新しくシャッフルしたデッキでゲームを作成する（リスタート用）
+// player1 は渡されたデッキ（なければ自動のデッキ）、player2（AI）は自動のデッキを使う
+export const createInitialGameState = (playerDeck: DeckList = createDefaultDeckList()): GameState => ({
   players: {
-    player1: createInitialPlayerState(createDeck()),
-    player2: createInitialPlayerState(createDeck()),
+    player1: createPlayerFromDeck(playerDeck),
+    player2: createPlayerFromDeck(createDefaultDeckList()),
   },
   currentPlayer: 'player1',
   turn: 1,

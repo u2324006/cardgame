@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+  <defs>
+    <radialGradient id="bg" cx="0.5" cy="0.6" r="0.7">
+      <stop offset="0" stop-color="#8E2525"/>
+      <stop offset="1" stop-color="#1F0707"/>
+    </radialGradient>
+  </defs>
+  <rect width="160" height="120" fill="url(#bg)"/>
+  <circle cx="80" cy="62" r="44" fill="none" stroke="#D4AF6A" stroke-width="1.5" opacity="0.7"/>
+  <!-- 炎 -->
+  <path d="M80 104 Q48 100 52 72 Q56 52 70 40 Q68 58 78 62 Q74 42 90 22 Q92 44 104 56 Q116 72 108 90 Q100 104 80 104 Z" fill="#E8590C"/>
+  <path d="M80 102 Q60 98 64 80 Q66 68 74 60 Q74 74 82 76 Q82 62 92 50 Q96 66 100 74 Q104 90 96 98 Q90 102 80 102 Z" fill="#F59F00"/>
+  <path d="M80 100 Q70 98 72 88 Q74 80 80 76 Q80 84 86 86 Q90 94 86 98 Q84 100 80 100 Z" fill="#FFF3BF"/>
+  <!-- 火の粉 -->
+  <circle cx="44" cy="40" r="2" fill="#F59F00"/>
+  <circle cx="120" cy="34" r="2.5" fill="#F59F00"/>
+  <circle cx="128" cy="60" r="1.5" fill="#FFF3BF"/>
+  <circle cx="34" cy="70" r="1.5" fill="#FFF3BF"/>
+</svg>

@@ -7,6 +7,7 @@ interface ControlPanelProps {
   isPlayerTurn: boolean;
   onNextPhase: () => void;
   onEndTurn: () => void;
+  onExit?: () => void;
 }
 
 const PHASES: { phase: Phase; label: string }[] = [
@@ -15,7 +16,7 @@ const PHASES: { phase: Phase; label: string }[] = [
   { phase: 'Attack', label: 'アタック' },
 ];
 
-const ControlPanel: React.FC<ControlPanelProps> = ({ turn, phase, isPlayerTurn, onNextPhase, onEndTurn }) => {
+const ControlPanel: React.FC<ControlPanelProps> = ({ turn, phase, isPlayerTurn, onNextPhase, onEndTurn, onExit }) => {
   // ドローフェイズは自動で進むので、その間は操作できないようにする
   const canAct = isPlayerTurn && phase !== 'Draw';
   return (
@@ -36,6 +37,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ turn, phase, isPlayerTurn, 
           <button onClick={onNextPhase} className="primary-button" disabled={!canAct}>次のフェイズへ</button>
           <button onClick={onEndTurn} className="secondary-button" disabled={!canAct}>ターン終了</button>
         </>
+      )}
+      {onExit && (
+        <button
+          onClick={() => { if (window.confirm('対戦をやめてメニューへ戻りますか？')) onExit(); }}
+          className="text-button"
+        >
+          メニューへ戻る
+        </button>
       )}
     </div>
   );

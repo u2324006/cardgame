@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card as CardType, LeaderCard as LeaderCardType, isMonster } from '../types/card';
+import { Card as CardType, LeaderCard as LeaderCardType, getSpellTargetSide, isMonster } from '../types/card';
 import { Row } from '../types/gameState';
 import Card from './Card';
 import LeaderCard from './LeaderCard';
@@ -11,7 +11,10 @@ export type InspectTarget =
 
 const previewNote = (target: InspectTarget): string => {
   if (target.kind === 'leader') return '大将カードのHPが0になると負けです。';
-  if (!isMonster(target.card)) return '手札で選んでから、対象の味方モンスターをクリックして使います。';
+  if (!isMonster(target.card)) {
+    const side = getSpellTargetSide(target.card) === 'enemy' ? '相手' : '味方';
+    return `手札で選んでから、対象の${side}モンスターをクリックして使います。`;
+  }
   return '前衛にいるときは FA、後衛にいるときは BA で攻撃します。';
 };
 

@@ -17,7 +17,15 @@ export const monster = (id: string, overrides: Partial<MonsterCard> = {}): Monst
   ...overrides,
 });
 
-export const spell: SpellCard = { id: 's001-0', name: '攻撃の呪文', type: 'Spell', description: '', cost: 1 };
+export const spell: SpellCard = {
+  id: 's001-0', name: '攻撃の呪文', type: 'Spell', description: '', cost: 1, effect: { kind: 'buffFa', amount: 1 },
+};
+export const healSpell: SpellCard = {
+  id: 's002-0', name: '回復の呪文', type: 'Spell', description: '', cost: 1, effect: { kind: 'heal', amount: 3 },
+};
+export const fireSpell: SpellCard = {
+  id: 's003-0', name: '炎の呪文', type: 'Spell', description: '', cost: 2, effect: { kind: 'damage', amount: 3 },
+};
 
 // 両プレイヤーの手札・フィールドを空にした、テスト用の状態を作る
 export const emptyState = (): GameState => {

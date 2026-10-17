@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6D7A8C"/>
+      <stop offset="1" stop-color="#262C36"/>
+    </linearGradient>
+  </defs>
+  <rect width="160" height="120" fill="url(#sky)"/>
+  <!-- 城壁 -->
+  <path d="M0 80 L0 64 L10 64 L10 70 L20 70 L20 64 L30 64 L30 70 L40 70 L40 64 L50 64 L50 80 Z M110 80 L110 64 L120 64 L120 70 L130 70 L130 64 L140 64 L140 70 L150 70 L150 64 L160 64 L160 80 Z" fill="#3A414D"/>
+  <path d="M0 100 L160 98 L160 120 L0 120 Z" fill="#1C2129"/>
+  <ellipse cx="80" cy="112" rx="48" ry="6" fill="#111418" opacity="0.6"/>
+  <!-- 大盾 -->
+  <path d="M34 46 L70 46 L70 84 Q52 106 34 84 Z" fill="#D4AF6A" stroke="#6B5530" stroke-width="2"/>
+  <path d="M52 52 L52 92 M40 66 L64 66" stroke="#8E2525" stroke-width="5"/>
+  <!-- 脚 -->
+  <path d="M70 92 L66 112 L78 112 L80 94 Z M86 94 L89 112 L101 112 L96 92 Z" fill="#5B6680"/>
+  <!-- 鎧 -->
+  <path d="M66 50 L100 50 L98 96 L68 96 Z" fill="#AEB7C6"/>
+  <path d="M68 66 L98 66 M70 80 L96 80" stroke="#5B6680" stroke-width="2"/>
+  <path d="M100 52 L114 68 L108 74 L96 62 Z" fill="#AEB7C6"/>
+  <!-- 剣 -->
+  <path d="M112 66 L132 30" stroke="#E6EAF0" stroke-width="4" stroke-linecap="round"/>
+  <path d="M106 64 L118 72" stroke="#D4AF6A" stroke-width="3" stroke-linecap="round"/>
+  <!-- 兜 -->
+  <path d="M70 48 Q70 24 83 24 Q96 24 96 48 Z" fill="#C3CBD8"/>
+  <path d="M74 36 L92 36 L92 40 L74 40 Z" fill="#1C2129"/>
+  <path d="M83 24 Q88 14 98 16" stroke="#2F64A8" stroke-width="5" fill="none" stroke-linecap="round"/>
+</svg>

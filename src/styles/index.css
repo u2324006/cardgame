@@ -51,3 +51,62 @@ body {
 button {
   font-family: var(--font-body);
 }
+
+/* --- 共通のボタン --- */
+
+.primary-button,
+.secondary-button {
+  height: 48px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s, background-color 0.15s;
+}
+
+.primary-button {
+  border: none;
+  background: var(--gold);
+  color: var(--ink);
+}
+
+.secondary-button {
+  border: 1px solid var(--gold-frame);
+  background: transparent;
+  color: var(--gold-text);
+}
+
+.primary-button:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: var(--warning-bg);
+}
+
+.primary-button:disabled,
+.secondary-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.text-button {
+  align-self: flex-start;
+  padding: 8px 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.text-button:hover {
+  color: var(--gold-text);
+}
+
+.text-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

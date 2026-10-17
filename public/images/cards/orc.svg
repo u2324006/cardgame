@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9A7A4A"/>
+      <stop offset="1" stop-color="#3D2B17"/>
+    </linearGradient>
+  </defs>
+  <rect width="160" height="120" fill="url(#sky)"/>
+  <path d="M0 100 L40 94 L80 102 L120 94 L160 100 L160 120 L0 120 Z" fill="#2A1D10"/>
+  <ellipse cx="80" cy="112" rx="46" ry="6" fill="#1A1209" opacity="0.6"/>
+  <!-- 斧 -->
+  <path d="M112 22 L108 96" stroke="#6B5032" stroke-width="4" stroke-linecap="round"/>
+  <path d="M112 24 Q132 26 132 44 Q122 40 110 42 Z" fill="#B8BEC8"/>
+  <!-- 脚 -->
+  <path d="M64 92 L60 112 L72 112 L75 94 Z M86 94 L89 112 L101 112 L96 92 Z" fill="#4A3A2A"/>
+  <!-- 胴体 -->
+  <path d="M58 54 L102 54 L98 96 L62 96 Z" fill="#6E8A4E"/>
+  <path d="M60 70 L100 70 L98 82 L62 82 Z" fill="#5B4632"/>
+  <!-- 腕 -->
+  <path d="M58 56 L44 80 L52 84 L62 66 Z M102 56 L112 72 L106 78 L98 64 Z" fill="#6E8A4E"/>
+  <!-- 頭 -->
+  <path d="M66 34 Q66 22 80 22 Q94 22 94 34 L94 52 Q80 58 66 52 Z" fill="#7A9A58"/>
+  <path d="M68 36 L78 40 M92 36 L82 40" stroke="#2A1D10" stroke-width="2.5"/>
+  <circle cx="73" cy="41" r="2" fill="#E04A2A"/>
+  <circle cx="87" cy="41" r="2" fill="#E04A2A"/>
+  <path d="M72 50 L74 44 L76 50 M84 50 L86 44 L88 50" fill="#F3E3B8"/>
+</svg>

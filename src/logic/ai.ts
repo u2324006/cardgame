@@ -1,4 +1,5 @@
-import { MonsterCard, isMonster } from '../types/card';
+import { MonsterCard, SpellCard, isMonster } from '../types/card';
+import { getMaxHp } from './cards';
 import { AttackTarget, FieldPosition, GameState, PlayerId, Row } from '../types/gameState';
 import {
   ActionResult,
@@ -9,7 +10,6 @@ import {
   getCardAt,
   getMonsterPositions,
   getOpponent,
-  isAttackSpell,
   moveMonster,
   otherRow,
   playCard,
@@ -78,32 +78,60 @@ const aiSummon = (state: GameState, player: PlayerId): GameState => {
   }
 };
 
-// 攻撃の呪文は、+1 で相手の前衛モンスターを倒せるようになるとき、
-// または相手の前衛が空で大将カードへのダメージが増えるときだけ使う
-const findSpellTarget = (state: GameState, player: PlayerId): FieldPosition | null => {
-  const defenderFront = monstersOnField(state, getOpponent(player), ['frontRow']).map(({ card }) => card);
-  const target = monstersOnField(state, player, ['frontRow']).find(({ card }) => {
-    const power = getAttackPower(state, card, 'frontRow');
-    if (power <= 0) return false;
-    return defenderFront.length === 0 || defenderFront.some(enemy => enemy.cardHp === power + 1);
-  });
-  return target?.position ?? null;
+// スペルの対象を選ぶ。使う価値がないときは null（エネルギーを温存する）
+// - FA上昇：上昇分で相手の前衛モンスターを倒せるようになるとき、または相手の前衛が空で直接攻撃が増えるとき
+// - 回復：回復量をほぼ無駄なく使える、ダメージを受けた味方
+// - ダメージ：倒せる相手モンスターのうち一番価値の高いもの
+const findSpellTarget = (state: GameState, player: PlayerId, spell: SpellCard): FieldPosition | null => {
+  const { effect } = spell;
+  const defender = getOpponent(player);
+  switch (effect.kind) {
+    case 'buffFa': {
+      const defenderFront = monstersOnField(state, defender, ['frontRow']).map(({ card }) => card);
+      const target = monstersOnField(state, player, ['frontRow']).find(({ card }) => {
+        const power = getAttackPower(state, card, 'frontRow');
+        if (power <= 0) return false;
+        return defenderFront.length === 0
+          || defenderFront.some(enemy => enemy.cardHp > power && enemy.cardHp <= power + effect.amount);
+      });
+      return target?.position ?? null;
+    }
+    case 'heal': {
+      const damaged = monstersOnField(state, player)
+        .filter(({ card }) => getMaxHp(card) - card.cardHp >= Math.min(2, effect.amount))
+        .sort((a, b) => monsterValue(b.card) - monsterValue(a.card));
+      return damaged[0]?.position ?? null;
+    }
+    case 'damage': {
+      const killable = monstersOnField(state, defender)
+        .filter(({ card }) => card.cardHp <= effect.amount)
+        .sort((a, b) => monsterValue(b.card) - monsterValue(a.card));
+      return killable[0]?.position ?? null;
+    }
+  }
 };
 
+// 使う価値のあるスペルがなくなるまで、手札のスペルを使う
 const aiCastSpells = (state: GameState, player: PlayerId): GameState => {
   let current = state;
   for (;;) {
-    const { hand, currentEnergy } = current.players[player];
-    const spellIndex = hand.findIndex(card => isAttackSpell(card) && card.cost <= currentEnergy);
-    if (spellIndex === -1) return current;
-
-    const target = findSpellTarget(current, player);
-    if (!target) return current;
-
-    const result = castSpell(current, player, spellIndex, target);
-    if (!result.ok) return current;
-    current = result.state;
+    const next = tryCastOneSpell(current, player);
+    if (!next) return current;
+    current = next;
   }
+};
+
+const tryCastOneSpell = (state: GameState, player: PlayerId): GameState | null => {
+  const { hand, currentEnergy } = state.players[player];
+  for (let handIndex = 0; handIndex < hand.length; handIndex++) {
+    const card = hand[handIndex];
+    if (isMonster(card) || card.cost > currentEnergy) continue;
+    const target = findSpellTarget(state, player, card);
+    if (!target) continue;
+    const result = castSpell(state, player, handIndex, target);
+    if (result.ok) return result.state;
+  }
+  return null;
 };
 
 export const runAiPlayPhase = (state: GameState, player: PlayerId): GameState =>

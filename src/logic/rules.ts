@@ -1,6 +1,7 @@
 // ゲームの基本ルールの数値
 export const RULES = {
   deckSize: 40,
+  maxCopiesPerCard: 3, // 同名カードの上限
   initialHandSize: 5,
   maxEnergy: 10,
   slotsPerRow: 3,

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2E4A6B"/>
+      <stop offset="1" stop-color="#14203A"/>
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop offset="0" stop-color="#FFF6C8" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#FFF6C8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="160" height="120" fill="url(#sky)"/>
+  <path d="M0 104 L20 92 L36 104 Z M128 104 L146 84 L160 104 Z" fill="#0E1828"/>
+  <path d="M0 104 L160 102 L160 120 L0 120 Z" fill="#0B1322"/>
+  <circle cx="80" cy="58" r="40" fill="url(#glow)"/>
+  <!-- 羽 -->
+  <path d="M78 56 Q50 28 44 48 Q48 62 78 60 Z" fill="#BFE6FF" opacity="0.8"/>
+  <path d="M82 56 Q110 28 116 48 Q112 62 82 60 Z" fill="#BFE6FF" opacity="0.8"/>
+  <path d="M78 62 Q56 74 58 84 Q70 82 78 64 Z" fill="#BFE6FF" opacity="0.6"/>
+  <path d="M82 62 Q104 74 102 84 Q90 82 82 64 Z" fill="#BFE6FF" opacity="0.6"/>
+  <!-- 体 -->
+  <path d="M80 54 L72 86 L88 86 Z" fill="#7CC79A"/>
+  <circle cx="80" cy="48" r="7" fill="#F2D6B8"/>
+  <path d="M73 46 Q80 36 87 46 Q84 40 80 40 Q76 40 73 46 Z" fill="#F2C14E"/>
+  <!-- 光の矢 -->
+  <path d="M90 66 L124 50" stroke="#FFF6C8" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="126" cy="49" r="3" fill="#FFF6C8"/>
+  <circle cx="34" cy="30" r="1.2" fill="#FFF6C8"/>
+  <circle cx="130" cy="22" r="1.2" fill="#FFF6C8"/>
+  <circle cx="118" cy="86" r="1" fill="#FFF6C8"/>
+</svg>

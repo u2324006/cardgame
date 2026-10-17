@@ -1,6 +1,6 @@
 import { GameState, Phase } from '../types/gameState';
 import { runAiAttackPhase, runAiPlayPhase } from './ai';
-import { emptyState, inPhase, monster, spell, withField, withPlayer } from './testUtils';
+import { emptyState, fireSpell, healSpell, inPhase, monster, spell, withField, withPlayer } from './testUtils';
 
 const aiTurn = (state: GameState, phase: Phase = 'Play'): GameState => inPhase(state, phase, 'player2');
 
@@ -53,6 +53,24 @@ describe('AI play phase', () => {
     const next = runAiPlayPhase(kill, 'player2');
     expect(next.players.player2.hand).toHaveLength(0);
     expect(next.turnState.attackBuffs['x']).toBe(1);
+  });
+});
+
+describe('AI spells', () => {
+  it('uses the fire spell only when it can destroy a monster', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 2, hand: [fireSpell] });
+    const tough = withField(state, 'player1', 'frontRow', [monster('a', { cardHp: 9 }), null, null]);
+    expect(runAiPlayPhase(tough, 'player2').players.player2.hand).toHaveLength(1);
+
+    state = withField(state, 'player1', 'backRow', [monster('weak', { cardHp: 2 }), null, null]);
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.players.player1.field.backRow[0]).toBeNull();
+  });
+
+  it('heals a damaged ally', () => {
+    let state = withField(aiTurn(emptyState()), 'player2', 'frontRow', [{ ...monster('m002-0'), cardHp: 7 }, null, null]);
+    state = withPlayer(state, 'player2', { currentEnergy: 1, hand: [healSpell] });
+    expect(runAiPlayPhase(state, 'player2').players.player2.field.frontRow[0]?.cardHp).toBe(10);
   });
 });
 

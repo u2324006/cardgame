@@ -219,42 +219,6 @@
   text-align: center;
 }
 
-.primary-button,
-.secondary-button {
-  height: 48px;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: filter 0.15s, background-color 0.15s;
-}
-
-.primary-button {
-  border: none;
-  background: var(--gold);
-  color: var(--ink);
-}
-
-.secondary-button {
-  border: 1px solid var(--gold-frame);
-  background: transparent;
-  color: var(--gold-text);
-}
-
-.primary-button:hover:not(:disabled) {
-  filter: brightness(1.1);
-}
-
-.secondary-button:hover:not(:disabled) {
-  background: var(--warning-bg);
-}
-
-.primary-button:disabled,
-.secondary-button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
 /* --- 勝敗 --- */
 
 .game-over-message {
@@ -268,6 +232,10 @@
   color: var(--gold-text);
 }
 
-.game-over-message .primary-button {
+.game-over-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   width: 220px;
 }
+
