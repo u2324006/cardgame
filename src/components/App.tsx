@@ -31,7 +31,7 @@ function App() {
       {screen === 'menu' && <MenuScreen deck={deck} isSavedDeck={isSaved} onNavigate={setScreen} />}
       {screen === 'cards' && <CardListScreen onBack={toMenu} />}
       {screen === 'deck' && <DeckBuilderScreen initialDeck={deck} isSaved={isSaved} onSave={handleSaveDeck} onBack={toMenu} />}
-      {screen === 'battle' && <GameBoard deck={deck} onExit={toMenu} />}
+      {screen === 'battle' && <div className="battle-viewport"><GameBoard deck={deck} onExit={toMenu} /></div>}
     </div>
   );
 }

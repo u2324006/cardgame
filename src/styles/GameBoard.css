@@ -1,4 +1,5 @@
 .game-board {
+  min-width: 1180px;
   min-height: 100vh;
   display: flex;
   gap: 20px;
@@ -239,3 +240,8 @@
   width: 220px;
 }
 
+
+/* 狭い画面では盤面だけを横スクロールさせる */
+.battle-viewport {
+  overflow-x: auto;
+}

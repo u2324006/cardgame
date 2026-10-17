@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import ConfirmDialog from './ConfirmDialog';
 import { Phase } from '../types/gameState';
 
 interface ControlPanelProps {
@@ -19,6 +20,7 @@ const PHASES: { phase: Phase; label: string }[] = [
 const ControlPanel: React.FC<ControlPanelProps> = ({ turn, phase, isPlayerTurn, onNextPhase, onEndTurn, onExit }) => {
   // ドローフェイズは自動で進むので、その間は操作できないようにする
   const canAct = isPlayerTurn && phase !== 'Draw';
+  const [isConfirmingExit, setIsConfirmingExit] = useState(false);
   return (
     <div className="control-panel">
       <div className="turn-info">ターン {turn}</div>
@@ -39,12 +41,17 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ turn, phase, isPlayerTurn, 
         </>
       )}
       {onExit && (
-        <button
-          onClick={() => { if (window.confirm('対戦をやめてメニューへ戻りますか？')) onExit(); }}
-          className="text-button"
-        >
+        <button onClick={() => setIsConfirmingExit(true)} className="text-button">
           メニューへ戻る
         </button>
+      )}
+      {onExit && isConfirmingExit && (
+        <ConfirmDialog
+          message="対戦をやめてメニューへ戻りますか？"
+          confirmLabel="メニューへ戻る"
+          onConfirm={onExit}
+          onCancel={() => setIsConfirmingExit(false)}
+        />
       )}
     </div>
   );

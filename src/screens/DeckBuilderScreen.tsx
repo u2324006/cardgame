@@ -15,6 +15,7 @@ import Card from '../components/Card';
 import LeaderCard from '../components/LeaderCard';
 import CardPreview, { InspectTarget } from '../components/CardPreview';
 import ScreenHeader from './ScreenHeader';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 type Step = 'leader' | 'cards';
 type Filter = 'all' | 'Monster' | 'Spell';
@@ -46,6 +47,7 @@ const DeckBuilderScreen: React.FC<DeckBuilderScreenProps> = ({ initialDeck, isSa
   const [filter, setFilter] = useState<Filter>('all');
   const [hovered, setHovered] = useState<InspectTarget | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [isConfirmingBack, setIsConfirmingBack] = useState(false);
 
   const total = countDeckCards(deck);
   const errors = validateDeck(deck);
@@ -89,12 +91,20 @@ const DeckBuilderScreen: React.FC<DeckBuilderScreenProps> = ({ initialDeck, isSa
   };
 
   const handleBack = () => {
-    if (hasEdits && !window.confirm('保存していない変更があります。破棄してメニューへ戻りますか？')) return;
-    onBack();
+    if (hasEdits) setIsConfirmingBack(true);
+    else onBack();
   };
 
   return (
     <div className="screen deck-builder">
+      {isConfirmingBack && (
+        <ConfirmDialog
+          message="保存していない変更があります。破棄してメニューへ戻りますか？"
+          confirmLabel="破棄して戻る"
+          onConfirm={onBack}
+          onCancel={() => setIsConfirmingBack(false)}
+        />
+      )}
       <ScreenHeader title="デッキ作成" onBack={handleBack}>
         <button type="button" className="primary-button save-button" onClick={handleSave} disabled={!canSave}>
           {canSave || errors.length > 0 ? '保存する' : '保存済み'}

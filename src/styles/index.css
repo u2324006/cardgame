@@ -31,6 +31,8 @@
   --warning-border: #A8742B;
   --warning-text: #F3D9A4;
 
+  color-scheme: dark;
+
   --font-display: 'Shippori Mincho B1', 'Hiragino Mincho ProN', serif;
   --font-body: 'Zen Kaku Gothic New', 'Hiragino Sans', 'Meiryo', sans-serif;
 }
@@ -109,4 +111,52 @@ button {
 .text-button:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+/* --- 確認ダイアログ --- */
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(8, 9, 14, 0.7);
+}
+
+.dialog {
+  width: min(400px, 100%);
+  padding: 24px;
+  border: 1px solid var(--gold-frame);
+  border-radius: 14px;
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dialog-message {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.dialog-actions button {
+  height: 42px;
+  padding: 0 18px;
+  font-size: 14px;
+}
+
+/* キーボード操作時のフォーカス表示 */
+button:focus-visible {
+  outline: 2px solid var(--selected);
+  outline-offset: 2px;
 }

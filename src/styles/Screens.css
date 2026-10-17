@@ -543,3 +543,38 @@
 .deck-actions .text-button {
   align-self: center;
 }
+
+/* --- 狭い画面 --- */
+
+@media (max-width: 900px) {
+  .screen {
+    padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+  }
+
+  .screen-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .step-tabs {
+    flex-wrap: wrap;
+  }
+
+  .cards-step {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cards-step .info-panel {
+    display: none;
+  }
+
+  .deck-panel {
+    width: 100%;
+    position: static;
+  }
+
+  .menu-title {
+    font-size: 40px;
+  }
+}
