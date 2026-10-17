@@ -39,7 +39,7 @@ describe('AI play phase', () => {
     const state = withField(aiTurn(emptyState()), 'player2', 'frontRow', [monster('mage', { frontAttack: 0, backAttack: 5 }), null, null]);
     const next = runAiPlayPhase(state, 'player2');
     expect(next.players.player2.field.backRow[0]?.id).toBe('mage');
-    expect(next.turnState.hasMoved).toBe(true);
+    expect(next.turnState.movedMonsterId).toBe('mage');
   });
 
   it('casts the attack spell only when the +1 enables a kill', () => {

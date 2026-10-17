@@ -38,7 +38,7 @@ const createInitialPlayerState = (fullDeck: Card[], leader: LeaderCard = DEFAULT
 export const createInitialTurnState = (): TurnState => ({
   attackedMonsterIds: [],
   summonedThisTurnIds: [],
-  hasMoved: false,
+  movedMonsterId: null,
   attackBuffs: {},
 });
 

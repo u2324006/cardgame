@@ -16,6 +16,7 @@ interface PlayerAreaProps {
   onInspect: (target: InspectTarget | null) => void;
   selectedCardIndex?: number | null;
   selectedPosition?: FieldPosition | null;
+  usedLabels?: Record<string, string>; // { [カードID]: '攻撃済み' など } 行動済みのモンスター
 }
 
 const ROW_LABELS: Record<Row, string> = { frontRow: '前衛', backRow: '後衛' };
@@ -31,6 +32,7 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
   onInspect,
   selectedCardIndex,
   selectedPosition,
+  usedLabels = {},
 }) => {
   // 自分から見て前衛が中央側になるよう、相手は後衛→前衛の順に並べる
   const rows: Row[] = isOpponent ? ['backRow', 'frontRow'] : ['frontRow', 'backRow'];
@@ -61,6 +63,7 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
                   row={row}
                   onClick={() => onSlotClick(row, i)}
                   isSelected={selectedPosition?.row === row && selectedPosition.index === i}
+                  usedLabel={card ? usedLabels[card.id] : undefined}
                   onMouseEnter={() => card && onInspect({ kind: 'card', card, row })}
                   onMouseLeave={() => onInspect(null)}
                 />

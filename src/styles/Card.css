@@ -1,6 +1,7 @@
 /* --- モンスター・スペルカード --- */
 
 .card {
+  position: relative;
   width: 88px;
   height: 122px;
   border: 2px solid var(--gold-frame);
@@ -17,6 +18,29 @@
 
 .card.selected {
   box-shadow: 0 0 0 3px var(--selected), 0 0 16px 4px rgba(245, 210, 122, 0.55);
+}
+
+/* 行動済み（攻撃済み・移動済み）のモンスター */
+.card.used {
+  cursor: default;
+}
+
+.card.used > :not(.card-used-label) {
+  filter: grayscale(0.7) brightness(0.5);
+}
+
+.card-used-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(18, 20, 28, 0.85);
+  color: #FFFFFF;
+  font: 700 10px/1.4 var(--font-body);
+  white-space: nowrap;
+  z-index: 1;
 }
 
 .card-header {

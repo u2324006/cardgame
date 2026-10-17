@@ -24,7 +24,7 @@ export interface PlayerState {
 export interface TurnState {
   attackedMonsterIds: string[];
   summonedThisTurnIds: string[];
-  hasMoved: boolean;
+  movedMonsterId: string | null; // このターンに移動したモンスター（移動は1ターンに1回）
   attackBuffs: Record<string, number>; // { [cardId]: FA上昇値 }
 }
 

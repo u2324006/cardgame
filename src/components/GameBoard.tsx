@@ -39,11 +39,13 @@ const samePosition = (a: FieldPosition, b: FieldPosition) => a.row === b.row && 
 
 interface GameBoardProps {
   deck?: DeckList; // プレイヤーが使うデッキ（なければ自動のデッキ）
+  initialState?: GameState; // 中断した対戦を再開するときの状態
+  onStateChange?: (state: GameState) => void; // 状態が変わるたびに呼ばれる（途中経過の保存用）
   onExit?: () => void; // メニューへ戻る
 }
 
-const GameBoard: React.FC<GameBoardProps> = ({ deck, onExit }) => {
-  const [gameState, setGameState] = useState<GameState>(() => createInitialGameState(deck));
+const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange, onExit }) => {
+  const [gameState, setGameState] = useState<GameState>(() => initialState ?? createInitialGameState(deck));
   const [selection, setSelection] = useState<Selection>(NO_SELECTION);
   const [hovered, setHovered] = useState<InspectTarget | null>(null); // マウスを乗せているカード
   const { message, showMessage, clearMessage } = useTimedMessage(MESSAGE_DURATION_MS);
@@ -51,6 +53,11 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, onExit }) => {
   const { players, turn, phase, currentPlayer, winner, turnState } = gameState;
   const isPlayerTurn = currentPlayer === HUMAN && !winner;
   const selectedFieldPosition = selection.kind === 'move' || selection.kind === 'attacker' ? selection.from : null;
+  // 自分のターンで行動済みのモンスター（攻撃済み・移動済み）は薄く表示する
+  const usedLabels: Record<string, string> = {};
+  if (isPlayerTurn && phase === 'Play' && turnState.movedMonsterId) usedLabels[turnState.movedMonsterId] = '移動済み';
+  if (isPlayerTurn && phase === 'Attack') turnState.attackedMonsterIds.forEach(id => { usedLabels[id] = '攻撃済み'; });
+
   const canDirectAttack = isPlayerTurn && phase === 'Attack' && selection.kind === 'attacker' && !hasFrontRowMonsters(players[AI]);
 
   // カード情報欄：マウスを乗せているカード、なければ選択中のカード
@@ -66,6 +73,10 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, onExit }) => {
   const previewTarget = hovered ?? selectedTarget;
 
   useAutoProgress(gameState, setGameState, AI);
+
+  useEffect(() => {
+    onStateChange?.(gameState);
+  }, [gameState, onStateChange]);
 
   // フェイズやターンが変わったら選択を解除
   useEffect(() => setSelection(NO_SELECTION), [phase, turn]);
@@ -99,7 +110,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, onExit }) => {
     if (!card) return;
     if (turnState.summonedThisTurnIds.includes(card.id)) {
       showMessage('このモンスターは召喚されたターンには移動できません。');
-    } else if (turnState.hasMoved) {
+    } else if (turnState.movedMonsterId) {
       showMessage('モンスターの移動は1ターンに1回までです。');
     } else {
       setSelection({ kind: 'move', from: position });
@@ -212,6 +223,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, onExit }) => {
           onInspect={setHovered}
           selectedCardIndex={selection.kind === 'hand' ? selection.index : null}
           selectedPosition={selectedFieldPosition}
+          usedLabels={usedLabels}
         />
       </div>
       <ControlPanel

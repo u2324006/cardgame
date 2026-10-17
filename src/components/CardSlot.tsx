@@ -9,12 +9,13 @@ interface CardSlotProps extends HoverHandlers {
   row: Row;
   onClick: () => void;
   isSelected?: boolean;
+  usedLabel?: string;
 }
 
-const CardSlot: React.FC<CardSlotProps> = ({ card, row, onClick, isSelected = false, onMouseEnter, onMouseLeave }) => (
+const CardSlot: React.FC<CardSlotProps> = ({ card, row, onClick, isSelected = false, usedLabel, onMouseEnter, onMouseLeave }) => (
   <div className={`card-slot ${card ? '' : 'empty'}`} onClick={onClick}>
     {card && (
-      <Card card={card} row={row} isSelected={isSelected} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} />
+      <Card card={card} row={row} isSelected={isSelected} usedLabel={usedLabel} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} />
     )}
   </div>
 );

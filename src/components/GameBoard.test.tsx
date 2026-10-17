@@ -19,7 +19,7 @@ describe('GameBoard', () => {
 
     advance(500); // 自分のドローフェイズは自動で進む
     expect(screen.getByText('プレイ').closest('li')?.className).toBe('active');
-    expect(container.querySelectorAll('.self-area .hand-container .card')).toHaveLength(6);
+    expect(container.querySelectorAll('.self-area .hand-container .card')).toHaveLength(5); // 先手1ターン目はドローなし
 
     fireEvent.click(screen.getByText('ターン終了'));
     expect(screen.getByText('相手のターン')).toBeTruthy();
@@ -30,7 +30,7 @@ describe('GameBoard', () => {
     advance(1000);
     advance(500); // 自分のドロー
     expect(screen.getByText('あなたのターン')).toBeTruthy();
-    expect(screen.getByText('ターン 3')).toBeTruthy();
+    expect(screen.getByText('ラウンド 2')).toBeTruthy(); // 自分の2回目のターン
   });
 
   it('shows rule violations on screen instead of an alert', () => {

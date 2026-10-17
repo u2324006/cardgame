@@ -12,13 +12,21 @@ import {
 import { emptyState, fireSpell, healSpell, inPhase, monster, spell, unwrap, withField, withPlayer } from './testUtils';
 
 describe('phase progression', () => {
-  it('draws a card and gains energy in the draw phase', () => {
+  it('does not draw on the first player\'s first turn, but still gains energy', () => {
     const state = { ...createInitialGameState(), phase: 'Draw' as const };
     const next = nextPhase(state);
     expect(next.phase).toBe('Play');
-    expect(next.players.player1.hand).toHaveLength(6);
-    expect(next.players.player1.deck).toHaveLength(34);
+    expect(next.players.player1.hand).toHaveLength(5);
+    expect(next.players.player1.deck).toHaveLength(35);
     expect(next.players.player1.currentEnergy).toBe(1);
+  });
+
+  it('draws a card and gains energy from the second turn on', () => {
+    const state = { ...createInitialGameState(), turn: 2, currentPlayer: 'player2' as const, phase: 'Draw' as const };
+    const next = nextPhase(state);
+    expect(next.players.player2.hand).toHaveLength(6);
+    expect(next.players.player2.deck).toHaveLength(34);
+    expect(next.players.player2.currentEnergy).toBe(1);
   });
 
   it('ends the turn and resets turn state', () => {

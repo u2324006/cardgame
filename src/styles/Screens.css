@@ -77,6 +77,31 @@
   opacity: 0.8;
 }
 
+.menu-warning {
+  width: min(480px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--warning-border);
+  border-radius: 10px;
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.menu-warning p {
+  margin: 0;
+}
+
+.menu-warning .secondary-button {
+  height: 38px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
 .menu-deck-status {
   margin: 0;
   font-size: 13px;

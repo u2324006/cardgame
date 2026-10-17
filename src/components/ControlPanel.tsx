@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ConfirmDialog from './ConfirmDialog';
 import { Phase } from '../types/gameState';
+import { getRound } from '../logic/gameLogic';
 
 interface ControlPanelProps {
   turn: number;
@@ -26,7 +27,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ turn, phase, isPlayerTurn, 
   const [isConfirmingExit, setIsConfirmingExit] = useState(false);
   return (
     <div className="control-panel">
-      <div className="turn-info">ターン {turn}</div>
+      <div className="turn-info">ラウンド {getRound(turn)}</div>
       <div className={`current-player ${isPlayerTurn ? 'self' : 'opponent'}`}>
         {isPlayerTurn ? 'あなたのターン' : '相手のターン'}
       </div>
@@ -55,7 +56,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ turn, phase, isPlayerTurn, 
       )}
       {onExit && isConfirmingExit && (
         <ConfirmDialog
-          message="対戦をやめてメニューへ戻りますか？"
+          message="対戦を中断してメニューへ戻りますか？メニューの「続きから」で再開できます。"
           confirmLabel="メニューへ戻る"
           onConfirm={onExit}
           onCancel={() => setIsConfirmingExit(false)}

@@ -50,6 +50,9 @@ export const hasFrontRowMonsters = (playerState: PlayerState): boolean =>
   playerState.field.frontRow.some(card => card !== null);
 
 // 攻撃の呪文のバフはFA（前衛での攻撃力）にのみ適用される
+// ラウンド：先手と後手のターンを1組とした数（turn 1・2 がラウンド1、turn 3・4 がラウンド2 …）
+export const getRound = (turn: number): number => Math.ceil(turn / 2);
+
 // 先手の1ターン目（ゲーム全体の1ターン目）は攻撃できない
 export const canAttackThisTurn = (state: GameState): boolean => state.turn > 1;
 
@@ -122,12 +125,17 @@ const checkTurn = (state: GameState, player: PlayerId, phase: Phase): string | n
 
 // 山札が尽きた状態で自分のターンを迎えたら、ドローの代わりに大将カードがダメージを受ける。
 // 最後の1枚を引いたターンや、そのターン中に山札が補充された場合は、次のターン開始時に山札が残っているので対象外。
+// 先手の1ターン目（ゲーム全体の1ターン目）はドローしない（エネルギーは増える）
 const drawPhase = (state: GameState): GameState => {
   const player = state.currentPlayer;
+  const skipDraw = state.turn === 1;
   const afterDeckOut = state.players[player].deck.length === 0
     ? damageSpecialCard(state, player, RULES.deckOutDamage)
     : state;
   const next = updatePlayer(afterDeckOut, player, playerState => {
+    if (skipDraw) {
+      return { ...playerState, currentEnergy: Math.min(playerState.currentEnergy + 1, playerState.maxEnergy) };
+    }
     const [drawnCard, ...deck] = playerState.deck;
     return {
       ...playerState,
@@ -240,7 +248,7 @@ export const moveMonster = (
   if (turnError) return failure(turnError);
   const card = getCardAt(state, player, from);
   if (!card) return failure('移動するモンスターがいません。');
-  if (state.turnState.hasMoved) return failure('モンスターの移動は1ターンに1回までです。');
+  if (state.turnState.movedMonsterId) return failure('モンスターの移動は1ターンに1回までです。');
   if (state.turnState.summonedThisTurnIds.includes(card.id)) {
     return failure('このモンスターは召喚されたターンには移動できません。');
   }
@@ -251,7 +259,7 @@ export const moveMonster = (
     ...p,
     field: setSlot(setSlot(p.field, from, null), to, card),
   }));
-  return success(updateTurnState(next, { hasMoved: true }));
+  return success(updateTurnState(next, { movedMonsterId: card.id }));
 };
 
 export const attack = (

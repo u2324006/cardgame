@@ -7,6 +7,7 @@ import {
   expandDeck,
   fillDeck,
   removeCard,
+  sanitizeDeck,
   validateDeck,
 } from './deck';
 import { createInitialGameState } from './initialState';
@@ -64,5 +65,10 @@ describe('deck rules', () => {
     const player = state.players.player1;
     expect(player.deck.length + player.hand.length).toBe(40);
     expect([...player.deck, ...player.hand].every(c => usedIds.has(c.id.split('-')[0]))).toBe(true);
+  });
+
+  it('sanitizes a saved deck that no longer follows the rules', () => {
+    const fixed = sanitizeDeck({ leaderId: 'gone', cards: { m001: 5, x999: 2, m002: 2 } });
+    expect(fixed).toEqual({ leaderId: DEFAULT_LEADER.id, cards: { m001: 3, m002: 2 } });
   });
 });

@@ -64,6 +64,21 @@ export const expandDeck = (deck: DeckList): Card[] =>
     Array.from({ length: getCardCount(deck, card.id) }, (_, i) => ({ ...card, id: `${card.id}-${i}` })),
   );
 
+// ルールに合わない部分を直したデッキを返す（存在しないカードを外し、上限を超えた枚数を減らし、大将がなければ既定の大将にする）
+// 枚数が40枚に足りなくなることはあるので、デッキ作成画面で組み直してもらう
+export const sanitizeDeck = (deck: DeckList): DeckList => {
+  const cards: Record<string, number> = {};
+  for (const [baseId, count] of Object.entries(deck.cards)) {
+    if (findBaseCard(baseId) && count > 0) cards[baseId] = Math.min(count, RULES.maxCopiesPerCard);
+  }
+  let sanitized: DeckList = { leaderId: findLeader(deck.leaderId) ? deck.leaderId : DEFAULT_LEADER.id, cards: {} };
+  // 40枚を超えている場合は先頭のカードから入れられる分だけ入れる
+  for (const card of BASE_CARDS) {
+    for (let i = 0; i < (cards[card.id] ?? 0); i++) sanitized = addCard(sanitized, card.id);
+  }
+  return sanitized;
+};
+
 // --- 保存（このブラウザの localStorage） ---
 
 const STORAGE_KEY = 'cardgame.deck';

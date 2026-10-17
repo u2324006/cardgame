@@ -34,4 +34,22 @@ describe('App navigation', () => {
     fireEvent.click(screen.getByRole('button', { name: /メニュー/ }));
     expect(screen.getByText(/使用するデッキ：保存したデッキ/)).toBeTruthy();
   });
+
+  it('offers to resume an interrupted battle', () => {
+    const first = render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /対戦/ }));
+    first.unmount(); // 再読み込みの代わり
+
+    render(<App />);
+    expect(screen.getByRole('button', { name: /続きから/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /続きから/ }));
+    expect(screen.getByText('カード情報')).toBeTruthy();
+  });
+
+  it('warns when the saved deck no longer follows the rules', () => {
+    window.localStorage.setItem('cardgame.deck', JSON.stringify({ leaderId: 'l001', cards: { m001: 3, x999: 37 } }));
+    render(<App />);
+    expect(screen.getByRole('alert').textContent).toContain('保存したデッキが今のカードやルールに合わなくなった');
+    expect(screen.getByText(/使用するデッキ：自動で作ったデッキ/)).toBeTruthy();
+  });
 });
