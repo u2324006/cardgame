@@ -1,88 +1,337 @@
+/* --- モンスター・スペルカード --- */
+
 .card {
-  width: 120px; /* Based on card.png visual */
-  height: 170px; /* Based on card.png visual */
-  border: 2px solid black; /* Stronger border */
-  border-radius: 0px; /* Sharp corners */
+  width: 88px;
+  height: 122px;
+  border: 2px solid var(--gold-frame);
+  border-radius: 8px;
+  background: var(--parchment);
+  color: var(--ink);
   display: flex;
   flex-direction: column;
-  background-color: #f0f0f0;
-  color: #333;
-  font-family: 'Arial', sans-serif;
-  box-sizing: border-box; /* Include padding and border in width/height */
-  position: relative; /* For absolute positioning of cost circle */
+  overflow: hidden;
+  cursor: pointer;
+  flex: none;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .card.selected {
-  border-color: #1E6FFF;
-  box-shadow: 0 0 0 3px #1E6FFF, 0 0 12px 4px rgba(30, 111, 255, 0.7);
+  box-shadow: 0 0 0 3px var(--selected), 0 0 16px 4px rgba(245, 210, 122, 0.55);
 }
 
-.card-top-section {
+.card-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 5px;
-  border-bottom: 1px solid black;
-  position: relative; /* For absolute positioning of cost circle */
+  gap: 4px;
+  min-height: 25px;
+  padding: 3px 4px;
+  background: var(--ink);
+  color: var(--gold-text);
+}
+
+.card.spell {
+  border-color: var(--spell-frame);
+}
+
+.card.spell .card-header {
+  background: var(--spell-header);
+}
+
+.card-cost {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--ink);
+  font: 700 11px/17px var(--font-body);
+  text-align: center;
+}
+
+.card-name {
+  font: 800 9px/1.15 var(--font-display);
+  /* 長い名前は2行まで折り返す */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.card-art {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+  background: var(--parchment-art);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 3px;
+  overflow: hidden;
+}
+
+.card.spell .card-art {
+  background: var(--spell-art);
+}
+
+.card-art img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-art-label {
+  font-size: 9px;
+  color: var(--ink-muted);
 }
 
 .card-hp {
-  font-size: 0.8em;
-  font-weight: bold;
-  border: 1px solid black;
-  padding: 2px 5px;
-}
-
-.card-race {
-  font-size: 0.7em;
-  border: 1px solid black;
-  padding: 2px 5px;
-}
-
-.card-cost-circle {
   position: absolute;
-  top: -10px; /* Adjust to place outside top-right corner */
-  right: -10px; /* Adjust to place outside top-right corner */
+  top: 4px;
+  right: 4px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--hp);
+  color: #FFFFFF;
+  font: 700 10px/1.5 var(--font-body);
+}
+
+.card-hp.damaged {
+  background: var(--hp-damaged);
+}
+
+.card-stats {
+  display: flex;
+  gap: 3px;
+  padding: 4px;
+}
+
+.card-stat {
+  flex: 1;
+  border-radius: 4px;
+  color: #FFFFFF;
+  font: 700 10px/1.5 var(--font-body);
+  text-align: center;
+}
+
+.card-stat.fa {
+  background: var(--fa);
+}
+
+.card-stat.ba {
+  background: var(--ba);
+}
+
+/* 今の列では使われない攻撃力 */
+.card-stat.inactive {
+  opacity: 0.3;
+}
+
+.card-summary {
+  padding: 4px;
+  font: 700 10px/1.5 var(--font-body);
+  text-align: center;
+  color: var(--spell-text);
+}
+
+.card-description {
+  padding: 4px 6px;
+  border-top: 1px solid var(--gold-frame);
+  font-size: 9px;
+  line-height: 1.45;
+  overflow: hidden;
+}
+
+/* カード情報欄の大きいカード */
+.card.large {
+  width: 196px;
+  height: 272px;
+  border-width: 3px;
+  border-radius: 12px;
+  cursor: default;
+}
+
+.card.large .card-header {
+  gap: 8px;
+  padding: 8px;
+}
+
+.card.large .card-cost {
   width: 30px;
   height: 30px;
-  border-radius: 50%;
-  background-color: white;
-  border: 2px solid black;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 1em;
-  font-weight: bold;
+  font-size: 17px;
+  line-height: 30px;
 }
 
-.card-image-area {
-  flex-grow: 1; /* Takes up remaining vertical space */
-  border-bottom: 1px solid black;
-  background-color: lightgray; /* Placeholder for image */
+.card.large .card-name {
+  font-size: 16px;
 }
 
-.card-description-area {
-  font-size: 0.75em;
-  padding: 5px;
-  border-bottom: 1px solid black;
-  min-height: 40px; /* Adjust as needed */
+.card.large .card-art-label {
+  font-size: 12px;
 }
 
-.card-stats-bottom {
-  display: flex;
-  justify-content: flex-end; /* Align to bottom right */
-  font-size: 0.8em;
-  font-weight: bold;
-  padding: 5px;
+.card.large .card-hp {
+  top: 8px;
+  right: 8px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 14px;
 }
 
-.card-stats-bottom span:first-child {
-  margin-right: 10px; /* Space between FA and BA */
+.card.large .card-description {
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.5;
 }
+
+.card.large .card-stats {
+  gap: 6px;
+  padding: 0 10px 10px;
+}
+
+.card.large .card-stat {
+  padding: 3px 0;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+/* --- 裏向きのカード --- */
 
 .card-back {
+  width: 52px;
+  height: 72px;
+  border: 2px solid var(--gold-frame);
   border-radius: 6px;
-  background:
-    repeating-linear-gradient(45deg, #1C4B7A 0 8px, #2A6DAD 8px 16px);
-  border: 4px solid #84A9C0;
+  background: var(--ink);
+  padding: 5px;
+  flex: none;
+}
+
+.card-back-inner {
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--gold-dark);
+  border-radius: 3px;
+}
+
+/* --- 大将カード --- */
+
+.leader-card {
+  width: 118px;
+  height: 160px;
+  margin: 3px;
+  border: 3px solid var(--gold-frame);
+  outline: 1px solid var(--gold-dark);
+  outline-offset: 2px;
+  border-radius: 10px;
+  background: var(--parchment);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: none;
+}
+
+.leader-card.targetable {
+  cursor: pointer;
+  box-shadow: 0 0 0 3px var(--hp-damaged), 0 0 14px 3px rgba(194, 65, 12, 0.6);
+}
+
+.leader-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px;
+  background: var(--leader-header);
+  color: var(--gold-text);
+}
+
+.leader-badge {
+  flex: none;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--gold);
+  color: var(--ink);
+  font: 700 9px/1.6 var(--font-body);
+}
+
+.leader-card .card-name {
+  font-size: 11px;
+}
+
+.leader-card .card-art {
+  background: var(--leader-art);
+  align-items: center;
+  padding-bottom: 0;
+}
+
+.leader-card .card-art-label {
+  font-size: 10px;
+}
+
+.leader-hp {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--hp);
+  color: #FFFFFF;
+  font: 700 12px/1.5 var(--font-body);
+}
+
+.leader-hp.damaged {
+  background: var(--hp-damaged);
+}
+
+.leader-hp-max {
+  font-size: 9px;
+}
+
+.leader-card .card-description {
+  height: 40px;
+  flex: none;
+}
+
+.leader-card.large {
+  width: 196px;
+  height: 272px;
+  margin: 0;
+  border-radius: 12px;
+}
+
+.leader-card.large .leader-header {
+  gap: 8px;
+  padding: 8px;
+}
+
+.leader-card.large .leader-badge {
+  font-size: 12px;
+  padding: 1px 7px;
+}
+
+.leader-card.large .card-name {
+  font-size: 18px;
+}
+
+.leader-card.large .leader-hp {
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 8px;
+  font-size: 16px;
+}
+
+.leader-card.large .leader-hp-max {
+  font-size: 12px;
+}
+
+.leader-card.large .card-description {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.5;
 }

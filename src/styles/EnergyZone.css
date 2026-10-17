@@ -1,31 +1,33 @@
 .energy-zone {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap-reverse;
-  justify-content: flex-start;
-  align-items: flex-end; /* アイテムを下端に揃える */
-  gap: 5px;
-  padding: 10px;
-  border: 2px solid #ccc;
-  border-radius: 15px;
-  background-color: rgba(0, 0, 0, 0.3);
-  width: 69px; /* Recalculated */
-  height: 144px; /* Recalculated */
-  box-sizing: border-box;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
 }
 
-.energy-circle {
-  width: 20px;
-  height: 20px;
+.energy-text {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.energy-text b {
+  color: var(--warning-text);
+}
+
+.energy-pips {
+  display: flex;
+  gap: 3px;
+}
+
+.energy-pip {
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  background-color: #555;
-  box-sizing: border-box;
+  background: var(--panel-border);
 }
 
-.energy-circle.filled {
-  background-color: yellow; /* Or any color for filled energy */
-}
-
-.energy-zone.rotated {
-  transform: rotate(180deg);
+.energy-pip.filled {
+  background: var(--energy);
 }

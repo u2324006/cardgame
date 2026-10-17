@@ -18,7 +18,7 @@ describe('GameBoard', () => {
     expect(container.querySelectorAll('.self-area .hand-container .card')).toHaveLength(5);
 
     advance(500); // 自分のドローフェイズは自動で進む
-    expect(screen.getByText('Play フェイズ')).toBeTruthy();
+    expect(screen.getByText('プレイ').closest('li')?.className).toBe('active');
     expect(container.querySelectorAll('.self-area .hand-container .card')).toHaveLength(6);
 
     fireEvent.click(screen.getByText('ターン終了'));
@@ -39,7 +39,7 @@ describe('GameBoard', () => {
     advance(500);
     // 2コストのカードは1エネルギーでは召喚できない
     const handCards = Array.from(container.querySelectorAll('.self-area .hand-container .card'));
-    const expensive = handCards.find(card => card.querySelector('.card-cost-value')?.textContent === '2' && card.classList.contains('monster'));
+    const expensive = handCards.find(card => card.querySelector('.card-cost')?.textContent === '2' && card.classList.contains('monster'));
     expect(expensive).toBeDefined();
     fireEvent.click(expensive!);
     fireEvent.click(container.querySelector('.self-area .front-row .card-slot')!);

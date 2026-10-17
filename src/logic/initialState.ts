@@ -1,6 +1,6 @@
 import { GameState, PlayerState, TurnState } from '../types/gameState';
-import { Card, MonsterCard } from '../types/card';
-import { BASE_CARDS } from './cards';
+import { Card, LeaderCard, MonsterCard } from '../types/card';
+import { BASE_CARDS, DEFAULT_LEADER } from './cards';
 import { RULES } from './rules';
 
 // Fisher–Yates シャッフル（元の配列は変更しない）
@@ -21,10 +21,11 @@ export const createDeck = (baseCards: Card[] = BASE_CARDS): Card[] =>
     return { ...card, id: `${card.id}-${i}` };
   }));
 
-const createInitialPlayerState = (fullDeck: Card[]): PlayerState => {
+const createInitialPlayerState = (fullDeck: Card[], leader: LeaderCard = DEFAULT_LEADER): PlayerState => {
   const emptyRow = () => Array<MonsterCard | null>(RULES.slotsPerRow).fill(null);
   return {
-    specialCardHp: RULES.initialSpecialCardHp,
+    leader,
+    specialCardHp: leader.maxHp,
     currentEnergy: 0,
     maxEnergy: RULES.maxEnergy,
     // 山札の先頭から初期手札を引く

@@ -1,4 +1,4 @@
-import { Card, MonsterCard } from './card';
+import { Card, LeaderCard, MonsterCard } from './card';
 
 export type PlayerId = 'player1' | 'player2';
 export type Row = 'frontRow' | 'backRow';
@@ -10,7 +10,8 @@ export interface FieldPosition {
 }
 
 export interface PlayerState {
-  specialCardHp: number;
+  leader: LeaderCard;
+  specialCardHp: number; // 大将カードの現在のHP
   currentEnergy: number;
   maxEnergy: number;
   deck: Card[];

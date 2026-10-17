@@ -1,4 +1,4 @@
-import { Card, MonsterCard, SpellCard } from '../types/card';
+import { Card, LeaderCard, MonsterCard, SpellCard } from '../types/card';
 
 // デッキに入るカードの元データ。デッキ作成時に `${id}-${番号}` の形で個別IDが振られる。
 export const ATTACK_SPELL_ID = 's001';
@@ -94,9 +94,18 @@ const attackSpell: SpellCard = {
   description: '味方モンスター1体のFAを、ターン終了まで1上げる。',
   race: 'スペル',
   cost: 1,
+  summary: 'FA +1',
 };
 
 export const BASE_CARDS: Card[] = [monsterCard1, monsterCard2, monsterCard3, monsterCard4, monsterCard5, monsterCard6, monsterCard7, attackSpell];
+
+// 大将カード（効果は今後追加予定）
+export const DEFAULT_LEADER: LeaderCard = {
+  id: 'l001',
+  name: '大将',
+  description: '大将固有の効果は未設定です。',
+  maxHp: 20,
+};
 
 // 個別IDから元カードのIDを取り出す（例: 's001-12' → 's001'）
 export const getBaseCardId = (card: Card): string => card.id.split('-')[0];
@@ -106,3 +115,6 @@ export const toOriginalCard = <T extends Card>(card: T): T => {
   const base = BASE_CARDS.find(c => c.id === getBaseCardId(card));
   return base ? ({ ...base, id: card.id } as T) : card;
 };
+
+// ダメージを受ける前の最大HP
+export const getMaxHp = (card: MonsterCard): number => toOriginalCard(card).cardHp;

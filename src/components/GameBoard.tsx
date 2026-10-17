@@ -7,6 +7,7 @@ import {
   castSpell,
   endTurn,
   getCardAt,
+  hasFrontRowMonsters,
   moveMonster,
   nextPhase,
   playCard,
@@ -17,6 +18,7 @@ import { useAutoProgress } from '../hooks/useAutoProgress';
 import { useTimedMessage } from '../hooks/useTimedMessage';
 import PlayerArea from './PlayerArea';
 import ControlPanel from './ControlPanel';
+import CardPreview, { InspectTarget } from './CardPreview';
 
 const HUMAN: PlayerId = 'player1';
 const AI: PlayerId = 'player2';
@@ -36,12 +38,25 @@ const samePosition = (a: FieldPosition, b: FieldPosition) => a.row === b.row && 
 const GameBoard: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(createInitialGameState);
   const [selection, setSelection] = useState<Selection>(NO_SELECTION);
+  const [hovered, setHovered] = useState<InspectTarget | null>(null); // マウスを乗せているカード
   const { message, showMessage, clearMessage } = useTimedMessage(MESSAGE_DURATION_MS);
 
   const { players, turn, phase, currentPlayer, winner, turnState } = gameState;
   const isPlayerTurn = currentPlayer === HUMAN && !winner;
   const selectedFieldPosition = selection.kind === 'move' || selection.kind === 'attacker' ? selection.from : null;
-  const attackerCard = selection.kind === 'attacker' ? getCardAt(gameState, HUMAN, selection.from) : null;
+  const canDirectAttack = isPlayerTurn && phase === 'Attack' && selection.kind === 'attacker' && !hasFrontRowMonsters(players[AI]);
+
+  // カード情報欄：マウスを乗せているカード、なければ選択中のカード
+  const selectedTarget = ((): InspectTarget | null => {
+    if (selection.kind === 'hand') {
+      const card = players[HUMAN].hand[selection.index];
+      return card ? { kind: 'card', card } : null;
+    }
+    if (selection.kind === 'none') return null;
+    const card = getCardAt(gameState, HUMAN, selection.from);
+    return card ? { kind: 'card', card, row: selection.from.row } : null;
+  })();
+  const previewTarget = hovered ?? selectedTarget;
 
   useAutoProgress(gameState, setGameState, AI);
 
@@ -61,6 +76,7 @@ const GameBoard: React.FC = () => {
   const handleRestart = () => {
     setGameState(createInitialGameState());
     setSelection(NO_SELECTION);
+    setHovered(null);
     clearMessage();
   };
 
@@ -134,7 +150,7 @@ const GameBoard: React.FC = () => {
   };
 
   // 相手の大将カードをクリック（ダイレクトアタック）
-  const handleOpponentSpecialCardClick = () => {
+  const handleOpponentLeaderClick = () => {
     if (!isPlayerTurn || phase !== 'Attack' || selection.kind !== 'attacker') return;
     apply(attack(gameState, HUMAN, selection.from, { type: 'player' }));
   };
@@ -143,31 +159,38 @@ const GameBoard: React.FC = () => {
     return (
       <div className="game-over-message">
         {winner === HUMAN ? 'あなたの勝利！' : '相手の勝利…'}
-        <button onClick={handleRestart} className="turn-button">もう一度遊ぶ</button>
+        <button onClick={handleRestart} className="primary-button">もう一度遊ぶ</button>
       </div>
     );
   }
 
   return (
     <div className="game-board">
-      <div className="info-panel">
-        <div className="card-info">カード情報 {attackerCard ? `${attackerCard.name}を選択中` : ''}</div>
+      <aside className="info-panel">
+        <h2 className="panel-title">カード情報</h2>
+        <div className="card-info">
+          <CardPreview target={previewTarget} />
+        </div>
         <div className="message-area" role="status">
           {message && <div key={message.id} className="message">{message.text}</div>}
         </div>
-      </div>
+      </aside>
       <div className="main-area">
         <PlayerArea
           playerState={players[AI]}
           isOpponent
           onSlotClick={(row, index) => handleFieldClick(AI, row, index)}
-          onSpecialCardClick={handleOpponentSpecialCardClick}
+          onLeaderClick={handleOpponentLeaderClick}
+          isLeaderTargetable={canDirectAttack}
+          onInspect={setHovered}
         />
+        <div className="front-line" aria-hidden="true"><span>前線</span></div>
         <PlayerArea
           playerState={players[HUMAN]}
           isOpponent={false}
           onSlotClick={(row, index) => handleFieldClick(HUMAN, row, index)}
           onHandCardClick={handleHandCardClick}
+          onInspect={setHovered}
           selectedCardIndex={selection.kind === 'hand' ? selection.index : null}
           selectedPosition={selectedFieldPosition}
         />
