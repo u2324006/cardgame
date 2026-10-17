@@ -5,85 +5,85 @@ export const ATTACK_SPELL_ID = 's001';
 
 const monsterCard1: MonsterCard = {
   id: 'm001',
-  name: 'Goblin Attacker',
+  name: 'ゴブリンアタッカー',
   type: 'Monster',
-  description: 'A standard goblin warrior.',
+  description: '前衛でも後衛でも同じ力で戦える、身軽なゴブリン。',
   frontAttack: 2,
   backAttack: 2,
   cardHp: 6,
-  race: 'Goblin',
+  race: 'ゴブリン',
   cost: 1,
 };
 
 const monsterCard2: MonsterCard = {
   id: 'm002',
-  name: 'Stone Golem',
+  name: 'ストーンゴーレム',
   type: 'Monster',
-  description: 'A creature made of living rock.',
+  description: '岩の体で攻撃を受け止める。後衛では攻撃できない。',
   frontAttack: 3,
   backAttack: 0,
   cardHp: 13,
-  race: 'Golem',
+  race: 'ゴーレム',
   cost: 2,
 };
 
 const monsterCard3: MonsterCard = {
   id: 'm003',
-  name: 'pute',
+  name: 'プテ',
   type: 'Monster',
-  description: 'A creature made of living rock.',
+  description: '前衛で鋭く攻める。後衛では攻撃できない。',
   frontAttack: 4,
   backAttack: 0,
   cardHp: 5,
-  race: 'Golem',
+  race: 'ゴーレム',
   cost: 1,
 };
 
 const monsterCard4: MonsterCard = {
   id: 'm004',
-  name: 'hanta-',
+  name: 'ハンター',
   type: 'Monster',
-  description: 'A creature made of living rock.',
+  description: '後衛から獲物を狙い撃つ。前衛では攻撃できない。',
   frontAttack: 0,
   backAttack: 4,
   cardHp: 3,
-  race: 'Golem',
+  race: 'ゴーレム',
   cost: 1,
 };
 
 const monsterCard5: MonsterCard = {
   id: 'm005',
-  name: 'sennsi',
+  name: '戦士',
   type: 'Monster',
-  description: 'A creature made of living rock.',
+  description: '前衛で力を発揮する。後衛では攻撃できない。',
   frontAttack: 5,
   backAttack: 0,
   cardHp: 7,
-  race: 'Golem',
+  race: 'ゴーレム',
   cost: 2,
 };
 
 const monsterCard6: MonsterCard = {
   id: 'm006',
-  name: 'majutu',
+  name: '魔術師',
   type: 'Monster',
-  description: 'A creature made of living rock.',
+  description: '後衛から強力な魔術を放つ。前衛では攻撃できない。',
   frontAttack: 0,
   backAttack: 5,
   cardHp: 6,
-  race: 'Golem',
+  race: 'ゴーレム',
   cost: 2,
 };
 
 const monsterCard7: MonsterCard = {
   id: 'm007',
-  name: 'baran',
+  name: 'バラン',
   type: 'Monster',
-  description: 'A creature made of living rock.',
+  description: '前衛でも後衛でも安定して戦える。',
   frontAttack: 3,
   backAttack: 3,
   cardHp: 9,
-  race: 'Golem',
+  race: 'ゴーレム',
   cost: 2,
 };
 
@@ -92,7 +92,7 @@ const attackSpell: SpellCard = {
   name: '攻撃の呪文',
   type: 'Spell',
   description: '味方モンスター1体のFAを、ターン終了まで1上げる。',
-  race: 'Spell',
+  race: 'スペル',
   cost: 1,
 };
 

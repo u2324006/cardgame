@@ -140,7 +140,7 @@ describe('turn and phase checks', () => {
 
   it('returns a destroyed monster to the graveyard with its original stats', () => {
     let state = withField(emptyState(), 'player1', 'frontRow', [monster('a', { frontAttack: 5 }), null, null]);
-    state = withField(state, 'player2', 'frontRow', [{ ...monster('m001-3'), name: 'Goblin Attacker', cardHp: 2 }, null, null]);
+    state = withField(state, 'player2', 'frontRow', [{ ...monster('m001-3'), name: 'ゴブリンアタッカー', cardHp: 2 }, null, null]);
     const next = unwrap(attack(inPhase(state, 'Attack'), 'player1', { row: 'frontRow', index: 0 }, { type: 'monster', position: { row: 'frontRow', index: 0 } }));
     expect(next.players.player2.graveyard[0]).toMatchObject({ id: 'm001-3', cardHp: 6 });
   });
