@@ -1,107 +1,15 @@
 import { GameState, PlayerState, TurnState } from '../types/gameState';
 import { Card } from '../types/card';
+import { BASE_CARDS } from './cards';
+import { RULES } from './rules';
 
-// --- Sample Cards ---
-const monsterCard1: Card = {
-  id: 'm001',
-  name: 'Goblin Attacker',
-  type: 'Monster',
-  description: 'A standard goblin warrior.',
-  frontAttack: 2,
-  backAttack: 2,
-  cardHp: 6,
-  race: 'Goblin',
-  cost: 1,
-};
-
-const monsterCard2: Card = {
-  id: 'm002',
-  name: 'Stone Golem',
-  type: 'Monster',
-  description: 'A creature made of living rock.',
-  frontAttack: 3,
-  backAttack: 0,
-  cardHp: 13,
-  race: 'Golem',
-  cost: 2,
-};
-
-const monsterCard3: Card = {
-  id: 'm003',
-  name: 'pute',
-  type: 'Monster',
-  description: 'A creature made of living rock.',
-  frontAttack: 4,
-  backAttack: 0,
-  cardHp: 5,
-  race: 'Golem',
-  cost: 1,
-};
-
-const monsterCard4: Card = {
-  id: 'm004',
-  name: 'hanta-',
-  type: 'Monster',
-  description: 'A creature made of living rock.',
-  frontAttack: 0,
-  backAttack: 4,
-  cardHp: 3,
-  race: 'Golem',
-  cost: 1,
-};
-
-const monsterCard5: Card = {
-  id: 'm005',
-  name: 'sennsi',
-  type: 'Monster',
-  description: 'A creature made of living rock.',
-  frontAttack: 5,
-  backAttack: 0,
-  cardHp: 7,
-  race: 'Golem',
-  cost: 2,
-};
-
-const monsterCard6: Card = {
-  id: 'm006',
-  name: 'majutu',
-  type: 'Monster',
-  description: 'A creature made of living rock.',
-  frontAttack: 0,
-  backAttack: 5,
-  cardHp: 6,
-  race: 'Golem',
-  cost: 2,
-};
-
-const monsterCard7: Card = {
-  id: 'm007',
-  name: 'baran',
-  type: 'Monster',
-  description: 'A creature made of living rock.',
-  frontAttack: 3,
-  backAttack: 3,
-  cardHp: 9,
-  race: 'Golem',
-  cost: 2,
-};
-
-const attackSpell: Card = {
-    id: 's001',
-    name: '攻撃の呪文',
-    type: 'Spell',
-    description: '味方モンスター1体のFAを、ターン終了まで1上げる。',
-    race: 'Spell',
-    cost: 1,
-}
-
-// Helper to create a shuffled deck of 40 cards
+// Helper to create a shuffled deck
 const createDeck = (baseCards: Card[]): Card[] => {
   const deck: Card[] = [];
-  // Duplicate base cards to reach 40
-  while (deck.length < 40) {
+  // Duplicate base cards to reach the deck size
+  while (deck.length < RULES.deckSize) {
     baseCards.forEach(card => {
-      if (deck.length < 40) {
+      if (deck.length < RULES.deckSize) {
         // Assign a new unique ID to each duplicated card
         deck.push({ ...card, id: `${card.id}-${deck.length}` });
       }
@@ -117,36 +25,22 @@ const createDeck = (baseCards: Card[]): Card[] => {
 
 // --- Initial Player State ---
 const createInitialPlayerState = (fullDeck: Card[]): PlayerState => {
-  const hand: Card[] = [];
-  const deck = [...fullDeck]; // Create a mutable copy of the full deck
-
-  // Draw initial 5 cards
-  for (let i = 0; i < 5; i++) {
-    if (deck.length > 0) {
-      const drawnCard = deck.shift(); // Remove from the beginning of the deck
-      if (drawnCard) {
-        hand.push(drawnCard);
-      }
-    }
-  }
-
+  const emptyRow = () => Array<Card | null>(RULES.slotsPerRow).fill(null);
   return {
     hp: 2000,
-    specialCardHp: 20,
+    specialCardHp: RULES.initialSpecialCardHp,
     currentEnergy: 0,
-    maxEnergy: 10,
-    deck: deck,
-    hand: hand,
+    maxEnergy: RULES.maxEnergy,
+    // 山札の先頭から初期手札を引く
+    deck: fullDeck.slice(RULES.initialHandSize),
+    hand: fullDeck.slice(0, RULES.initialHandSize),
     graveyard: [],
     field: {
-      frontRow: [null, null, null],
-      backRow: [null, null, null],
+      frontRow: emptyRow(),
+      backRow: emptyRow(),
     },
   };
 };
-
-// --- Create Decks ---
-const baseCards = [monsterCard1, monsterCard2, monsterCard3, monsterCard4, monsterCard5, monsterCard6, monsterCard7, attackSpell]; // Cards to duplicate
 
 export const createInitialTurnState = (): TurnState => ({
   attackedMonsterIds: [],
@@ -159,8 +53,8 @@ export const createInitialTurnState = (): TurnState => ({
 // 呼び出すたびに新しいデッキでゲームを作成する（リスタート用）
 export const createInitialGameState = (): GameState => ({
   players: {
-    player1: createInitialPlayerState(createDeck(baseCards)),
-    player2: createInitialPlayerState(createDeck(baseCards)),
+    player1: createInitialPlayerState(createDeck(BASE_CARDS)),
+    player2: createInitialPlayerState(createDeck(BASE_CARDS)),
   },
   currentPlayer: 'player1',
   turn: 1,

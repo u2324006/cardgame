@@ -4,16 +4,19 @@ import '../styles/Card.css';
 
 interface CardProps {
   card: CardType;
-  onClick: () => void;
-  isSelected: boolean;
+  onClick?: () => void;
+  isSelected?: boolean;
 }
 
-const Card: React.FC<CardProps> = ({ card, onClick, isSelected }) => {
+// 裏向きのカード（相手の手札など）
+export const CardBack: React.FC = () => <div className="card card-back" />;
+
+const Card: React.FC<CardProps> = ({ card, onClick, isSelected = false }) => {
   return (
     <div className={`card ${card.type.toLowerCase()} ${isSelected ? 'selected' : ''}`} onClick={onClick}>
       {/* Top section: HP, Race, Cost */}
       <div className="card-top-section">
-        <div className="card-hp">{card.cardHp !== undefined ? `HP: ${card.cardHp}` : ''}</div>
+        <div className="card-hp" style={{ visibility: card.cardHp === undefined ? 'hidden' : undefined }}>HP: {card.cardHp}</div>
         <div className="card-race">{card.race}</div>
         <div className="card-cost-circle">
           <div className="card-cost-value">{card.cost}</div>

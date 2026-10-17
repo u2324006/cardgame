@@ -11,7 +11,7 @@ interface CardSlotProps {
 const CardSlot: React.FC<CardSlotProps> = ({ card, onClick }) => {
   return (
     <div className="card-slot" onClick={onClick}>
-      {card ? <Card card={card} onClick={() => {}} isSelected={false} /> : <div className="empty-slot"></div>}
+      {card ? <Card card={card} /> : <div className="empty-slot"></div>}
     </div>
   );
 };

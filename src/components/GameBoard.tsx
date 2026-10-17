@@ -14,9 +14,8 @@ import {
   runAiPlayPhase,
 } from '../logic/gameLogic';
 import { FieldPosition, GameState, PlayerId, Row } from '../types/gameState';
-import Hand from './Hand';
-import CardSlot from './CardSlot';
-import EnergyZone from './EnergyZone';
+import PlayerArea from './PlayerArea';
+import ControlPanel from './ControlPanel';
 
 const HUMAN: PlayerId = 'player1';
 const AI: PlayerId = 'player2';
@@ -149,14 +148,6 @@ const GameBoard: React.FC = () => {
     if (apply(attack(gameState, HUMAN, attackerPosition, { type: 'player' }))) setAttackerPosition(null);
   };
 
-  const renderRow = (player: PlayerId, row: Row) => (
-    <div className={`row ${row === 'frontRow' ? 'front-row' : 'back-row'}`}>
-      {players[player].field[row].map((card, i) => (
-        <CardSlot key={i} card={card} onClick={() => handleFieldClick(player, row, i)} />
-      ))}
-    </div>
-  );
-
   if (winner) {
     return (
       <div className="game-over-message">
@@ -170,48 +161,27 @@ const GameBoard: React.FC = () => {
     <div className="game-board">
       <div className="info-panel"><div className="card-info">カード情報 {attackerCard ? `${attackerCard.name}を選択中` : ''}</div></div>
       <div className="main-area">
-        <div className="player-area opponent-area">
-          <Hand cards={players.player2.hand} onCardClick={() => {}} />
-          <div className="field-and-deck">
-            <div className="field">
-              {renderRow(AI, 'backRow')}
-              {renderRow(AI, 'frontRow')}
-            </div>
-            <div className="deck-graveyard">
-              <div className="deck">山札: {players.player2.deck.length}</div>
-              <div className="graveyard">墓地: {players.player2.graveyard.length}</div>
-            </div>
-            <div className="special-card-hp" onClick={handlePlayerHpClick}>HP: {players.player2.specialCardHp}</div>
-            <EnergyZone currentEnergy={players.player2.currentEnergy} maxEnergy={players.player2.maxEnergy} className="rotated" />
-          </div>
-        </div>
-        <div className="player-area self-area">
-          <div className="field-and-deck">
-            <div className="deck-graveyard">
-              <div className="deck">山札: {players.player1.deck.length}</div>
-              <div className="graveyard">墓地: {players.player1.graveyard.length}</div>
-            </div>
-            <div className="field">
-              {renderRow(HUMAN, 'frontRow')}
-              {renderRow(HUMAN, 'backRow')}
-            </div>
-            <div className="special-card-hp">HP: {players.player1.specialCardHp}</div>
-            <EnergyZone currentEnergy={players.player1.currentEnergy} maxEnergy={players.player1.maxEnergy} />
-          </div>
-          <Hand cards={players.player1.hand} onCardClick={handleSelectCard} selectedCardIndex={selectedCardIndex} />
-        </div>
+        <PlayerArea
+          playerState={players[AI]}
+          isOpponent
+          onSlotClick={(row, index) => handleFieldClick(AI, row, index)}
+          onSpecialCardClick={handlePlayerHpClick}
+        />
+        <PlayerArea
+          playerState={players[HUMAN]}
+          isOpponent={false}
+          onSlotClick={(row, index) => handleFieldClick(HUMAN, row, index)}
+          onHandCardClick={handleSelectCard}
+          selectedCardIndex={selectedCardIndex}
+        />
       </div>
-      <div className="control-panel">
-        <div className="turn-info">ターン {turn}</div>
-        <div className="phase-button">{phase} フェイズ</div>
-        <div className="current-player-info">{isPlayer1Turn ? 'あなたのターン' : '相手のターン'}</div>
-        {isPlayer1Turn && (
-          <>
-            {phase !== 'Draw' && <button onClick={handleNextPhase} className="phase-button">次のフェイズへ</button>}
-            <button onClick={handleEndTurn} className="turn-button">ターン終了</button>
-          </>
-        )}
-      </div>
+      <ControlPanel
+        turn={turn}
+        phase={phase}
+        isPlayerTurn={isPlayer1Turn}
+        onNextPhase={handleNextPhase}
+        onEndTurn={handleEndTurn}
+      />
     </div>
   );
 };

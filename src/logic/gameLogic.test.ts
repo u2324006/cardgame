@@ -1,5 +1,5 @@
 import { Card } from '../types/card';
-import { GameState, PlayerId } from '../types/gameState';
+import { GameState, PlayerId, PlayerState } from '../types/gameState';
 import { createInitialGameState } from './initialState';
 import {
   attack,
@@ -46,6 +46,11 @@ const withField = (state: GameState, player: PlayerId, row: 'frontRow' | 'backRo
   },
 });
 
+const withPlayer = (state: GameState, player: PlayerId, changes: Partial<PlayerState>): GameState => ({
+  ...state,
+  players: { ...state.players, [player]: { ...state.players[player], ...changes } },
+});
+
 const unwrap = (result: ReturnType<typeof attack>): GameState => {
   if (!result.ok) throw new Error(result.error);
   return result.state;
@@ -62,10 +67,7 @@ describe('phase progression', () => {
   });
 
   it('ends the turn and resets turn state', () => {
-    const state = unwrap(playCard(
-      { ...emptyState(), players: { ...emptyState().players, player1: { ...emptyState().players.player1, hand: [monster('a')] } } },
-      'player1', 0, { row: 'frontRow', index: 0 },
-    ));
+    const state = unwrap(playCard(withPlayer(emptyState(), 'player1', { hand: [monster('a')] }), 'player1', 0, { row: 'frontRow', index: 0 }));
     const next = endTurn(state);
     expect(next.currentPlayer).toBe('player2');
     expect(next.phase).toBe('Draw');
@@ -73,10 +75,45 @@ describe('phase progression', () => {
   });
 });
 
+describe('deck out', () => {
+  // player1 のドローフェイズから、1周回って再び player1 のドローフェイズが終わるまで進める
+  const playRound = (state: GameState): GameState => nextPhase(endTurn(endTurn(state)));
+  const drawState = (deck: Card[]): GameState =>
+    withPlayer({ ...emptyState(), phase: 'Draw' }, 'player1', { deck });
+
+  it('does not damage the special card on the turn the last card is drawn', () => {
+    const next = nextPhase(drawState([monster('last')]));
+    expect(next.players.player1.deck).toHaveLength(0);
+    expect(next.players.player1.hand.map(c => c.id)).toEqual(['last']);
+    expect(next.players.player1.specialCardHp).toBe(20);
+  });
+
+  it('damages the special card by 1 on each following turn while the deck stays empty', () => {
+    let state = nextPhase(drawState([monster('last')]));
+    state = playRound(state);
+    expect(state.players.player1.specialCardHp).toBe(19);
+    state = playRound(state);
+    expect(state.players.player1.specialCardHp).toBe(18);
+    expect(state.players.player2.specialCardHp).toBe(20);
+  });
+
+  it('skips the damage when the deck was refilled during the turn the last card was drawn', () => {
+    let state = nextPhase(drawState([monster('last')]));
+    state = withPlayer(state, 'player1', { deck: [monster('refill')] });
+    state = playRound(state);
+    expect(state.players.player1.specialCardHp).toBe(20);
+    expect(state.players.player1.hand.map(c => c.id)).toEqual(['last', 'refill']);
+  });
+
+  it('loses the game when deck-out damage reduces the special card HP to 0', () => {
+    const state = withPlayer(drawState([]), 'player1', { specialCardHp: 1 });
+    expect(nextPhase(state).winner).toBe('player2');
+  });
+});
+
 describe('playCard', () => {
   it('places a monster and spends energy without mutating the original state', () => {
-    const base = emptyState();
-    const state = { ...base, players: { ...base.players, player1: { ...base.players.player1, hand: [monster('a', { cost: 2 })] } } };
+    const state = withPlayer(emptyState(), 'player1', { hand: [monster('a', { cost: 2 })] });
     const next = unwrap(playCard(state, 'player1', 0, { row: 'frontRow', index: 1 }));
     expect(next.players.player1.field.frontRow[1]?.id).toBe('a');
     expect(next.players.player1.currentEnergy).toBe(3);
@@ -84,16 +121,14 @@ describe('playCard', () => {
   });
 
   it('refuses to place a spell on the field', () => {
-    const base = emptyState();
-    const state = { ...base, players: { ...base.players, player1: { ...base.players.player1, hand: [spell] } } };
+    const state = withPlayer(emptyState(), 'player1', { hand: [spell] });
     expect(playCard(state, 'player1', 0, { row: 'frontRow', index: 0 }).ok).toBe(false);
   });
 });
 
 describe('castSpell', () => {
   it('raises the target FA by 1 until the end of the turn', () => {
-    const base = withField(emptyState(), 'player1', 'frontRow', [monster('a'), null, null]);
-    const state = { ...base, players: { ...base.players, player1: { ...base.players.player1, hand: [spell] } } };
+    const state = withPlayer(withField(emptyState(), 'player1', 'frontRow', [monster('a'), null, null]), 'player1', { hand: [spell] });
     let next = unwrap(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 }));
     expect(next.players.player1.graveyard).toContainEqual(spell);
 
@@ -141,14 +176,10 @@ describe('attack', () => {
 
 describe('AI', () => {
   it('plays affordable monsters into their preferred row', () => {
-    const base = emptyState();
-    const state = {
-      ...base,
-      players: {
-        ...base.players,
-        player2: { ...base.players.player2, currentEnergy: 2, hand: [spell, monster('front'), monster('back', { frontAttack: 0, backAttack: 4 }), monster('extra')] },
-      },
-    };
+    const state = withPlayer(emptyState(), 'player2', {
+      currentEnergy: 2,
+      hand: [spell, monster('front'), monster('back', { frontAttack: 0, backAttack: 4 }), monster('extra')],
+    });
     const next = runAiPlayPhase(state, 'player2');
     expect(next.players.player2.field.frontRow[0]?.id).toBe('front');
     expect(next.players.player2.field.backRow[0]?.id).toBe('back');

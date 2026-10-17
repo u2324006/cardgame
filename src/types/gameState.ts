@@ -2,7 +2,7 @@ import { Card } from './card';
 
 export type PlayerId = 'player1' | 'player2';
 export type Row = 'frontRow' | 'backRow';
-export type Phase = 'Draw' | 'Play' | 'Attack' | 'EndTurnPhase';
+export type Phase = 'Draw' | 'Play' | 'Attack';
 
 export interface FieldPosition {
   row: Row;

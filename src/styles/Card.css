@@ -78,3 +78,10 @@
 .card-stats-bottom span:first-child {
   margin-right: 10px; /* Space between FA and BA */
 }
+
+.card-back {
+  border-radius: 6px;
+  background:
+    repeating-linear-gradient(45deg, #1C4B7A 0 8px, #2A6DAD 8px 16px);
+  border: 4px solid #84A9C0;
+}

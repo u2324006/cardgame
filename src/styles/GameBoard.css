@@ -138,11 +138,6 @@
   justify-content: center;
 }
 
-.draw-button {
-    padding: 15px 25px;
-    font-size: 1.2em;
-}
-
 .control-panel {
   width: 15%;
   display: flex;
@@ -169,4 +164,18 @@
 
 .phase-button:hover, .turn-button:hover {
   background-color: var(--turn-button-hover-bg-color);
+}
+
+.game-over-message {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  font-size: 2em;
+}
+
+.game-over-message .turn-button {
+  font-size: 0.5em;
 }

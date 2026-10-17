@@ -7,7 +7,9 @@ import {
   PlayerState,
   Row,
 } from '../types/gameState';
+import { ATTACK_SPELL_ID, getBaseCardId } from './cards';
 import { createInitialTurnState } from './initialState';
+import { RULES } from './rules';
 
 // ゲームのルールをまとめた純粋関数群。
 // どの関数も引数の state を書き換えず、新しい state を返す。
@@ -42,6 +44,14 @@ const setSlot = (
   [position.row]: field[position.row].map((slot, i) => (i === position.index ? card : slot)),
 });
 
+// 大将カードにダメージを与え、HPが0以下になったら相手の勝利とする
+const damageSpecialCard = (state: GameState, player: PlayerId, amount: number): GameState => {
+  const next = updatePlayer(state, player, p => ({ ...p, specialCardHp: p.specialCardHp - amount }));
+  return next.players[player].specialCardHp <= 0 && !next.winner
+    ? { ...next, winner: getOpponent(player) }
+    : next;
+};
+
 export const getCardAt = (state: GameState, player: PlayerId, position: FieldPosition): Card | null =>
   state.players[player].field[position.row][position.index] ?? null;
 
@@ -58,8 +68,14 @@ export const getAttackPower = (state: GameState, card: Card, row: Row): number =
 
 // --- フェイズ・ターン進行 ---
 
+// 山札が尽きた状態で自分のターンを迎えたら、ドローの代わりに大将カードがダメージを受ける。
+// 最後の1枚を引いたターンや、そのターン中に山札が補充された場合は、次のターン開始時に山札が残っているので対象外。
 const drawPhase = (state: GameState): GameState => {
-  const next = updatePlayer(state, state.currentPlayer, playerState => {
+  const player = state.currentPlayer;
+  const afterDeckOut = state.players[player].deck.length === 0
+    ? damageSpecialCard(state, player, RULES.deckOutDamage)
+    : state;
+  const next = updatePlayer(afterDeckOut, player, playerState => {
     const [drawnCard, ...deck] = playerState.deck;
     return {
       ...playerState,
@@ -121,7 +137,7 @@ export const playCard = (
   });
 };
 
-const isAttackSpell = (card: Card) => card.id.startsWith('s001');
+const isAttackSpell = (card: Card) => getBaseCardId(card) === ATTACK_SPELL_ID;
 
 export const castSpell = (
   state: GameState,
@@ -211,7 +227,7 @@ export const attack = (
     );
   } else {
     if (frontRowBlocked) return failure('前衛にモンスターがいるため、直接攻撃できません。');
-    next = updatePlayer(state, defender, p => ({ ...p, specialCardHp: p.specialCardHp - attackPower }));
+    next = damageSpecialCard(state, defender, attackPower);
   }
 
   return success({
@@ -220,7 +236,6 @@ export const attack = (
       ...next.turnState,
       attackedMonsterIds: [...next.turnState.attackedMonsterIds, attacker.id],
     },
-    winner: next.players[defender].specialCardHp <= 0 ? attackerPlayer : next.winner,
   });
 };
 
