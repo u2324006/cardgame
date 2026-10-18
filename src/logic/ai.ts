@@ -196,7 +196,7 @@ interface AttackPlan {
 }
 
 // 1回分の攻撃を決める。
-// 相手の前衛が空なら大将カードを直接攻撃。
+// 相手の前衛が空なら、前衛のモンスターで大将カードを直接攻撃（後衛からは大将を攻撃できない）。
 // 倒せるモンスターがいれば、価値が一番高いものを、無駄の少ない攻撃役で倒す。
 // 倒せなければ、一番HPの低いモンスターを一番強い攻撃役で削り、後続の攻撃で倒しやすくする。
 const chooseAttack = (state: GameState, player: PlayerId): AttackPlan | null => {
@@ -206,8 +206,14 @@ const chooseAttack = (state: GameState, player: PlayerId): AttackPlan | null => 
     .filter(({ card, power }) => power > 0 && !state.turnState.attackedMonsterIds.includes(card.id));
   if (attackers.length === 0) return null;
 
-  const targets = monstersOnField(state, defender, ['frontRow']);
-  if (targets.length === 0) return { attacker: attackers[0].position, target: { type: 'player' } };
+  const frontTargets = monstersOnField(state, defender, ['frontRow']);
+  if (frontTargets.length === 0) {
+    const frontAttacker = attackers.find(({ position }) => position.row === 'frontRow');
+    if (frontAttacker) return { attacker: frontAttacker.position, target: { type: 'player' } };
+  }
+  // 前衛が空なら、残り（後衛）の攻撃役で相手の後衛を狙う
+  const targets = frontTargets.length > 0 ? frontTargets : monstersOnField(state, defender, ['backRow']);
+  if (targets.length === 0) return null;
 
   let bestKill: { plan: AttackPlan; value: number; overkill: number } | null = null;
   for (const attacker of attackers) {

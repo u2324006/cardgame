@@ -73,7 +73,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
     return bonuses;
   };
 
-  const canDirectAttack = isPlayerTurn && phase === 'Attack' && selection.kind === 'attacker' && !hasFrontRowMonsters(players[AI]);
+  const canDirectAttack = isPlayerTurn && phase === 'Attack' && selection.kind === 'attacker' && selection.from.row === 'frontRow' && !hasFrontRowMonsters(players[AI]);
 
   // カード情報欄：マウスを乗せているカード、なければ選択中のカード
   const selectedTarget = ((): InspectTarget | null => {

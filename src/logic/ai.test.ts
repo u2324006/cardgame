@@ -126,12 +126,20 @@ describe('AI attack phase', () => {
     expect(next.players.player1.specialCardHp).toBe(20 - 9);
   });
 
-  it('attacks the special card directly with every monster when the front row is empty', () => {
+  it('attacks the special card with front-row monsters and the back row with back-row monsters', () => {
     let state = withField(aiTurn(emptyState(), 'Attack'), 'player2', 'frontRow', [monster('x', { frontAttack: 4 }), null, null]);
     state = withField(state, 'player2', 'backRow', [monster('y', { backAttack: 2 }), null, null]);
     state = withField(state, 'player1', 'backRow', [monster('b'), null, null]);
     const next = runAiAttackPhase(state, 'player2');
-    expect(next.players.player1.specialCardHp).toBe(20 - 6);
+    expect(next.players.player1.specialCardHp).toBe(20 - 4); // 後衛の y は大将を攻撃できない
+    expect(next.players.player1.field.backRow[0]?.cardHp).toBe(5 - 2);
+  });
+
+  it('does not attack with the back row when nothing but the special card is left', () => {
+    const state = withField(aiTurn(emptyState(), 'Attack'), 'player2', 'backRow', [monster('y', { backAttack: 2 }), null, null]);
+    const next = runAiAttackPhase(state, 'player2');
+    expect(next.players.player1.specialCardHp).toBe(20);
+    expect(next.turnState.attackedMonsterIds).toEqual([]);
   });
 });
 

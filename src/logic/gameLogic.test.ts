@@ -133,6 +133,15 @@ describe('attack', () => {
     expect(attack(next, 'player1', attacker, { type: 'monster', position: { row: 'frontRow', index: 0 } }).ok).toBe(false);
   });
 
+  it('forbids back-row monsters from attacking the special card, but lets them attack monsters', () => {
+    let state = withField(emptyState(), 'player1', 'backRow', [monster('a', { backAttack: 3 }), null, null]);
+    state = inPhase(withField(state, 'player2', 'backRow', [monster('b', { cardHp: 5 }), null, null]), 'Attack');
+    const attacker = { row: 'backRow' as const, index: 0 };
+    expect(attack(state, 'player1', attacker, { type: 'player' })).toEqual({ ok: false, error: '後衛のモンスターは大将カードを攻撃できません。' });
+    const next = unwrap(attack(state, 'player1', attacker, { type: 'monster', position: { row: 'backRow', index: 0 } }));
+    expect(next.players.player2.field.backRow[0]?.cardHp).toBe(2);
+  });
+
   it('declares a winner when the special card HP reaches 0', () => {
     const state = withField(emptyState(), 'player1', 'frontRow', [monster('a', { frontAttack: 20 }), null, null]);
     const next = unwrap(attack(inPhase(state, 'Attack'), 'player1', { row: 'frontRow', index: 0 }, { type: 'player' }));

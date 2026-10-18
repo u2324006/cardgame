@@ -378,6 +378,7 @@ export const attack = (
     }
     next = damageMonster(state, defender, target.position, attackPower);
   } else {
+    if (attackerPosition.row === 'backRow') return failure('後衛のモンスターは大将カードを攻撃できません。');
     if (frontRowBlocked) return failure('前衛にモンスターがいるため、直接攻撃できません。');
     next = damageSpecialCard(state, defender, attackPower);
   }
