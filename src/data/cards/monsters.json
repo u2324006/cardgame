@@ -285,5 +285,225 @@
       "kind": "ambush",
       "amount": 1
     }
+  },
+  {
+    "id": "m021",
+    "name": "召喚士",
+    "race": "魔導士",
+    "effectText": "召喚したとき、手札のコスト2以下のモンスター1体をコストを払わずに召喚できる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 3,
+    "frontAttack": 1,
+    "backAttack": 2,
+    "hp": 5,
+    "effect": {
+      "kind": "freeSummonOnSummon",
+      "maxCost": 2
+    }
+  },
+  {
+    "id": "m022",
+    "name": "傭兵",
+    "race": "戦士",
+    "effectText": "手札を2枚捨てれば、エネルギーを払わずに召喚できる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 4,
+    "frontAttack": 3,
+    "backAttack": 1,
+    "hp": 6,
+    "effect": {
+      "kind": "discardSummon",
+      "amount": 2
+    }
+  },
+  {
+    "id": "m023",
+    "name": "伝令官",
+    "race": "戦士",
+    "effectText": "召喚したとき、このターン次に使うスペルのコストを1下げる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 1,
+    "hp": 2,
+    "effect": {
+      "kind": "spellDiscountOnSummon",
+      "amount": 1
+    }
+  },
+  {
+    "id": "m024",
+    "name": "祈祷師",
+    "race": "魔導士",
+    "effectText": "後衛に召喚したとき、次の自分のターン開始時にエネルギーを1増やす（そのとき場に残っていれば）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 1,
+    "hp": 4,
+    "effect": {
+      "kind": "energyNextTurnFromBack",
+      "amount": 1
+    }
+  },
+  {
+    "id": "m025",
+    "name": "斥候",
+    "race": "戦士",
+    "effectText": "召喚したとき、カードを1枚引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 1,
+    "hp": 2,
+    "effect": {
+      "kind": "drawOnSummon",
+      "amount": 1
+    }
+  },
+  {
+    "id": "m026",
+    "name": "伝令兵",
+    "race": "戦士",
+    "effectText": "前衛で倒されたとき、カードを1枚引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 2,
+    "frontAttack": 2,
+    "backAttack": 1,
+    "hp": 4,
+    "effect": {
+      "kind": "drawOnFrontDeath",
+      "amount": 1
+    }
+  },
+  {
+    "id": "m027",
+    "name": "研究者",
+    "race": "魔導士",
+    "effectText": "後衛にいるとき、自分のターン終了時にエネルギーが1以下ならカードを1枚引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 2,
+    "hp": 4,
+    "effect": {
+      "kind": "drawIfLowEnergy",
+      "amount": 1,
+      "threshold": 1
+    }
+  },
+  {
+    "id": "m028",
+    "name": "狂戦士",
+    "race": "戦士",
+    "effectText": "召喚したとき、手札を1枚選んで捨てる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "frontAttack": 4,
+    "backAttack": 0,
+    "hp": 3,
+    "effect": {
+      "kind": "discardOnSummon",
+      "amount": 1
+    }
+  },
+  {
+    "id": "m029",
+    "name": "怨霊",
+    "race": "霊",
+    "effectText": "相手の効果で手札から捨てられたとき、相手のモンスター1体に2ダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 2,
+    "frontAttack": 2,
+    "backAttack": 2,
+    "hp": 4,
+    "effect": {
+      "kind": "damageWhenDiscarded",
+      "amount": 2
+    }
+  },
+  {
+    "id": "m030",
+    "name": "幻影兵",
+    "race": "霊",
+    "effectText": "相手の効果で手札から捨てられたとき、空きがあれば場に出る。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 2,
+    "frontAttack": 3,
+    "backAttack": 3,
+    "hp": 3,
+    "effect": {
+      "kind": "summonWhenDiscarded"
+    }
   }
 ]

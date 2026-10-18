@@ -33,6 +33,7 @@ const createInitialPlayerState = (fullDeck: Card[], leader: LeaderCard = getDefa
       backRow: emptyRow(),
     },
     leaderAbilityUsed: false,
+    delayedEnergy: [],
   };
 };
 
@@ -45,6 +46,10 @@ export const createInitialTurnState = (): TurnState => ({
   disabledLeaders: [],
   movedToFrontIds: [],
   commandUsedIds: [],
+  spellDiscount: 0,
+  summonDiscount: 0,
+  spoilsDraw: 0,
+  spellEnergyUsed: false,
 });
 
 const createPlayerFromDeck = (deck: DeckList): PlayerState =>
@@ -64,6 +69,8 @@ export const createInitialGameState = (playerDeck: DeckList = createDefaultDeckL
   winner: null,
   pendingDiscard: null,
   pendingFreeSpell: null,
+  pendingFreeSummon: null,
+  pendingPick: null,
   moveLocks: [],
   leaderGuards: [],
 });

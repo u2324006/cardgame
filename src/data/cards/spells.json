@@ -298,5 +298,385 @@
       "kind": "guardLeader",
       "amount": 2
     }
+  },
+  {
+    "id": "s011",
+    "name": "奇襲部隊",
+    "race": "スペル",
+    "effectText": "手札のコスト3以下のモンスター1体を、コストを払わずに前衛に召喚する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 2,
+    "target": "none",
+    "effect": {
+      "kind": "freeSummon",
+      "amount": 3
+    }
+  },
+  {
+    "id": "s012",
+    "name": "魔導書",
+    "race": "スペル",
+    "effectText": "このターン、次に使うスペルのコストを2下げる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "target": "none",
+    "effect": {
+      "kind": "spellDiscount",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s013",
+    "name": "援軍要請",
+    "race": "スペル",
+    "effectText": "自分の場のモンスターが相手より少ないとき、このターン次に召喚するモンスターのコストを2下げる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "target": "none",
+    "effect": {
+      "kind": "summonDiscount",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s014",
+    "name": "生贄の儀式",
+    "race": "スペル",
+    "effectText": "自分のモンスター1体を墓地に置き、手札のコスト2以下のモンスター1体をコストを払わずに召喚する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 0,
+    "target": "allyMonster",
+    "effect": {
+      "kind": "sacrificeSummon",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s015",
+    "name": "魔力の泉",
+    "race": "スペル",
+    "effectText": "次の自分のターン開始時、エネルギーを2増やす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "target": "none",
+    "effect": {
+      "kind": "delayedEnergy",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s016",
+    "name": "魔力結晶",
+    "race": "スペル",
+    "effectText": "手札を2枚捨て、エネルギーを2増やす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 0,
+    "target": "none",
+    "effect": {
+      "kind": "discardForEnergy",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s017",
+    "name": "蓄魔の壺",
+    "race": "スペル",
+    "effectText": "エネルギーの上限を1上げる（最大12）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 0,
+    "target": "none",
+    "effect": {
+      "kind": "raiseMaxEnergy",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s018",
+    "name": "魔力吸収",
+    "race": "スペル",
+    "effectText": "相手のエネルギーを2減らし、自分のエネルギーを1増やす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 2,
+    "target": "none",
+    "effect": {
+      "kind": "drainEnergy",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s019",
+    "name": "生命変換",
+    "race": "スペル",
+    "effectText": "自分の大将のHPを3減らし、エネルギーを2増やす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 0,
+    "target": "none",
+    "effect": {
+      "kind": "lifeToEnergy",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s020",
+    "name": "捧げ物",
+    "race": "スペル",
+    "effectText": "自分のモンスター1体を墓地に置き、そのコストぶんエネルギーを増やす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "target": "allyMonster",
+    "effect": {
+      "kind": "sacrificeForEnergy",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s021",
+    "name": "作戦会議",
+    "race": "スペル",
+    "effectText": "カードを2枚引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 2,
+    "target": "none",
+    "effect": {
+      "kind": "draw",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s022",
+    "name": "補給線",
+    "race": "スペル",
+    "effectText": "自分の後衛のモンスターを好きな数だけ墓地に送り、その数だけカードを引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "target": "allyMonster",
+    "effect": {
+      "kind": "supplyLine",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s023",
+    "name": "戦利品",
+    "race": "スペル",
+    "effectText": "このターン、最初に相手のモンスターを倒したとき、カードを1枚引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "target": "none",
+    "effect": {
+      "kind": "spoils",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s024",
+    "name": "墓荒らし",
+    "race": "スペル",
+    "effectText": "自分の墓地のモンスター1体を手札に戻す。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "target": "none",
+    "effect": {
+      "kind": "graveRob",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s025",
+    "name": "錬成",
+    "race": "スペル",
+    "effectText": "手札を1枚捨て、カードを2枚引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "target": "none",
+    "effect": {
+      "kind": "discardDraw",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s026",
+    "name": "略奪",
+    "race": "スペル",
+    "effectText": "相手の手札をランダムに1枚捨てさせる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 2,
+    "target": "none",
+    "effect": {
+      "kind": "randomDiscard",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s027",
+    "name": "火炎瓶",
+    "race": "スペル",
+    "effectText": "手札を1枚捨て、相手のモンスター1体に「捨てたカードのコスト＋2」ダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "target": "enemyMonster",
+    "effect": {
+      "kind": "firebomb",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s028",
+    "name": "情報戦",
+    "race": "スペル",
+    "effectText": "相手の手札を見て、スペルを1枚選んで捨てさせる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "target": "none",
+    "effect": {
+      "kind": "reveal",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s029",
+    "name": "仕切り直し",
+    "race": "スペル",
+    "effectText": "手札をすべて捨て、同じ枚数のカードを引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 3,
+    "target": "none",
+    "effect": {
+      "kind": "reshuffle",
+      "amount": 1
+    }
   }
 ]

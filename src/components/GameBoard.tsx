@@ -15,15 +15,19 @@ import {
   getCardAt,
   getHpBonus,
   getMonsterPositions,
+  getSpellCost,
   getSummonCost,
   isLeaderActive,
   hasFrontRowMonsters,
   moveMonster,
   needsPierceTarget,
   nextPhase,
+  pickCard,
   playCard,
   skipFreeSpell,
+  skipFreeSummon,
 } from '../logic/gameLogic';
+import PickDialog from './PickDialog';
 import { getSpellTargetSide, isMonster, isUntargetedSpell } from '../types/card';
 import { DeckList } from '../logic/deck';
 import { AttackTarget, FieldPosition, GameState, PlayerId, Row } from '../types/gameState';
@@ -40,7 +44,8 @@ const MESSAGE_DURATION_MS = 3000;
 // プレイヤーが今選んでいるもの（同時に選べるのは1つだけ）
 type Selection =
   | { kind: 'none' }
-  | { kind: 'hand'; index: number } // 召喚・スペルに使う手札
+  | { kind: 'hand'; index: number; payByDiscard?: boolean } // 召喚・スペルに使う手札（payByDiscard：傭兵を手札を捨てて召喚する）
+  | { kind: 'supply'; index: number; positions: FieldPosition[] } // 補給線で墓地に送る後衛のモンスターを選んでいる
   | { kind: 'move'; from: FieldPosition } // 移動させるモンスター
   | { kind: 'attacker'; from: FieldPosition } // 攻撃させるモンスター
   | { kind: 'command'; from: FieldPosition } // 指揮する指揮官（次に FA を上げる前衛の味方を選ぶ）
@@ -65,7 +70,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
 
   const { players, turn, phase, currentPlayer, winner, turnState } = gameState;
   const isPlayerTurn = currentPlayer === HUMAN && !winner;
-  const selectedFieldPosition = selection.kind === 'none' || selection.kind === 'hand' ? null : selection.from;
+  const selectedFieldPosition = selection.kind === 'none' || selection.kind === 'hand' || selection.kind === 'supply' ? null : selection.from;
   // 自分のターンで行動済みのモンスター（攻撃済み・移動済み）は薄く表示する
   const usedLabels: Record<string, string> = {};
   if (isPlayerTurn && phase === 'Play' && turnState.movedMonsterId) usedLabels[turnState.movedMonsterId] = '移動済み';
@@ -73,6 +78,12 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
     gameState.moveLocks.filter(lock => lock.player === HUMAN).forEach(lock => { usedLabels[lock.cardId] = '移動不可'; });
   }
   if (isPlayerTurn && phase === 'Attack') turnState.attackedMonsterIds.forEach(id => { usedLabels[id] = '攻撃済み'; });
+  if (selection.kind === 'supply') {
+    selection.positions.forEach(position => {
+      const card = getCardAt(gameState, HUMAN, position);
+      if (card) usedLabels[card.id] = '墓地へ';
+    });
+  }
 
   // 籠城の効果（大将が受けるダメージを減らす）
   const guardOf = (player: PlayerId): string | undefined => {
@@ -80,7 +91,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
     return amount > 0 ? `籠城 ダメージ -${amount}` : undefined;
   };
   // 手札のモンスターの召喚コスト（伏兵の効果で下がる）
-  const handCosts = players[HUMAN].hand.map(card => (isMonster(card) ? getSummonCost(gameState, HUMAN, card) : card.cost));
+  const handCosts = players[HUMAN].hand.map(card => (isMonster(card) ? getSummonCost(gameState, HUMAN, card) : getSpellCost(gameState, card)));
 
   // 大将カードの効果が働いていないときのラベル
   const leaderStatusOf = (player: PlayerId): string | undefined => {
@@ -103,7 +114,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
 
   // カード情報欄：マウスを乗せているカード、なければ選択中のカード
   const selectedTarget = ((): InspectTarget | null => {
-    if (selection.kind === 'hand') {
+    if (selection.kind === 'hand' || selection.kind === 'supply') {
       const card = players[HUMAN].hand[selection.index];
       return card ? { kind: 'card', card } : null;
     }
@@ -156,6 +167,8 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
 
   // モンスターの効果で、コストなしで使うスペルを選んでいるところ
   const pendingFreeSpell = gameState.pendingFreeSpell?.player === HUMAN ? gameState.pendingFreeSpell : null;
+  const pendingFreeSummon = gameState.pendingFreeSummon?.player === HUMAN ? gameState.pendingFreeSummon : null;
+  const pendingPick = gameState.pendingPick?.player === HUMAN ? gameState.pendingPick : null;
   const leaderAbility = players[HUMAN].leader.ability;
 
   // 選んだ手札が、対象を選ばずに使うスペルなら「使う」ボタンを出す
@@ -170,7 +183,10 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
       return;
     }
     if (!isPlayerTurn || phase !== 'Play') return;
-    setSelection(selection.kind === 'hand' && selection.index === index ? NO_SELECTION : { kind: 'hand', index });
+    const card = players[HUMAN].hand[index];
+    if ((selection.kind === 'hand' || selection.kind === 'supply') && selection.index === index) setSelection(NO_SELECTION);
+    else if (card && !isMonster(card) && card.effect.kind === 'supplyLine') setSelection({ kind: 'supply', index, positions: [] });
+    else setSelection({ kind: 'hand', index });
   };
 
   // 移動させるモンスターを選択
@@ -191,9 +207,20 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
   const handlePlayPhaseClick = (position: FieldPosition) => {
     const clickedCard = getCardAt(gameState, HUMAN, position);
 
+    if (selection.kind === 'supply') {
+      // 補給線：自分の後衛のモンスターを選ぶ／外す
+      if (!clickedCard || position.row !== 'backRow') {
+        showMessage('墓地に送る自分の後衛のモンスターを選んでください。');
+        return;
+      }
+      const chosen = selection.positions.some(p => samePosition(p, position));
+      setSelection({ ...selection, positions: chosen ? selection.positions.filter(p => !samePosition(p, position)) : [...selection.positions, position] });
+      return;
+    }
+
     if (selection.kind === 'hand') {
       const selectedCard = players[HUMAN].hand[selection.index];
-      if (!clickedCard) apply(playCard(gameState, HUMAN, selection.index, position));
+      if (!clickedCard) apply(playCard(gameState, HUMAN, selection.index, position, { payByDiscard: selection.payByDiscard }));
       else if (selectedCard && !isMonster(selectedCard)) apply(castSpell(gameState, HUMAN, selection.index, position));
       else selectMoveSource(position);
       return;
@@ -311,6 +338,35 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
             指揮する（前衛の味方1体の FA を上げる）
           </button>
         )}
+        {selectedHandCard && isMonster(selectedHandCard) && selectedHandCard.ability?.kind === 'discardSummon' && selection.kind === 'hand' && !selection.payByDiscard && (
+          <button type="button" className="secondary-button cast-button" onClick={() => setSelection({ ...selection, payByDiscard: true })}>
+            手札を{selectedHandCard.ability.amount}枚捨てて召喚する（エネルギー不要）
+          </button>
+        )}
+        {selection.kind === 'hand' && selection.payByDiscard && (
+          <div className="discard-panel" role="status">
+            <p>召喚する<b>空きスロット</b>を選んでください。召喚したあと、捨てる手札を選びます。</p>
+          </div>
+        )}
+        {selection.kind === 'supply' && (
+          <div className="discard-panel" role="status">
+            <p>墓地に送る<b>自分の後衛のモンスター</b>を選んでください（{selection.positions.length}体）。</p>
+            <button
+              type="button"
+              className="primary-button"
+              disabled={selection.positions.length === 0}
+              onClick={() => apply(castSpell(gameState, HUMAN, selection.index, undefined, selection.positions))}
+            >
+              使う（{selection.positions.length}枚引く）
+            </button>
+          </div>
+        )}
+        {pendingFreeSummon && (
+          <div className="discard-panel" role="alert">
+            <p>「{pendingFreeSummon.source}」の効果：手札のコスト{pendingFreeSummon.maxCost}以下のモンスターを1体、<b>コストを払わずに</b>{pendingFreeSummon.row === 'frontRow' ? '前衛に' : ''}召喚できます。</p>
+            <button type="button" className="secondary-button" onClick={() => apply(skipFreeSummon(gameState, HUMAN))}>召喚しない</button>
+          </div>
+        )}
         {selection.kind === 'pierce' && (
           <div className="discard-panel" role="status">
             <p>槍兵の効果：追加で1ダメージを与える<b>相手の後衛のモンスター</b>を選んでください。</p>
@@ -331,6 +387,8 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
         {pendingDiscard && (
           <div className="discard-panel" role="alert">
             <p>手札から墓地に置くカードを<b>{pendingDiscard.count}枚</b>選んでください（{discardIndices.length} / {pendingDiscard.count}）。</p>
+            {pendingDiscard.then?.kind === 'damage' && <p>捨てたカードのコスト＋{pendingDiscard.then.bonus}のダメージを与えます。</p>}
+            {pendingDiscard.then?.kind === 'draw' && <p>捨てたあと、カードを{pendingDiscard.then.amount}枚引きます。</p>}
             <button
               type="button"
               className="primary-button"
@@ -374,12 +432,22 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
           handCosts={handCosts}
         />
       </div>
+      {pendingPick && (
+        <PickDialog
+          title={pendingPick.source}
+          message={pendingPick.kind === 'graveyard' ? '手札に戻す墓地のモンスターを選んでください。' : '相手の手札です。捨てさせるスペルを選んでください。'}
+          cards={pendingPick.kind === 'graveyard' ? players[HUMAN].graveyard : players[AI].hand}
+          isPickable={card => (pendingPick.kind === 'graveyard' ? isMonster(card) : !isMonster(card))}
+          onPick={index => apply(pickCard(gameState, HUMAN, index))}
+          onSkip={pendingPick.kind === 'opponentHand' && players[AI].hand.every(isMonster) ? () => apply(pickCard(gameState, HUMAN, null)) : undefined}
+        />
+      )}
       <ControlPanel
         turn={turn}
         phase={phase}
         isPlayerTurn={isPlayerTurn}
         canAttack={canAttackThisTurn(gameState)}
-        isBusy={!!pendingDiscard || !!pendingFreeSpell}
+        isBusy={!!pendingDiscard || !!pendingFreeSpell || !!pendingFreeSummon || !!pendingPick}
         onNextPhase={() => setGameState(nextPhase)}
         onEndTurn={() => setGameState(endTurn)}
         onExit={onExit}

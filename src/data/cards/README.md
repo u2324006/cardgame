@@ -56,6 +56,16 @@
 | `charge` | 後衛から前衛へ移動したターン、FA が amount 上がる | `{ "kind": "charge", "amount": 2 }` |
 | `rearguard` | 前衛で攻撃されて倒されたとき、攻撃したモンスターに amount ダメージ | `{ "kind": "rearguard", "amount": 3 }` |
 | `ambush` | 相手の場のモンスターが自分より多いとき、コストが amount 下がる | `{ "kind": "ambush", "amount": 1 }` |
+| `freeSummonOnSummon` | 召喚したとき、手札のコスト maxCost 以下のモンスターを1体コストなしで召喚できる | `{ "kind": "freeSummonOnSummon", "maxCost": 2 }` |
+| `discardSummon` | 手札を amount 枚捨てれば、エネルギーを払わずに召喚できる | `{ "kind": "discardSummon", "amount": 2 }` |
+| `spellDiscountOnSummon` | 召喚したとき、このターン次に使うスペルのコスト −amount | `{ "kind": "spellDiscountOnSummon", "amount": 1 }` |
+| `energyNextTurnFromBack` | 後衛に召喚したとき、次の自分のターン開始時にエネルギー +amount（場に残っていれば） | `{ "kind": "energyNextTurnFromBack", "amount": 1 }` |
+| `drawOnSummon` | 召喚したとき amount 枚引く | `{ "kind": "drawOnSummon", "amount": 1 }` |
+| `drawOnFrontDeath` | 前衛で倒されたとき amount 枚引く | `{ "kind": "drawOnFrontDeath", "amount": 1 }` |
+| `drawIfLowEnergy` | 後衛にいるとき、ターン終了時にエネルギーが threshold 以下なら amount 枚引く | `{ "kind": "drawIfLowEnergy", "amount": 1, "threshold": 1 }` |
+| `discardOnSummon` | 召喚したとき、手札を amount 枚選んで捨てる | `{ "kind": "discardOnSummon", "amount": 1 }` |
+| `damageWhenDiscarded` | 相手の効果で手札から捨てられたとき、相手のモンスター1体に amount ダメージ | `{ "kind": "damageWhenDiscarded", "amount": 2 }` |
+| `summonWhenDiscarded` | 相手の効果で手札から捨てられたとき、空きがあれば場に出る | `{ "kind": "summonWhenDiscarded" }` |
 
 ### スペルだけ
 
@@ -85,6 +95,25 @@
 | `pullForward` | 相手の後衛のモンスターを同じ位置の前衛へ（埋まっていれば入れ替え）。動いたモンスターは次のターン移動できない（amount は 1） | 相手の後衛のモンスター |
 | `lastStand` | 自分のモンスターが相手より少ないとき、このターン全モンスターの FA・BA を amount 上げる | なし |
 | `guardLeader` | 次の相手のターン、自分の大将が受けるダメージを1回につき amount 減らす | 自分の大将 |
+| `freeSummon` | 手札のコスト amount 以下のモンスター1体をコストなしで前衛に召喚 | なし |
+| `spellDiscount` | このターン次に使うスペルのコスト −amount | なし |
+| `summonDiscount` | 劣勢のとき、このターン次に召喚するモンスターのコスト −amount | なし |
+| `sacrificeSummon` | 自分のモンスターを墓地に置き、手札のコスト amount 以下のモンスターをコストなしで召喚 | 自分のモンスター |
+| `delayedEnergy` | 次の自分のターン開始時にエネルギー +amount | なし |
+| `discardForEnergy` | 手札を amount 枚捨て、エネルギー +amount | なし |
+| `raiseMaxEnergy` | エネルギーの上限 +amount（最大 12） | なし |
+| `drainEnergy` | 相手のエネルギー −amount、自分 +1 | なし |
+| `lifeToEnergy` | 自分の大将の HP −3、エネルギー +amount | なし |
+| `sacrificeForEnergy` | 自分のモンスターを墓地に置き、そのコストぶんエネルギー（amount は 1） | 自分のモンスター |
+| `draw` | amount 枚引く | なし |
+| `supplyLine` | 自分の後衛のモンスターを好きな数だけ墓地に送り、その数だけ引く（amount は 1） | 自分の後衛のモンスター（複数） |
+| `spoils` | このターン最初に相手のモンスターを倒したとき amount 枚引く | なし |
+| `graveRob` | 自分の墓地のモンスター1体を手札に戻す（amount は 1） | なし |
+| `discardDraw` | 手札を1枚捨て、amount 枚引く | なし |
+| `randomDiscard` | 相手の手札をランダムに amount 枚捨てさせる | なし |
+| `firebomb` | 手札を1枚捨て、相手のモンスター1体に「捨てたカードのコスト + amount」ダメージ | 相手のモンスター |
+| `reveal` | 相手の手札を見て、スペルを1枚選んで捨てさせる（amount は 1） | なし |
+| `reshuffle` | 手札をすべて捨て、同じ枚数を引く（amount は 1） | なし |
 
 ### 大将だけ
 
@@ -102,6 +131,8 @@
 | `healOnMove` | 自分のモンスターが移動したとき、そのモンスターの HP を amount 回復 | `{ "kind": "healOnMove", "amount": 1 }` |
 | `backRowBaBonus` | 自分の後衛のモンスターの BA を amount 上げる。hpRatio があれば、大将の HP が最大 HP × hpRatio 以下のときだけ | `{ "kind": "backRowBaBonus", "amount": 1, "hpRatio": 0.5 }` |
 | `extraDrawWhenBehind` | ターン開始時、自分のモンスターが相手より margin 体以上少なければ amount 枚多く引く | `{ "kind": "extraDrawWhenBehind", "margin": 2, "amount": 1 }` |
+| `spellEnergy` | 1ターンに1回、スペルを使ったときエネルギー +amount | `{ "kind": "spellEnergy", "amount": 1 }` |
+| `extraDrawWhenFewCards` | ターン開始時、手札が handSize 枚以下なら amount 枚多く引く | `{ "kind": "extraDrawWhenFewCards", "handSize": 2, "amount": 1 }` |
 
 ## AI へのお願い（効果の実装）
 

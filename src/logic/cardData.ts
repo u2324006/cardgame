@@ -147,7 +147,7 @@ export const fromMonsterRecord = (record: MonsterRecord): MonsterCard => ({
 });
 
 export const fromSpellRecord = (record: SpellRecord): SpellCard => {
-  const effect: SpellEffect = record.effect ? { kind: record.effect.kind, amount: record.effect.amount } : { kind: 'custom' };
+  const effect = (record.effect ? { kind: record.effect.kind, amount: record.effect.amount } : { kind: 'custom' }) as SpellEffect;
   return {
     type: 'Spell',
     ...notesFromRecord(record),
@@ -201,6 +201,8 @@ const isLeaderAbility = (effect: unknown): effect is LeaderAbility => {
     case 'healOnMove': return isNumber(e.amount);
     case 'backRowBaBonus': return isNumber(e.amount) && (e.hpRatio === undefined || isNumber(e.hpRatio));
     case 'extraDrawWhenBehind': return isNumber(e.margin) && isNumber(e.amount);
+    case 'spellEnergy': return isNumber(e.amount);
+    case 'extraDrawWhenFewCards': return isNumber(e.handSize) && isNumber(e.amount);
     default: return false;
   }
 };
@@ -208,8 +210,14 @@ const isLeaderAbility = (effect: unknown): effect is LeaderAbility => {
 const isMonsterAbility = (effect: unknown): effect is MonsterAbility => {
   const e = effect as MonsterAbility;
   if (!e || !MONSTER_ABILITY_KINDS.includes(e.kind)) return false;
-  if (e.kind === 'freeSpellOnSummon') return isNumber(e.maxCost);
-  return e.kind === 'sniper' || isNumber(e.amount);
+  switch (e.kind) {
+    case 'freeSpellOnSummon':
+    case 'freeSummonOnSummon': return isNumber(e.maxCost);
+    case 'drawIfLowEnergy': return isNumber(e.amount) && isNumber(e.threshold);
+    case 'sniper':
+    case 'summonWhenDiscarded': return true;
+    default: return isNumber(e.amount);
+  }
 };
 
 export const isLeaderRecord = (r: unknown): r is LeaderRecord => {

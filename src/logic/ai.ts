@@ -19,12 +19,15 @@ import {
   getHpBonus,
   getMonsterPositions,
   getOpponent,
+  getSpellCost,
   getSummonCost,
   isMoveLocked,
   moveMonster,
   otherRow,
+  pickCard,
   playCard,
   skipFreeSpell,
+  skipFreeSummon,
   activateLeaderAbility,
 } from './gameLogic';
 
@@ -50,9 +53,12 @@ const abilityRow = (card: MonsterCard): Row | null => {
     case 'sniper':
     case 'medic':
     case 'commander': return 'backRow';
+    case 'energyNextTurnFromBack':
+    case 'drawIfLowEnergy': return 'backRow';
     case 'pierce':
     case 'frontGuard':
-    case 'rearguard': return 'frontRow';
+    case 'rearguard':
+    case 'drawOnFrontDeath': return 'frontRow';
     default: return null;
   }
 };
@@ -83,21 +89,27 @@ const aiSummon = (state: GameState, player: PlayerId): GameState => {
   for (;;) {
     const snapshot = current;
     const { hand, currentEnergy } = snapshot.players[player];
+    // 傭兵：エネルギーが足りなくても、手札に余裕があれば（捨てる枚数 +2 枚以上）手札を捨てて召喚する
+    const byDiscard = (card: MonsterCard) => card.ability?.kind === 'discardSummon' && hand.length - 1 >= card.ability.amount + 2;
     const candidates = hand
       .map((card, handIndex) => ({ card, handIndex }))
-      .flatMap(({ card, handIndex }) => (isMonster(card) && getSummonCost(snapshot, player, card) <= currentEnergy ? [{ card, handIndex }] : []))
+      .flatMap(({ card, handIndex }) => {
+        if (!isMonster(card)) return [];
+        if (getSummonCost(snapshot, player, card) <= currentEnergy) return [{ card, handIndex, payByDiscard: false }];
+        return byDiscard(card) ? [{ card, handIndex, payByDiscard: true }] : [];
+      })
       .sort((a, b) => monsterValue(b.card) - monsterValue(a.card));
 
     let summoned = false;
-    for (const { card, handIndex } of candidates) {
+    for (const { card, handIndex, payByDiscard } of candidates) {
       const row = preferredRow(card);
       const fallbackRow = otherRow(row);
       const slot = findEmptySlot(current, player, row)
         ?? (getAttackPower(current, card, fallbackRow) > 0 ? findEmptySlot(current, player, fallbackRow) : null);
       if (!slot) continue;
-      const result = playCard(current, player, handIndex, slot);
+      const result = playCard(current, player, handIndex, slot, { payByDiscard });
       if (result.ok) {
-        current = resolveAiFreeSpell(result.state, player);
+        current = resolveAiPending(result.state, player);
         summoned = true;
         break;
       }
@@ -162,6 +174,29 @@ const findSpellTarget = (state: GameState, player: PlayerId, spell: SpellCard): 
     }
     case 'swapColumn':
       return findColumnSwap(state, player, player, 2);
+    case 'firebomb': {
+      // 一番残しておきたくない手札を捨てる前提で、倒せる相手モンスターを狙う
+      const others = state.players[player].hand.filter(c => c.id !== spell.id);
+      if (others.length === 0) return null;
+      const fuel = others.reduce((a, b) => (keepValue(b) < keepValue(a) ? b : a));
+      const damage = fuel.cost + effect.amount;
+      const killable = monstersOnField(state, defender)
+        .filter(({ card }) => getEffectiveHp(state, defender, card) <= damage)
+        .sort((a, b) => monsterValue(b.card) - monsterValue(a.card));
+      return killable[0]?.position ?? null;
+    }
+    case 'sacrificeSummon': {
+      // 弱いモンスターを、手札のもっと強いモンスターに入れ替える
+      const best = state.players[player].hand
+        .filter((c): c is MonsterCard => isMonster(c) && c.cost <= effect.amount)
+        .reduce<MonsterCard | null>((a, b) => (!a || monsterValue(b) > monsterValue(a) ? b : a), null);
+      if (!best) return null;
+      const weakest = monstersOnField(state, player).sort((a, b) => monsterValue(a.card) - monsterValue(b.card))[0];
+      return weakest && monsterValue(best) >= monsterValue(weakest.card) + 4 ? weakest.position : null;
+    }
+    case 'sacrificeForEnergy':
+    case 'supplyLine':
+      return null; // 自分のモンスターを減らす効果は使わない
     case 'pullForward':
       return findColumnSwap(state, player, defender, -2, ['backRow']);
     case 'drawDiscard':
@@ -170,6 +205,21 @@ const findSpellTarget = (state: GameState, player: PlayerId, spell: SpellCard): 
     case 'damageFrontAll':
     case 'lastStand':
     case 'guardLeader':
+    case 'freeSummon':
+    case 'spellDiscount':
+    case 'summonDiscount':
+    case 'delayedEnergy':
+    case 'discardForEnergy':
+    case 'raiseMaxEnergy':
+    case 'drainEnergy':
+    case 'lifeToEnergy':
+    case 'draw':
+    case 'spoils':
+    case 'graveRob':
+    case 'discardDraw':
+    case 'randomDiscard':
+    case 'reveal':
+    case 'reshuffle':
       return null; // 対象を選ばないスペル（shouldCastUntargeted で判断する）
   }
 };
@@ -226,11 +276,55 @@ const shouldCastUntargeted = (state: GameState, player: PlayerId, spell: SpellCa
     }
     case 'guardLeader':
       return state.players[player].specialCardHp <= 10 && countMonsters(state, defender) >= 2;
+    default:
+      return shouldCastResourceSpell(state, player, spell);
     case 'catchUpEnergy': {
       // 増えるエネルギーが払うコストより多いときだけ
       const gain = monstersOnField(state, defender).length - monstersOnField(state, player).length;
       return gain > (state.pendingFreeSpell ? 0 : spell.cost);
     }
+  }
+};
+
+// カードを引く・捨てる・エネルギー・踏み倒しのスペルを使うか
+const shouldCastResourceSpell = (state: GameState, player: PlayerId, spell: SpellCard): boolean => {
+  const defender = getOpponent(player);
+  const me = state.players[player];
+  const energyAfter = me.currentEnergy - getSpellCost(state, spell);
+  const others = me.hand.filter(c => c.id !== spell.id);
+  const monstersInHand = others.filter((c): c is MonsterCard => isMonster(c));
+  const effect = spell.effect as { kind: SpellCard['effect']['kind']; amount: number };
+  // 今は出せないが、エネルギーが gain 増えれば出せるモンスターが手札にあるか
+  const unlocks = (gain: number) => monstersInHand.some(c => getSummonCost(state, player, c) > energyAfter && getSummonCost(state, player, c) <= energyAfter + gain);
+  switch (effect.kind) {
+    case 'freeSummon':
+      return monstersInHand.some(c => c.cost >= 2 && c.cost <= effect.amount);
+    case 'spellDiscount':
+      return others.some(c => !isMonster(c) && c.effect.kind !== 'custom' && c.cost >= 2);
+    case 'summonDiscount':
+      return unlocks(effect.amount);
+    case 'discardForEnergy':
+      return others.length >= effect.amount + 1 && unlocks(effect.amount);
+    case 'lifeToEnergy':
+      return me.specialCardHp >= 12 && unlocks(effect.amount);
+    case 'delayedEnergy':
+    case 'raiseMaxEnergy':
+      return true;
+    case 'drainEnergy':
+      return state.players[defender].currentEnergy >= 2;
+    case 'draw':
+      return me.deck.length >= effect.amount + 3;
+    case 'spoils':
+      return canAttackThisTurn(state) && countMonsters(state, player) > 0 && countMonsters(state, defender) > 0;
+    case 'graveRob':
+      return me.graveyard.some(c => isMonster(c) && c.cost >= 2);
+    case 'discardDraw':
+      return me.deck.length >= effect.amount + 3 && others.some(c => keepValue(c) < 5);
+    case 'randomDiscard':
+    case 'reveal':
+      return state.players[defender].hand.length > 0;
+    case 'reshuffle':
+      return others.filter(c => keepValue(c) < 0).length >= 2;
     default:
       return false;
   }
@@ -256,10 +350,11 @@ const resolveAiDiscard = (state: GameState, player: PlayerId): GameState => {
 };
 
 // 使う価値のあるスペルがなくなるまで、手札のスペルを使う
-const aiCastSpells = (state: GameState, player: PlayerId): GameState => {
+const aiCastSpells = (state: GameState, player: PlayerId, only: (spell: SpellCard) => boolean = () => true): GameState => {
   let current = state;
   for (;;) {
-    const next = tryCastOneSpell(current, player);
+    const snapshot = current;
+    const next = tryCastOneSpell(snapshot, player, spell => only(spell) && getSpellCost(snapshot, spell) <= snapshot.players[player].currentEnergy);
     if (!next) return current;
     current = next;
   }
@@ -269,7 +364,7 @@ const aiCastSpells = (state: GameState, player: PlayerId): GameState => {
 const tryCastOneSpell = (
   state: GameState,
   player: PlayerId,
-  canPay: (spell: SpellCard) => boolean = spell => spell.cost <= state.players[player].currentEnergy,
+  canPay: (spell: SpellCard) => boolean = spell => getSpellCost(state, spell) <= state.players[player].currentEnergy,
 ): GameState | null => {
   const { hand } = state.players[player];
   for (let handIndex = 0; handIndex < hand.length; handIndex++) {
@@ -278,13 +373,13 @@ const tryCastOneSpell = (
     if (isUntargetedSpell(card)) {
       if (!shouldCastUntargeted(state, player, card)) continue;
       const result = castSpell(state, player, handIndex);
-      if (result.ok) return resolveAiDiscard(result.state, player);
+      if (result.ok) return resolveAiPending(result.state, player);
       continue;
     }
     const target = findSpellTarget(state, player, card);
     if (!target) continue;
     const result = castSpell(state, player, handIndex, target);
-    if (result.ok) return result.state;
+    if (result.ok) return resolveAiPending(result.state, player);
   }
   return null;
 };
@@ -294,6 +389,49 @@ const resolveAiFreeSpell = (state: GameState, player: PlayerId): GameState => {
   const pending = state.pendingFreeSpell;
   if (pending?.player !== player) return state;
   return tryCastOneSpell(state, player, spell => spell.cost <= pending.maxCost) ?? applyIfOk(state, skipFreeSpell(state, player));
+};
+
+// コストなしの召喚：手札の一番強い対象のモンスターを出す（出せなければ召喚しない）
+const resolveAiFreeSummon = (state: GameState, player: PlayerId): GameState => {
+  const pending = state.pendingFreeSummon;
+  if (pending?.player !== player) return state;
+  const options = state.players[player].hand
+    .map((card, handIndex) => ({ card, handIndex }))
+    .filter((o): o is { card: MonsterCard; handIndex: number } => isMonster(o.card) && o.card.cost <= pending.maxCost)
+    .sort((a, b) => monsterValue(b.card) - monsterValue(a.card));
+  for (const { card, handIndex } of options) {
+    const row = pending.row ?? preferredRow(card);
+    const slot = findEmptySlot(state, player, row) ?? (pending.row ? null : findEmptySlot(state, player, otherRow(row)));
+    if (!slot) continue;
+    const result = playCard(state, player, handIndex, slot);
+    if (result.ok) return result.state;
+  }
+  return applyIfOk(state, skipFreeSummon(state, player));
+};
+
+// 墓荒らし：一番強いモンスターを戻す。情報戦：一番コストの高いスペルを捨てさせる
+const resolveAiPick = (state: GameState, player: PlayerId): GameState => {
+  const pending = state.pendingPick;
+  if (pending?.player !== player) return state;
+  const cards = pending.kind === 'graveyard' ? state.players[player].graveyard : state.players[getOpponent(player)].hand;
+  const scored = cards
+    .map((card, index) => ({ index, score: pending.kind === 'graveyard'
+      ? (isMonster(card) ? monsterValue(card) : -1)
+      : (isMonster(card) ? -1 : card.cost) }))
+    .filter(({ score }) => score >= 0)
+    .sort((a, b) => b.score - a.score);
+  return applyIfOk(state, pickCard(state, player, scored[0]?.index ?? null));
+};
+
+// 選ぶ途中の場面（捨てる・コストなしのスペルや召喚・カードを選ぶ）がなくなるまで片付ける
+const resolveAiPending = (state: GameState, player: PlayerId): GameState => {
+  let current = state;
+  for (let i = 0; i < 10; i++) {
+    const before = current;
+    current = resolveAiPick(resolveAiFreeSummon(resolveAiFreeSpell(resolveAiDiscard(current, player), player), player), player);
+    if (current === before) return current;
+  }
+  return current;
 };
 
 // 1回だけ使える大将の効果は、使えるようになったらすぐ使う
@@ -309,8 +447,15 @@ const aiCommand = (state: GameState, player: PlayerId): GameState =>
     return target ? applyIfOk(current, commandMonster(current, player, position, target.position)) : current;
   }, state);
 
-export const runAiPlayPhase = (state: GameState, player: PlayerId): GameState =>
-  aiCommand(aiCastSpells(aiSummon(aiMove(aiUseLeaderAbility(state, player), player), player), player), player);
+// 召喚の前に使うスペル（エネルギー・割引・踏み倒し・ドローなど、召喚の助けになるもの）
+const PREPARE_KINDS: SpellCard['effect']['kind'][] = [
+  'summonDiscount', 'discardForEnergy', 'raiseMaxEnergy', 'drainEnergy', 'lifeToEnergy', 'freeSummon', 'draw', 'graveRob', 'discardDraw',
+];
+
+export const runAiPlayPhase = (state: GameState, player: PlayerId): GameState => {
+  const prepared = aiCastSpells(aiMove(aiUseLeaderAbility(state, player), player), player, spell => PREPARE_KINDS.includes(spell.effect.kind));
+  return aiCommand(aiCastSpells(aiSummon(prepared, player), player), player);
+};
 
 // --- Attack フェイズ ---
 

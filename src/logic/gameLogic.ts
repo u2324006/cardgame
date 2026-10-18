@@ -1,4 +1,4 @@
-import { Card, LeaderAbility, MonsterCard, getSpellTargetSide, isImplementedEffect, isMonster, isUntargetedSpell } from '../types/card';
+import { Card, LeaderAbility, MonsterCard, SpellCard, getSpellTargetSide, isImplementedEffect, isMonster, isUntargetedSpell } from '../types/card';
 import {
   AttackTarget,
   FieldPosition,
@@ -97,10 +97,17 @@ export const getHpBonus = (state: GameState, owner: PlayerId, card: MonsterCard)
 };
 
 // 召喚のコスト（伏兵：相手の場のモンスターが自分より多いと下がる）
-export const getSummonCost = (state: GameState, player: PlayerId, card: MonsterCard): number =>
-  card.ability?.kind === 'ambush' && countMonsters(state, getOpponent(player)) > countMonsters(state, player)
-    ? Math.max(0, card.cost - card.ability.amount)
-    : card.cost;
+// 援軍要請：次に召喚するモンスターのコストが下がる
+export const getSummonCost = (state: GameState, player: PlayerId, card: MonsterCard): number => {
+  const ambush = card.ability?.kind === 'ambush' && countMonsters(state, getOpponent(player)) > countMonsters(state, player)
+    ? card.ability.amount
+    : 0;
+  return Math.max(0, card.cost - ambush - state.turnState.summonDiscount);
+};
+
+// スペルのコスト（魔導書・伝令官で下がる。見習い魔導士の効果で使うときは 0）
+export const getSpellCost = (state: GameState, spell: SpellCard): number =>
+  state.pendingFreeSpell && spell.cost <= state.pendingFreeSpell.maxCost ? 0 : Math.max(0, spell.cost - state.turnState.spellDiscount);
 
 export const countMonsters = (state: GameState, player: PlayerId): number => getMonsterPositions(state, player).length;
 
@@ -194,11 +201,31 @@ const damageMonster = (state: GameState, player: PlayerId, position: FieldPositi
   // 盾兵：前衛にいるとき受けるダメージが減る
   const reduction = card.ability?.kind === 'frontGuard' && position.row === 'frontRow' ? card.ability.amount : 0;
   const newHp = card.cardHp - Math.max(0, amount - reduction);
-  return updatePlayer(state, player, p =>
-    newHp + getHpBonus(state, player, card) <= 0
-      ? { ...p, field: setSlot(p.field, position, null), graveyard: [...p.graveyard, toOriginalCard(card)] }
-      : { ...p, field: setSlot(p.field, position, { ...card, cardHp: newHp }) },
-  );
+  if (newHp + getHpBonus(state, player, card) > 0) {
+    return updatePlayer(state, player, p => ({ ...p, field: setSlot(p.field, position, { ...card, cardHp: newHp }) }));
+  }
+  return onDestroyed(sendToGraveyard(state, player, position), player, card, position);
+};
+
+// 場のモンスターを元の能力値に戻して墓地へ送る
+const sendToGraveyard = (state: GameState, player: PlayerId, position: FieldPosition): GameState => {
+  const card = getCardAt(state, player, position);
+  if (!card) return state;
+  return updatePlayer(state, player, p => ({ ...p, field: setSlot(p.field, position, null), graveyard: [...p.graveyard, toOriginalCard(card)] }));
+};
+
+// 倒されたときの効果：伝令兵（前衛で倒されたら持ち主が引く）と戦利品（相手のモンスターを倒したら引く）
+const onDestroyed = (state: GameState, owner: PlayerId, card: MonsterCard, position: FieldPosition): GameState => {
+  let next = state;
+  const { ability } = card;
+  if (ability?.kind === 'drawOnFrontDeath' && position.row === 'frontRow') {
+    next = updatePlayer(next, owner, p => drawCards(p, ability.amount));
+  }
+  const { spoilsDraw } = next.turnState;
+  if (spoilsDraw > 0 && owner !== next.currentPlayer) {
+    next = updateTurnState(updatePlayer(next, next.currentPlayer, p => drawCards(p, spoilsDraw)), { spoilsDraw: 0 });
+  }
+  return next;
 };
 
 // 大将カードの効果がなくなるなどして HP が 0 以下になったモンスターを墓地へ送る
@@ -219,12 +246,15 @@ const damageSpecialCard = (state: GameState, player: PlayerId, amount: number): 
     : next;
 };
 
-// 行動できるのは、自分のターンの指定フェイズ中だけ（allowFreeSpell：コストなしのスペルを選んでいる途中でも通す）
-const checkTurn = (state: GameState, player: PlayerId, phase: Phase, allowFreeSpell = false): string | null => {
+// 行動できるのは、自分のターンの指定フェイズ中だけ。
+// allow：コストなしのスペル（freeSpell）・召喚（freeSummon）を選んでいる途中でも、その行動は通す
+const checkTurn = (state: GameState, player: PlayerId, phase: Phase, allow?: 'freeSpell' | 'freeSummon'): string | null => {
   if (state.winner) return 'ゲームは終了しています。';
   if (state.currentPlayer !== player) return '自分のターンではありません。';
   if (state.pendingDiscard) return `先に、墓地に置くカードを${state.pendingDiscard.count}枚選んでください。`;
-  if (state.pendingFreeSpell && !allowFreeSpell) return `先に、「${state.pendingFreeSpell.source}」の効果で使うスペルを選ぶか、「使わない」を選んでください。`;
+  if (state.pendingPick) return `先に、「${state.pendingPick.source}」の効果でカードを選んでください。`;
+  if (state.pendingFreeSpell && allow !== 'freeSpell') return `先に、「${state.pendingFreeSpell.source}」の効果で使うスペルを選ぶか、「使わない」を選んでください。`;
+  if (state.pendingFreeSummon && allow !== 'freeSummon') return `先に、「${state.pendingFreeSummon.source}」の効果で召喚するモンスターを選ぶか、「召喚しない」を選んでください。`;
   if (state.phase !== phase) return `${phase} フェイズではありません。`;
   return null;
 };
@@ -240,24 +270,45 @@ const drawPhase = (state: GameState): GameState => {
   const afterDeckOut = state.players[player].deck.length === 0
     ? damageSpecialCard(state, player, RULES.deckOutDamage)
     : state;
-  // 不屈の将：自分の場のモンスターが相手より margin 体以上少なければ、多く引く
-  const ability = getActiveLeaderAbility(state, player);
-  const extra = ability?.kind === 'extraDrawWhenBehind'
-    && countMonsters(state, getOpponent(player)) - countMonsters(state, player) >= ability.margin ? ability.amount : 0;
   const next = updatePlayer(afterDeckOut, player, playerState => {
-    const charged = { ...playerState, currentEnergy: Math.min(playerState.currentEnergy + 1, playerState.maxEnergy) };
-    return skipDraw ? charged : drawCards(charged, 1 + extra);
+    // 魔力の泉・祈祷師：前のターンに予約したエネルギー（祈祷師は場に残っているときだけ）
+    const delayed = playerState.delayedEnergy
+      .filter(e => !e.cardId || ROWS.some(row => playerState.field[row].some(c => c?.id === e.cardId)))
+      .reduce((sum, e) => sum + e.amount, 0);
+    const charged = {
+      ...playerState,
+      currentEnergy: Math.min(playerState.currentEnergy + 1 + delayed, playerState.maxEnergy),
+      delayedEnergy: [],
+    };
+    return skipDraw ? charged : drawCards(charged, 1 + getExtraDraws(state, player));
   });
   return { ...next, phase: 'Play' };
 };
 
-const isBusy = (state: GameState): boolean => !!(state.winner || state.pendingDiscard || state.pendingFreeSpell);
+// ターン開始時に多く引く枚数（不屈の将：モンスターが少ないとき、賢者：手札が少ないとき）
+const getExtraDraws = (state: GameState, player: PlayerId): number => {
+  const ability = getActiveLeaderAbility(state, player);
+  switch (ability?.kind) {
+    case 'extraDrawWhenBehind':
+      return countMonsters(state, getOpponent(player)) - countMonsters(state, player) >= ability.margin ? ability.amount : 0;
+    case 'extraDrawWhenFewCards':
+      return state.players[player].hand.length <= ability.handSize ? ability.amount : 0;
+    default:
+      return 0;
+  }
+};
 
-// ターン終了時の効果（衛生兵：後衛から同じ位置の前衛の味方を回復）
+const isBusy = (state: GameState): boolean =>
+  !!(state.winner || state.pendingDiscard || state.pendingFreeSpell || state.pendingFreeSummon || state.pendingPick);
+
+// ターン終了時の効果（衛生兵：後衛から同じ位置の前衛の味方を回復、研究者：エネルギーが少なければ引く）
 const applyEndOfTurnEffects = (state: GameState): GameState => {
   const player = state.currentPlayer;
   return getMonsterPositions(state, player, ['backRow']).reduce((next, position) => {
     const ability = getCardAt(next, player, position)?.ability;
+    if (ability?.kind === 'drawIfLowEnergy') {
+      return next.players[player].currentEnergy <= ability.threshold ? updatePlayer(next, player, p => drawCards(p, ability.amount)) : next;
+    }
     if (ability?.kind !== 'medic') return next;
     const front: FieldPosition = { row: 'frontRow', index: position.index };
     const ally = getCardAt(next, player, front);
@@ -299,16 +350,23 @@ export const playCard = (
   player: PlayerId,
   handIndex: number,
   position: FieldPosition,
+  options: { payByDiscard?: boolean } = {}, // 傭兵：エネルギーの代わりに手札を捨てて召喚する
 ): ActionResult => {
-  const turnError = checkTurn(state, player, 'Play');
+  const turnError = checkTurn(state, player, 'Play', 'freeSummon');
   if (turnError) return failure(turnError);
   const playerState = state.players[player];
   const card = playerState.hand[handIndex];
   if (!card) return failure('カードが選択されていません。');
   if (!isMonster(card)) return failure('スペルカードは味方モンスターを選んで使用してください。');
-  const cost = getSummonCost(state, player, card);
-  if (playerState.currentEnergy < cost) return failure('エネルギーが足りません！');
   if (getCardAt(state, player, position)) return failure('そのスロットには既にカードがあります。');
+  const free = state.pendingFreeSummon;
+  if (free && card.cost > free.maxCost) return failure(`コストなしで召喚できるのはコスト${free.maxCost}以下のモンスターです。`);
+  if (free?.row && position.row !== free.row) return failure(`「${free.source}」の効果では${free.row === 'frontRow' ? '前衛' : '後衛'}に召喚します。`);
+  const discardSummon = !free && options.payByDiscard && card.ability?.kind === 'discardSummon' ? card.ability.amount : 0;
+  if (options.payByDiscard && !discardSummon) return failure('このモンスターは手札を捨てて召喚できません。');
+  if (discardSummon && playerState.hand.length - 1 < discardSummon) return failure(`捨てる手札が${discardSummon}枚必要です。`);
+  const cost = free || discardSummon ? 0 : getSummonCost(state, player, card);
+  if (playerState.currentEnergy < cost) return failure('エネルギーが足りません！');
 
   const next = updatePlayer(state, player, p => ({
     ...payFromHand(p, handIndex, cost),
@@ -316,13 +374,54 @@ export const playCard = (
   }));
   const summoned = updateTurnState(next, {
     summonedThisTurnIds: [...next.turnState.summonedThisTurnIds, card.id],
+    // 援軍要請の割引は、コストを払って召喚したときに使い切る
+    summonDiscount: free || discardSummon ? next.turnState.summonDiscount : 0,
   });
-  // 召喚したときの効果：使えるスペルが手札にあれば、使うかどうかを選ぶ
+  const cleared = free ? { ...summoned, pendingFreeSummon: null } : summoned;
+  if (discardSummon) return success({ ...cleared, pendingDiscard: { player, count: discardSummon } });
+  return success(applySummonEffects(cleared, player, card, position));
+};
+
+// 召喚したときの効果
+const applySummonEffects = (state: GameState, player: PlayerId, card: MonsterCard, position: FieldPosition): GameState => {
   const { ability } = card;
-  if (ability?.kind === 'freeSpellOnSummon' && summoned.players[player].hand.some(c => isFreeSpellCandidate(c, ability.maxCost))) {
-    return success({ ...summoned, pendingFreeSpell: { player, maxCost: ability.maxCost, source: card.name } });
+  const hand = state.players[player].hand;
+  switch (ability?.kind) {
+    case 'freeSpellOnSummon':
+      // 使えるスペルが手札にあれば、使うかどうかを選ぶ
+      return hand.some(c => isFreeSpellCandidate(c, ability.maxCost))
+        ? { ...state, pendingFreeSpell: { player, maxCost: ability.maxCost, source: card.name } }
+        : state;
+    case 'freeSummonOnSummon':
+      return canFreeSummon(state, player, ability.maxCost)
+        ? { ...state, pendingFreeSummon: { player, maxCost: ability.maxCost, source: card.name } }
+        : state;
+    case 'spellDiscountOnSummon':
+      return updateTurnState(state, { spellDiscount: state.turnState.spellDiscount + ability.amount });
+    case 'energyNextTurnFromBack':
+      return position.row === 'backRow'
+        ? updatePlayer(state, player, p => ({ ...p, delayedEnergy: [...p.delayedEnergy, { amount: ability.amount, cardId: card.id }] }))
+        : state;
+    case 'drawOnSummon':
+      return updatePlayer(state, player, p => drawCards(p, ability.amount));
+    case 'discardOnSummon': {
+      const count = Math.min(ability.amount, hand.length);
+      return count > 0 ? { ...state, pendingDiscard: { player, count } } : state;
+    }
+    default:
+      return state;
   }
-  return success(summoned);
+};
+
+// コストなしで召喚できるモンスターが手札にあり、出せる空きがあるか
+const canFreeSummon = (state: GameState, player: PlayerId, maxCost: number, row?: Row): boolean =>
+  state.players[player].hand.some(c => isMonster(c) && c.cost <= maxCost)
+  && (row ? !!findEmptySlot(state, player, row) : ROWS.some(r => findEmptySlot(state, player, r)));
+
+// コストなしで召喚できる場面で、召喚しないことを選ぶ
+export const skipFreeSummon = (state: GameState, player: PlayerId): ActionResult => {
+  if (state.pendingFreeSummon?.player !== player) return failure('いまはモンスターを選ぶ場面ではありません。');
+  return success({ ...state, pendingFreeSummon: null });
 };
 
 // コストなしでスペルを使える場面で、使わないことを選ぶ
@@ -357,14 +456,109 @@ const drawCards = (playerState: PlayerState, count: number): PlayerState => ({
 });
 
 // 対象を選ばないスペルを使う（カードを引いて捨てる など）。cost は払うエネルギー（コストなしで使うときは 0）
+const LIFE_TO_ENERGY_COST = 3; // 生命変換で減る大将の HP
+
+const gainEnergy = (state: GameState, player: PlayerId, amount: number): GameState =>
+  updatePlayer(state, player, p => ({ ...p, currentEnergy: Math.min(p.currentEnergy + amount, p.maxEnergy) }));
+
+// 対象を選ばないスペルを使えない理由（使えるなら null）。手札の数は、使うスペルを除いて数える
+const untargetedPrecondition = (state: GameState, player: PlayerId, spell: SpellCard): string | null => {
+  const opponent = getOpponent(player);
+  const { hand, maxEnergy, specialCardHp, graveyard } = state.players[player];
+  const otherCards = hand.length - 1;
+  const { effect } = spell;
+  switch (effect.kind) {
+    case 'lastStand':
+    case 'summonDiscount':
+      return countMonsters(state, player) < countMonsters(state, opponent) ? null : '自分の場のモンスターが相手より少ないときだけ使えます。';
+    case 'freeSummon':
+      return canFreeSummon(state, player, effect.amount, 'frontRow') ? null : `手札にコスト${effect.amount}以下のモンスターがいないか、前衛に空きがありません。`;
+    case 'discardForEnergy':
+      return otherCards >= effect.amount ? null : `捨てる手札が${effect.amount}枚必要です。`;
+    case 'discardDraw':
+      return otherCards >= 1 ? null : '捨てる手札がないので使えません。';
+    case 'raiseMaxEnergy':
+      return maxEnergy < RULES.maxEnergyLimit ? null : `エネルギーの上限は${RULES.maxEnergyLimit}までです。`;
+    case 'lifeToEnergy':
+      return specialCardHp > LIFE_TO_ENERGY_COST ? null : `大将の HP が${LIFE_TO_ENERGY_COST}より多いときだけ使えます。`;
+    case 'graveRob':
+      return graveyard.some(isMonster) ? null : '墓地にモンスターがいません。';
+    case 'randomDiscard':
+    case 'reveal':
+      return state.players[opponent].hand.length > 0 ? null : '相手の手札がありません。';
+    default:
+      return null;
+  }
+};
+
+// 補給線：選んだ自分の後衛のモンスターを墓地に送り、その数だけ引く
+const castSupplyLine = (state: GameState, player: PlayerId, handIndex: number, cost: number, positions: FieldPosition[]): ActionResult => {
+  const unique = positions.filter((pos, i) => positions.findIndex(o => o.row === pos.row && o.index === pos.index) === i);
+  if (unique.length === 0) return failure('墓地に送る自分の後衛のモンスターを選んでください。');
+  if (unique.some(pos => pos.row !== 'backRow' || !getCardAt(state, player, pos))) return failure('選べるのは自分の後衛のモンスターだけです。');
+  const spell = state.players[player].hand[handIndex];
+  const paid = updatePlayer(state, player, p => ({ ...payFromHand(p, handIndex, cost), graveyard: [...p.graveyard, spell] }));
+  const sacrificed = unique.reduce((next, pos) => sendToGraveyard(next, player, pos), paid);
+  return success(updatePlayer(sacrificed, player, p => drawCards(p, unique.length)));
+};
+
+// 相手の効果で手札を捨てさせられる。怨霊は相手のモンスターにダメージ、幻影兵は場に出る
+const forceDiscard = (state: GameState, victim: PlayerId, handIndex: number): GameState => {
+  const card = state.players[victim].hand[handIndex];
+  if (!card) return state;
+  const removed = updatePlayer(state, victim, p => ({ ...p, hand: p.hand.filter((_, i) => i !== handIndex) }));
+  const toGraveyard = updatePlayer(removed, victim, p => ({ ...p, graveyard: [...p.graveyard, card] }));
+  if (!isMonster(card)) return toGraveyard;
+  const { ability } = card;
+  if (ability?.kind === 'summonWhenDiscarded') {
+    const row: Row = card.backAttack > card.frontAttack ? 'backRow' : 'frontRow';
+    const slot = findEmptySlot(removed, victim, row) ?? findEmptySlot(removed, victim, otherRow(row));
+    return slot ? updatePlayer(removed, victim, p => ({ ...p, field: setSlot(p.field, slot, card) })) : toGraveyard;
+  }
+  if (ability?.kind === 'damageWhenDiscarded') {
+    const forcer = getOpponent(victim);
+    const hpOf = (pos: FieldPosition) => getEffectiveHp(toGraveyard, forcer, getCardAt(toGraveyard, forcer, pos) as MonsterCard);
+    const costOf = (pos: FieldPosition) => (getCardAt(toGraveyard, forcer, pos) as MonsterCard).cost;
+    // 倒せるモンスターのうちコストが一番高いもの。倒せなければコストが一番高いもの
+    const target = getMonsterPositions(toGraveyard, forcer)
+      .sort((a, b) => Number(hpOf(b) <= ability.amount) - Number(hpOf(a) <= ability.amount) || costOf(b) - costOf(a))[0];
+    return target ? damageMonster(toGraveyard, forcer, target, ability.amount) : toGraveyard;
+  }
+  return toGraveyard;
+};
+
+// 墓地や相手の手札からカードを選ぶ（墓荒らし：墓地のモンスターを手札へ、情報戦：相手のスペルを捨てさせる）。
+// 情報戦で相手の手札にスペルがなければ index は null
+export const pickCard = (state: GameState, player: PlayerId, index: number | null): ActionResult => {
+  const pending = state.pendingPick;
+  if (pending?.player !== player) return failure('いまはカードを選ぶ場面ではありません。');
+  const done = { ...state, pendingPick: null };
+  if (pending.kind === 'graveyard') {
+    const card = index === null ? undefined : state.players[player].graveyard[index];
+    if (!card || !isMonster(card)) return failure('墓地のモンスターを選んでください。');
+    return success(updatePlayer(done, player, p => ({
+      ...p,
+      graveyard: p.graveyard.filter((_, i) => i !== index),
+      hand: [...p.hand, card],
+    })));
+  }
+  const opponent = getOpponent(player);
+  const hand = state.players[opponent].hand;
+  if (index === null) {
+    return hand.some(c => !isMonster(c)) ? failure('捨てさせるスペルを選んでください。') : success(done);
+  }
+  const card = hand[index];
+  if (!card || isMonster(card)) return failure('捨てさせるのは相手のスペルです。');
+  return success(forceDiscard(done, opponent, index));
+};
+
 const castUntargetedSpell = (state: GameState, player: PlayerId, handIndex: number, cost: number): ActionResult => {
   const spell = state.players[player].hand[handIndex];
   if (!spell || isMonster(spell)) return failure('スペルカードが選択されていません。');
   const { effect } = spell;
   const opponent = getOpponent(player);
-  if (effect.kind === 'lastStand' && countMonsters(state, player) >= countMonsters(state, opponent)) {
-    return failure('自分の場のモンスターが相手より少ないときだけ使えます。');
-  }
+  const precondition = untargetedPrecondition(state, player, spell);
+  if (precondition) return failure(precondition);
 
   const paid = updatePlayer(state, player, p => ({
     ...payFromHand(p, handIndex, cost),
@@ -397,6 +591,48 @@ const castUntargetedSpell = (state: GameState, player: PlayerId, handIndex: numb
       const count = Math.min(effect.amount, drawn.players[player].hand.length);
       return success(count > 0 ? { ...drawn, pendingDiscard: { player, count } } : drawn);
     }
+    case 'freeSummon':
+      return success({ ...paid, pendingFreeSummon: { player, maxCost: effect.amount, row: 'frontRow', source: spell.name } });
+    case 'spellDiscount':
+      return success(updateTurnState(paid, { spellDiscount: paid.turnState.spellDiscount + effect.amount }));
+    case 'summonDiscount':
+      return success(updateTurnState(paid, { summonDiscount: paid.turnState.summonDiscount + effect.amount }));
+    case 'delayedEnergy':
+      return success(updatePlayer(paid, player, p => ({ ...p, delayedEnergy: [...p.delayedEnergy, { amount: effect.amount }] })));
+    case 'discardForEnergy':
+      return success({ ...gainEnergy(paid, player, effect.amount), pendingDiscard: { player, count: effect.amount } });
+    case 'raiseMaxEnergy':
+      return success(updatePlayer(paid, player, p => ({ ...p, maxEnergy: Math.min(p.maxEnergy + effect.amount, RULES.maxEnergyLimit) })));
+    case 'drainEnergy': {
+      const drained = updatePlayer(paid, opponent, p => ({ ...p, currentEnergy: Math.max(0, p.currentEnergy - effect.amount) }));
+      return success(gainEnergy(drained, player, 1));
+    }
+    case 'lifeToEnergy': {
+      const paidLife = updatePlayer(paid, player, p => ({ ...p, specialCardHp: p.specialCardHp - LIFE_TO_ENERGY_COST }));
+      return success(gainEnergy(paidLife, player, effect.amount));
+    }
+    case 'draw':
+      return success(updatePlayer(paid, player, p => drawCards(p, effect.amount)));
+    case 'spoils':
+      return success(updateTurnState(paid, { spoilsDraw: paid.turnState.spoilsDraw + effect.amount }));
+    case 'graveRob':
+      return success({ ...paid, pendingPick: { player, kind: 'graveyard', source: spell.name } });
+    case 'discardDraw':
+      return success({ ...paid, pendingDiscard: { player, count: 1, then: { kind: 'draw', amount: effect.amount } } });
+    case 'randomDiscard': {
+      let next = paid;
+      for (let i = 0; i < effect.amount && next.players[opponent].hand.length > 0; i++) {
+        next = forceDiscard(next, opponent, Math.floor(Math.random() * next.players[opponent].hand.length));
+      }
+      return success(next);
+    }
+    case 'reveal':
+      return success({ ...paid, pendingPick: { player, kind: 'opponentHand', source: spell.name } });
+    case 'reshuffle': {
+      const count = paid.players[player].hand.length;
+      const discarded = updatePlayer(paid, player, p => ({ ...p, hand: [], graveyard: [...p.graveyard, ...p.hand] }));
+      return success(updatePlayer(discarded, player, p => drawCards(p, count)));
+    }
     default:
       return failure('このスペルの効果はまだ実装されていません。');
   }
@@ -415,12 +651,21 @@ export const discardCards = (state: GameState, player: PlayerId, handIndices: nu
   if (unique.length !== pending.count || unique.some(i => !hand[i])) {
     return failure(`墓地に置くカードを${pending.count}枚選んでください。`);
   }
+  const discarded = unique.map(i => hand[i]);
   const next = updatePlayer(state, player, p => ({
     ...p,
     hand: p.hand.filter((_, i) => !unique.includes(i)),
-    graveyard: [...p.graveyard, ...unique.map(i => p.hand[i])],
+    graveyard: [...p.graveyard, ...discarded],
   }));
-  return success({ ...next, pendingDiscard: null });
+  const done: GameState = { ...next, pendingDiscard: null };
+  const followUp = pending.then;
+  if (followUp?.kind === 'damage') {
+    // 火炎瓶：捨てたカードのコスト + bonus のダメージ
+    const damage = discarded.reduce((sum, card) => sum + card.cost, 0) + followUp.bonus;
+    return success(damageMonster(done, getOpponent(player), followUp.target, damage));
+  }
+  if (followUp?.kind === 'draw') return success(updatePlayer(done, player, p => drawCards(p, followUp.amount)));
+  return success(done);
 };
 
 // スペルを使う。対象を選ぶスペルは、効果に応じて味方または相手の場のモンスターを targetPosition で指定する。
@@ -430,11 +675,25 @@ export const castSpell = (
   player: PlayerId,
   handIndex: number,
   targetPosition?: FieldPosition,
+  positions?: FieldPosition[], // 補給線：墓地に送る自分の後衛のモンスター
 ): ActionResult => {
-  const turnError = checkTurn(state, player, 'Play', true);
+  const turnError = checkTurn(state, player, 'Play', 'freeSpell');
   if (turnError) return failure(turnError);
-  const result = castSpellUnchecked(state, player, handIndex, targetPosition);
-  return result.ok && state.pendingFreeSpell ? success({ ...result.state, pendingFreeSpell: null }) : result;
+  const result = castSpellUnchecked(state, player, handIndex, targetPosition, positions);
+  if (!result.ok) return result;
+  let next = result.state;
+  if (state.pendingFreeSpell) {
+    next = { ...next, pendingFreeSpell: null };
+  } else if (state.turnState.spellDiscount > 0) {
+    // 割引はこのスペルで使い切る（このスペルで新しく増えた割引は残す）
+    next = updateTurnState(next, { spellDiscount: next.turnState.spellDiscount - state.turnState.spellDiscount });
+  }
+  // 大魔導師：1ターンに1回、スペルを使ったらエネルギーが増える
+  const ability = getActiveLeaderAbility(next, player);
+  if (ability?.kind === 'spellEnergy' && !next.turnState.spellEnergyUsed) {
+    next = updateTurnState(updatePlayer(next, player, p => ({ ...p, currentEnergy: Math.min(p.currentEnergy + ability.amount, p.maxEnergy) })), { spellEnergyUsed: true });
+  }
+  return success(next);
 };
 
 const castSpellUnchecked = (
@@ -442,6 +701,7 @@ const castSpellUnchecked = (
   player: PlayerId,
   handIndex: number,
   targetPosition?: FieldPosition,
+  positions?: FieldPosition[],
 ): ActionResult => {
   const playerState = state.players[player];
   const spell = playerState.hand[handIndex];
@@ -449,9 +709,10 @@ const castSpellUnchecked = (
   if (spell.effect.kind === 'custom') return failure('このスペルの効果はまだ実装されていません。');
   const free = state.pendingFreeSpell;
   if (free && spell.cost > free.maxCost) return failure(`コストなしで使えるのはコスト${free.maxCost}以下のスペルです。`);
-  const cost = free ? 0 : spell.cost;
+  const cost = getSpellCost(state, spell);
   if (playerState.currentEnergy < cost) return failure('エネルギーが足りません！');
   if (isUntargetedSpell(spell)) return castUntargetedSpell(state, player, handIndex, cost);
+  if (spell.effect.kind === 'supplyLine') return castSupplyLine(state, player, handIndex, cost, positions ?? []);
   if (!targetPosition) return failure('対象のモンスターを選んでください。');
   const targetSide = getSpellTargetSide(spell);
   const targetPlayer = targetSide === 'ally' ? player : getOpponent(player);
@@ -476,6 +737,10 @@ const castSpellUnchecked = (
         if (targetPosition.row !== 'frontRow') return '自分の前衛のモンスターを選んでください。';
         return destination ? null : '後衛に空きがないので下げられません。';
       case 'forceMove': return destination ? null : '反対の列に空きがないので移動させられません。';
+      case 'sacrificeSummon':
+        return state.players[player].hand.some(c => isMonster(c) && c.cost <= effect.amount)
+          ? null : `手札にコスト${effect.amount}以下のモンスターがいないので使えません。`;
+      case 'firebomb': return playerState.hand.length < 2 ? '捨てる手札がないので使えません。' : null;
       default: return null;
     }
   })();
@@ -520,6 +785,17 @@ const castSpellUnchecked = (
     }
     case 'swapColumn':
       return success(swapMonsters(paid, player, targetPosition, to));
+    case 'sacrificeSummon': {
+      const sacrificed = sendToGraveyard(paid, player, targetPosition);
+      return success({ ...sacrificed, pendingFreeSummon: { player, maxCost: effect.amount, source: spell.name } });
+    }
+    case 'sacrificeForEnergy': {
+      const sacrificed = sendToGraveyard(paid, player, targetPosition);
+      const gain = toOriginalCard(target).cost;
+      return success(updatePlayer(sacrificed, player, p => ({ ...p, currentEnergy: Math.min(p.currentEnergy + gain, p.maxEnergy) })));
+    }
+    case 'firebomb':
+      return success({ ...paid, pendingDiscard: { player, count: 1, then: { kind: 'damage', target: targetPosition, bonus: effect.amount } } });
     default:
       return failure('このスペルは対象を選ばずに使います。'); // isUntargetedSpell で先に処理している
   }

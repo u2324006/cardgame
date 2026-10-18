@@ -1,4 +1,6 @@
 import { GameState, Phase } from '../types/gameState';
+import { createInitialGameState } from './initialState';
+import { nextPhase } from './gameLogic';
 import { runAiAttackPhase, runAiPlayPhase } from './ai';
 import { apprentice, spellOf, withAbility, backSpell, catchUpSpell, disableSpell, drawSpell, forceMoveSpell, throwSpell, withRallyLeader, emptyState, fireSpell, healSpell, inPhase, monster, spell, withField, withGolemLeader, withPlayer } from './testUtils';
 
@@ -234,6 +236,52 @@ describe('AI with front/back row cards', () => {
     let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 1, hand: [withAbility('am', { kind: 'ambush', amount: 1 }, { cost: 2 })] });
     state = withField(state, 'player1', 'frontRow', [monster('a'), null, null]);
     expect(runAiPlayPhase(state, 'player2').players.player2.hand).toHaveLength(0);
+  });
+});
+
+describe('AI with resource cards', () => {
+  it('uses 召喚士 to summon a second monster for free', () => {
+    const summoner = withAbility('sm', { kind: 'freeSummonOnSummon', maxCost: 2 }, { cost: 3 });
+    const state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 3, hand: [summoner, monster('cheap', { cost: 2 })] });
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.pendingFreeSummon).toBeNull();
+    expect(next.players.player2.hand).toHaveLength(0);
+  });
+
+  it('draws with 作戦会議 before summoning and strips a spell with 情報戦', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', {
+      currentEnergy: 3,
+      hand: [spellOf('meeting', { kind: 'draw', amount: 2 }, 2), spellOf('intel', { kind: 'reveal', amount: 1 })],
+      deck: ['d1', 'd2', 'd3', 'd4', 'd5'].map(id => monster(id, { cost: 9 })),
+    });
+    state = withPlayer(state, 'player1', { hand: [monster('x'), { ...fireSpell, cost: 1 }] });
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.pendingPick).toBeNull();
+    expect(next.players.player1.hand.map(c => c.id)).toEqual(['x']);
+    expect(next.players.player2.deck.length).toBeLessThanOrEqual(3);
+  });
+});
+
+describe('AI vs AI full games', () => {
+  // 両方のプレイヤーを AI に動かさせて、途中で止まったり例外が出たりしないことを確かめる
+  const playGame = (): GameState => {
+    let state = createInitialGameState();
+    for (let step = 0; step < 2000 && !state.winner; step++) {
+      const player = state.currentPlayer;
+      if (state.phase === 'Play') state = runAiPlayPhase(state, player);
+      else if (state.phase === 'Attack') state = runAiAttackPhase(state, player);
+      const advanced = nextPhase(state);
+      if (advanced === state && !state.winner) throw new Error(`stuck at turn ${state.turn} ${state.phase}`);
+      state = advanced;
+    }
+    return state;
+  };
+
+  it('finishes games without getting stuck', () => {
+    for (let i = 0; i < 20; i++) {
+      const finished = playGame();
+      expect(finished.winner).not.toBeNull();
+    }
   });
 });
 

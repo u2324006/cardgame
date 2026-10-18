@@ -41,7 +41,7 @@ const NumberField: React.FC<NumberFieldProps> = ({ value, onChange, label, class
 const switchEffect = (current: SpellEffect, kind: SpellEffect['kind']): SpellEffect => {
   if (kind === 'custom') return { kind };
   const amount = isImplementedEffect(current) ? current.amount : 1;
-  return { kind, amount };
+  return { kind, amount } as SpellEffect;
 };
 
 // カードの見た目のまま、文字や数値を直接書き込める白紙のカード

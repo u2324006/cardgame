@@ -283,3 +283,27 @@
 .battle-viewport {
   overflow-x: auto;
 }
+
+/* 墓地や相手の手札から選ぶダイアログ */
+.dialog.pick-dialog {
+  max-width: min(760px, 92vw);
+}
+
+.pick-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-height: 60vh;
+  overflow-y: auto;
+  margin: 12px 0;
+}
+
+.pick-card.pickable .card {
+  cursor: pointer;
+  box-shadow: 0 0 0 2px var(--gold, #d8b25a);
+}
+
+.pick-card.unpickable {
+  opacity: 0.4;
+}

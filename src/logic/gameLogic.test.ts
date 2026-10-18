@@ -12,6 +12,8 @@ import {
   moveMonster,
   nextPhase,
   commandMonster,
+  pickCard,
+  skipFreeSummon,
   getSummonCost,
   playCard,
   skipFreeSpell,
@@ -598,6 +600,237 @@ describe('front/back row leaders', () => {
     state = { ...withPlayer(state, 'player1', { deck: [monster('d1'), monster('d2'), monster('d3')] }), phase: 'Draw' };
     expect(nextPhase(withField(state, 'player2', 'frontRow', [monster('a'), null, null])).players.player1.hand).toHaveLength(1);
     expect(nextPhase(withField(state, 'player2', 'frontRow', [monster('a'), monster('b'), null])).players.player1.hand).toHaveLength(2);
+  });
+});
+
+describe('resource cards: cost cheating', () => {
+  const play = (state: GameState) => withPlayer(state, 'player1', { currentEnergy: 0 });
+
+  it('召喚士 summons a cost-2 monster for free, which can be skipped', () => {
+    const summoner = withAbility('sm', { kind: 'freeSummonOnSummon', maxCost: 2 }, { cost: 3 });
+    const state = withPlayer(emptyState(), 'player1', { hand: [summoner, monster('cheap', { cost: 2 }), monster('big', { cost: 3 })], currentEnergy: 3 });
+    const summoned = unwrap(playCard(state, 'player1', 0, { row: 'backRow', index: 0 }));
+    expect(summoned.pendingFreeSummon).toMatchObject({ maxCost: 2 });
+    expect(playCard(summoned, 'player1', 1, { row: 'frontRow', index: 0 }).ok).toBe(false); // big はコスト3
+    const free = unwrap(playCard(summoned, 'player1', 0, { row: 'frontRow', index: 0 }));
+    expect(free.players.player1.field.frontRow[0]?.id).toBe('cheap');
+    expect(free.pendingFreeSummon).toBeNull();
+    expect(unwrap(skipFreeSummon(summoned, 'player1')).pendingFreeSummon).toBeNull();
+  });
+
+  it('奇襲部隊 summons a cost-3 monster into the front row for free', () => {
+    const state = withPlayer(emptyState(), 'player1', { hand: [spellOf('ambush', { kind: 'freeSummon', amount: 3 }, 2), monster('big', { cost: 3 })], currentEnergy: 2 });
+    const cast = unwrap(castSpell(state, 'player1', 0));
+    expect(playCard(cast, 'player1', 0, { row: 'backRow', index: 0 }).ok).toBe(false);
+    const done = unwrap(playCard(cast, 'player1', 0, { row: 'frontRow', index: 0 }));
+    expect(done.players.player1.currentEnergy).toBe(0);
+    expect(done.players.player1.field.frontRow[0]?.id).toBe('big');
+  });
+
+  it('魔導書 and 伝令官 discount only the next spell', () => {
+    const book = spellOf('book', { kind: 'spellDiscount', amount: 2 }, 1);
+    const fire3 = { ...fireSpell, cost: 3 };
+    let state = withField(emptyState(), 'player2', 'frontRow', [monster('e', { cardHp: 9 }), null, null]);
+    state = withPlayer(state, 'player1', { hand: [book, fire3, { ...fire3, id: 'fire-2' }], currentEnergy: 2 });
+    let next = unwrap(castSpell(state, 'player1', 0));
+    next = unwrap(castSpell(next, 'player1', 0, { row: 'frontRow', index: 0 })); // 3 - 2 = 1
+    expect(next.players.player1.currentEnergy).toBe(0);
+    expect(castSpell(next, 'player1', 0, { row: 'frontRow', index: 0 }).ok).toBe(false);
+    const herald = withAbility('hd', { kind: 'spellDiscountOnSummon', amount: 1 }, { cost: 1 });
+    const summoned = unwrap(playCard(withPlayer(emptyState(), 'player1', { hand: [herald], currentEnergy: 1 }), 'player1', 0, { row: 'backRow', index: 0 }));
+    expect(summoned.turnState.spellDiscount).toBe(1);
+  });
+
+  it('援軍要請 discounts the next summon by 2 only when outnumbered', () => {
+    const call = spellOf('call', { kind: 'summonDiscount', amount: 2 }, 1);
+    let state = withPlayer(emptyState(), 'player1', { hand: [call, monster('big', { cost: 3 })], currentEnergy: 2 });
+    expect(castSpell(state, 'player1', 0).ok).toBe(false);
+    state = withField(state, 'player2', 'frontRow', [monster('e'), null, null]);
+    const next = unwrap(playCard(unwrap(castSpell(state, 'player1', 0)), 'player1', 0, { row: 'frontRow', index: 0 }));
+    expect(next.players.player1.currentEnergy).toBe(0);
+    expect(next.turnState.summonDiscount).toBe(0);
+  });
+
+  it('生贄の儀式 sacrifices a monster and summons a cost-2 monster for free', () => {
+    let state = withField(emptyState(), 'player1', 'frontRow', [monster('weak'), null, null]);
+    state = play(withPlayer(state, 'player1', { hand: [spellOf('rite', { kind: 'sacrificeSummon', amount: 2 }, 0), monster('new', { cost: 2 })] }));
+    const cast = unwrap(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 }));
+    expect(cast.players.player1.graveyard.map(c => c.id)).toContain('weak');
+    const done = unwrap(playCard(cast, 'player1', 0, { row: 'frontRow', index: 0 }));
+    expect(done.players.player1.field.frontRow[0]?.id).toBe('new');
+  });
+
+  it('傭兵 can be summoned by discarding two cards instead of paying energy', () => {
+    const merc = withAbility('mc', { kind: 'discardSummon', amount: 2 }, { cost: 4 });
+    const state = play(withPlayer(emptyState(), 'player1', { hand: [merc, monster('a'), monster('b'), monster('c')] }));
+    expect(playCard(state, 'player1', 0, { row: 'frontRow', index: 0 }).ok).toBe(false);
+    const summoned = unwrap(playCard(state, 'player1', 0, { row: 'frontRow', index: 0 }, { payByDiscard: true }));
+    expect(summoned.pendingDiscard).toEqual({ player: 'player1', count: 2 });
+    const done = unwrap(discardCards(summoned, 'player1', [0, 1]));
+    expect(done.players.player1.hand.map(c => c.id)).toEqual(['c']);
+  });
+});
+
+describe('resource cards: energy', () => {
+  it('魔力の泉 and 祈祷師 add energy at the start of the next own turn', () => {
+    const priest = withAbility('pr', { kind: 'energyNextTurnFromBack', amount: 1 }, { cost: 2 });
+    let state = withPlayer(emptyState(), 'player1', { hand: [spellOf('fount', { kind: 'delayedEnergy', amount: 2 }), priest], currentEnergy: 3, deck: [monster('d1'), monster('d2')] });
+    state = unwrap(castSpell(state, 'player1', 0));
+    state = unwrap(playCard(state, 'player1', 0, { row: 'backRow', index: 0 }));
+    const nextTurn = nextPhase(endTurn(endTurn(state)));
+    expect(nextTurn.players.player1.currentEnergy).toBe(0 + 1 + 2 + 1);
+    expect(nextTurn.players.player1.delayedEnergy).toEqual([]);
+  });
+
+  it('魔力結晶 gives 2 energy for 2 discards, 蓄魔の壺 raises the max up to 12', () => {
+    let state = withPlayer(emptyState(), 'player1', { hand: [spellOf('crystal', { kind: 'discardForEnergy', amount: 2 }, 0), monster('a'), monster('b')], currentEnergy: 1 });
+    const cast = unwrap(castSpell(state, 'player1', 0));
+    expect(cast.players.player1.currentEnergy).toBe(3);
+    expect(cast.pendingDiscard?.count).toBe(2);
+    const pot = spellOf('pot', { kind: 'raiseMaxEnergy', amount: 1 }, 0);
+    state = withPlayer(emptyState(), 'player1', { hand: [pot, pot, pot], maxEnergy: 11 });
+    const raised = unwrap(castSpell(state, 'player1', 0));
+    expect(raised.players.player1.maxEnergy).toBe(12);
+    expect(castSpell(raised, 'player1', 0).ok).toBe(false);
+  });
+
+  it('魔力吸収, 生命変換 and 捧げ物 move energy around', () => {
+    let state = withPlayer(emptyState(), 'player2', { currentEnergy: 3 });
+    state = withPlayer(state, 'player1', { hand: [spellOf('drain', { kind: 'drainEnergy', amount: 2 }, 2), spellOf('life', { kind: 'lifeToEnergy', amount: 2 }, 0)], currentEnergy: 2 });
+    let next = unwrap(castSpell(state, 'player1', 0));
+    expect([next.players.player1.currentEnergy, next.players.player2.currentEnergy]).toEqual([1, 1]);
+    next = unwrap(castSpell(next, 'player1', 0));
+    expect([next.players.player1.currentEnergy, next.players.player1.specialCardHp]).toEqual([3, 17]);
+    expect(castSpell(withPlayer(state, 'player1', { specialCardHp: 3 }), 'player1', 1).ok).toBe(false);
+
+    let offer = withField(emptyState(), 'player1', 'frontRow', [monster('m011-0', { cost: 3 }), null, null]);
+    offer = withPlayer(offer, 'player1', { hand: [spellOf('offer', { kind: 'sacrificeForEnergy', amount: 1 }, 1)], currentEnergy: 1 });
+    expect(unwrap(castSpell(offer, 'player1', 0, { row: 'frontRow', index: 0 })).players.player1.currentEnergy).toBe(3); // 騎士のコスト3
+  });
+
+  it('大魔導師 gains 1 energy on the first spell each turn', () => {
+    let state = withLeaderAbility(emptyState(), 'player1', { kind: 'spellEnergy', amount: 1 });
+    state = withPlayer(state, 'player1', { hand: [spellOf('a', { kind: 'draw', amount: 1 }), spellOf('b', { kind: 'draw', amount: 1 })], currentEnergy: 2, deck: [monster('d1'), monster('d2')] });
+    let next = unwrap(castSpell(state, 'player1', 0));
+    expect(next.players.player1.currentEnergy).toBe(2);
+    next = unwrap(castSpell(next, 'player1', 0));
+    expect(next.players.player1.currentEnergy).toBe(1);
+  });
+});
+
+describe('resource cards: drawing', () => {
+  const deck = [monster('d1'), monster('d2'), monster('d3')];
+
+  it('斥候 draws on summon, 伝令兵 draws when destroyed in the front row', () => {
+    const scout = withAbility('sc', { kind: 'drawOnSummon', amount: 1 });
+    const summoned = unwrap(playCard(withPlayer(emptyState(), 'player1', { hand: [scout], deck }), 'player1', 0, { row: 'frontRow', index: 0 }));
+    expect(summoned.players.player1.hand.map(c => c.id)).toEqual(['d1']);
+    let state = withField(emptyState(), 'player2', 'frontRow', [withAbility('ms', { kind: 'drawOnFrontDeath', amount: 1 }, { cardHp: 2 }), null, null]);
+    state = withPlayer(withPlayer(state, 'player2', { deck }), 'player1', { hand: [fireSpell] });
+    expect(unwrap(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 })).players.player2.hand.map(c => c.id)).toEqual(['d1']);
+  });
+
+  it('作戦会議 draws 2, 補給線 trades back-row monsters for cards', () => {
+    let state = withField(emptyState(), 'player1', 'backRow', [monster('b1'), monster('b2'), null]);
+    state = withField(state, 'player1', 'frontRow', [monster('f'), null, null]);
+    state = withPlayer(state, 'player1', { hand: [spellOf('meeting', { kind: 'draw', amount: 2 }, 2), spellOf('supply', { kind: 'supplyLine', amount: 1 })], currentEnergy: 3, deck });
+    let next = unwrap(castSpell(state, 'player1', 0));
+    expect(next.players.player1.hand).toHaveLength(3);
+    expect(castSpell(next, 'player1', 0, undefined, [{ row: 'frontRow', index: 0 }]).ok).toBe(false);
+    next = unwrap(castSpell(next, 'player1', 0, undefined, [{ row: 'backRow', index: 0 }, { row: 'backRow', index: 1 }]));
+    expect(next.players.player1.field.backRow).toEqual([null, null, null]);
+    expect(next.players.player1.hand.map(c => c.id)).toEqual(['d1', 'd2', 'd3']);
+  });
+
+  it('戦利品 draws once, on the first enemy destroyed this turn', () => {
+    let state = withField(emptyState(), 'player2', 'frontRow', [monster('a', { cardHp: 1 }), monster('b', { cardHp: 1 }), null]);
+    state = withPlayer(state, 'player1', { hand: [spellOf('spoils', { kind: 'spoils', amount: 1 }), fireSpell, fireSpell], deck, currentEnergy: 5 });
+    let next = unwrap(castSpell(state, 'player1', 0));
+    next = unwrap(castSpell(next, 'player1', 0, { row: 'frontRow', index: 0 }));
+    expect(next.players.player1.hand.map(c => c.id)).toEqual([fireSpell.id, 'd1']);
+    next = unwrap(castSpell(next, 'player1', 0, { row: 'frontRow', index: 1 }));
+    expect(next.players.player1.hand.map(c => c.id)).toEqual(['d1']);
+  });
+
+  it('墓荒らし returns a monster from the graveyard to the hand', () => {
+    const state = withPlayer(emptyState(), 'player1', { hand: [spellOf('rob', { kind: 'graveRob', amount: 1 })], graveyard: [spell, monster('dead')] });
+    const cast = unwrap(castSpell(state, 'player1', 0));
+    expect(pickCard(cast, 'player1', 0).ok).toBe(false); // スペルは選べない
+    const done = unwrap(pickCard(cast, 'player1', 1));
+    expect(done.players.player1.hand.map(c => c.id)).toEqual(['dead']);
+    expect(castSpell(withPlayer(state, 'player1', { graveyard: [] }), 'player1', 0).ok).toBe(false);
+  });
+
+  it('研究者 draws at the end of turn when 1 or less energy is left; 賢者 draws extra with a small hand', () => {
+    let state = withField(emptyState(), 'player1', 'backRow', [withAbility('rs', { kind: 'drawIfLowEnergy', amount: 1, threshold: 1 }), null, null]);
+    state = withPlayer(state, 'player1', { deck, currentEnergy: 1 });
+    expect(endTurn(state).players.player1.hand).toHaveLength(1);
+    expect(endTurn(withPlayer(state, 'player1', { currentEnergy: 2 })).players.player1.hand).toHaveLength(0);
+
+    let sage = withLeaderAbility(emptyState(), 'player1', { kind: 'extraDrawWhenFewCards', handSize: 2, amount: 1 });
+    sage = { ...withPlayer(sage, 'player1', { deck, hand: [monster('h1'), monster('h2')] }), phase: 'Draw' };
+    expect(nextPhase(sage).players.player1.hand).toHaveLength(4);
+  });
+});
+
+describe('resource cards: discarding', () => {
+  const deck = [monster('d1'), monster('d2'), monster('d3')];
+
+  it('狂戦士 makes its owner discard a card on summon', () => {
+    const berserker = withAbility('bs', { kind: 'discardOnSummon', amount: 1 }, { frontAttack: 4 });
+    const summoned = unwrap(playCard(withPlayer(emptyState(), 'player1', { hand: [berserker, monster('x')] }), 'player1', 0, { row: 'frontRow', index: 0 }));
+    expect(summoned.pendingDiscard?.count).toBe(1);
+  });
+
+  it('錬成 discards one card and then draws two', () => {
+    const state = withPlayer(emptyState(), 'player1', { hand: [spellOf('alchemy', { kind: 'discardDraw', amount: 2 }), monster('x')], deck });
+    const done = unwrap(discardCards(unwrap(castSpell(state, 'player1', 0)), 'player1', [0]));
+    expect(done.players.player1.hand.map(c => c.id)).toEqual(['d1', 'd2']);
+  });
+
+  it('火炎瓶 deals the discarded card\'s cost + 2 damage', () => {
+    let state = withField(emptyState(), 'player2', 'frontRow', [monster('e', { cardHp: 9 }), null, null]);
+    state = withPlayer(state, 'player1', { hand: [spellOf('bomb', { kind: 'firebomb', amount: 2 }), monster('fuel', { cost: 3 })] });
+    const cast = unwrap(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 }));
+    const done = unwrap(discardCards(cast, 'player1', [0]));
+    expect(done.players.player2.field.frontRow[0]?.cardHp).toBe(9 - 5);
+  });
+
+  it('略奪 and 情報戦 make the opponent discard; 怨霊 and 幻影兵 strike back', () => {
+    const wraith = withAbility('wr', { kind: 'damageWhenDiscarded', amount: 2 });
+    let state = withField(emptyState(), 'player1', 'frontRow', [monster('mine', { cardHp: 2 }), null, null]);
+    state = withPlayer(state, 'player2', { hand: [wraith] });
+    state = withPlayer(state, 'player1', { hand: [spellOf('loot', { kind: 'randomDiscard', amount: 1 }, 2)], currentEnergy: 2 });
+    const looted = unwrap(castSpell(state, 'player1', 0));
+    expect(looted.players.player2.hand).toHaveLength(0);
+    expect(looted.players.player1.field.frontRow[0]).toBeNull(); // 怨霊の 2 ダメージ
+
+    const phantom = withAbility('ph', { kind: 'summonWhenDiscarded' }, { frontAttack: 3, backAttack: 3 });
+    let spy = withPlayer(emptyState(), 'player2', { hand: [phantom, spell] });
+    spy = withPlayer(spy, 'player1', { hand: [spellOf('intel', { kind: 'reveal', amount: 1 })] });
+    const revealed = unwrap(castSpell(spy, 'player1', 0));
+    expect(revealed.pendingPick?.kind).toBe('opponentHand');
+    expect(pickCard(revealed, 'player1', 0).ok).toBe(false); // モンスターは選べない
+    expect(unwrap(pickCard(revealed, 'player1', 1)).players.player2.hand.map(c => c.id)).toEqual(['ph']);
+    // 自分の効果で捨てた幻影兵は場に出ない（相手の効果のときだけ）
+    const own = withPlayer(emptyState(), 'player1', { hand: [spellOf('alchemy', { kind: 'discardDraw', amount: 1 }), phantom], deck });
+    const discarded = unwrap(discardCards(unwrap(castSpell(own, 'player1', 0)), 'player1', [0]));
+    expect(discarded.players.player1.field.frontRow.every(c => c === null)).toBe(true);
+  });
+
+  it('幻影兵 enters the field when discarded by the opponent', () => {
+    const phantom = withAbility('ph', { kind: 'summonWhenDiscarded' }, { frontAttack: 3, backAttack: 3 });
+    let state = withPlayer(emptyState(), 'player2', { hand: [phantom] });
+    state = withPlayer(state, 'player1', { hand: [spellOf('loot', { kind: 'randomDiscard', amount: 1 }, 2)], currentEnergy: 2 });
+    const next = unwrap(castSpell(state, 'player1', 0));
+    expect(next.players.player2.field.frontRow[0]?.id).toBe('ph');
+  });
+
+  it('仕切り直し discards the whole hand and draws the same number', () => {
+    const state = withPlayer(emptyState(), 'player1', { hand: [spellOf('redo', { kind: 'reshuffle', amount: 1 }, 3), monster('a'), monster('b')], deck, currentEnergy: 3 });
+    const next = unwrap(castSpell(state, 'player1', 0));
+    expect(next.players.player1.hand.map(c => c.id)).toEqual(['d1', 'd2']);
+    expect(next.players.player1.graveyard.map(c => c.id)).toEqual(expect.arrayContaining(['a', 'b']));
   });
 });
 

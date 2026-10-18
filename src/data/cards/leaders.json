@@ -97,5 +97,44 @@
       "margin": 2,
       "amount": 1
     }
+  },
+  {
+    "id": "l005",
+    "name": "大魔導師",
+    "race": "",
+    "effectText": "1ターンに1回、自分がスペルを使ったとき、エネルギーを1増やす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "maxHp": 18,
+    "effect": {
+      "kind": "spellEnergy",
+      "amount": 1
+    }
+  },
+  {
+    "id": "l006",
+    "name": "賢者",
+    "race": "",
+    "effectText": "ターン開始時、手札が2枚以下なら、カードを1枚多く引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "maxHp": 18,
+    "effect": {
+      "kind": "extraDrawWhenFewCards",
+      "handSize": 2,
+      "amount": 1
+    }
   }
 ]
