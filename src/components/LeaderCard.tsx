@@ -9,13 +9,13 @@ interface LeaderCardProps extends HoverHandlers {
   onClick?: () => void;
   isTargetable?: boolean; // 直接攻撃の対象としてクリックできるとき
   size?: 'normal' | 'large';
-  isDisabled?: boolean; // このターンの間、効果がなくなっているとき
+  statusLabel?: string; // 効果が働いていないとき（例: '効果停止中'・'効果使用済み'）。カードを暗くしてラベルを出す
 }
 
 // 大将カード。大将ゾーンに置かれ、HPと固有の効果を持つ
-const LeaderCard: React.FC<LeaderCardProps> = ({ leader, hp, onClick, isTargetable = false, size = 'normal', isDisabled = false, onMouseEnter, onMouseLeave }) => (
+const LeaderCard: React.FC<LeaderCardProps> = ({ leader, hp, onClick, isTargetable = false, size = 'normal', statusLabel, onMouseEnter, onMouseLeave }) => (
   <div
-    className={`leader-card ${size} ${isTargetable ? 'targetable' : ''} ${isDisabled ? 'disabled' : ''}`}
+    className={`leader-card ${size} ${isTargetable ? 'targetable' : ''} ${statusLabel ? 'disabled' : ''}`}
     onClick={onClick}
     onMouseEnter={onMouseEnter}
     onMouseLeave={onMouseLeave}
@@ -24,7 +24,7 @@ const LeaderCard: React.FC<LeaderCardProps> = ({ leader, hp, onClick, isTargetab
       <span className="leader-badge">大将</span>
       <span className="card-name">{leader.name}</span>
     </div>
-    {isDisabled && <div className="card-used-label leader-disabled-label">効果停止中</div>}
+    {statusLabel && <div className="card-used-label leader-disabled-label">{statusLabel}</div>}
     <CardArt image={leader.image} label="イラスト">
       <div className={`leader-hp ${hp < leader.maxHp ? 'damaged' : ''}`}>
         HP {hp}<span className="leader-hp-max"> / {leader.maxHp}</span>

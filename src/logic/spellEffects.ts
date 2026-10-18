@@ -11,6 +11,9 @@ export const describeEffect = (effect: SpellEffect): string => {
     case 'buffBa': return `味方モンスター1体のBAを、ターン終了まで${effect.amount}上げる。`;
     case 'drawDiscard': return `カードを${effect.amount}枚引き、その後手札から${effect.amount}枚を選んで墓地に置く。`;
     case 'disableLeader': return 'このターンの間、相手の大将カードの効果をなくす。';
+    case 'damageBack': return `相手の後衛のモンスター1体に${effect.amount}ダメージを与える。`;
+    case 'forceMove': return '相手のモンスター1体を反対の列へ移動させる。相手は次のターン、そのモンスターを移動できない。';
+    case 'catchUpEnergy': return '相手のモンスターの数が自分より多いとき、その差だけエネルギーを増やす。';
     case 'custom': return '';
   }
 };
@@ -24,6 +27,9 @@ export const summarizeEffect = (effect: SpellEffect): string => {
     case 'buffBa': return `BA +${effect.amount}`;
     case 'drawDiscard': return `${effect.amount}枚引いて${effect.amount}枚捨てる`;
     case 'disableLeader': return '大将の効果を消す';
+    case 'damageBack': return `後衛に${effect.amount}ダメージ`;
+    case 'forceMove': return '相手を移動';
+    case 'catchUpEnergy': return '数の差だけエネルギー';
     case 'custom': return '効果未実装';
   }
 };

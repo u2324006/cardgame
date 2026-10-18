@@ -1,5 +1,6 @@
 import { MonsterCard, SpellCard } from '../types/card';
 import { BUILTIN_CARD_SET } from './cards';
+import { BUILTIN_LEADER_CARDS } from './builtinCards';
 import {
   fromLeaderRecord,
   fromMonsterRecord,
@@ -65,7 +66,7 @@ describe('card records (JSON for AI)', () => {
   it('describes built-in cards without notes sensibly', () => {
     const fire = BUILTIN_CARD_SET.cards.find(c => c.id === 's003') as SpellCard;
     expect(toSpellRecord(fire)).toMatchObject({ effectText: '相手のモンスター1体に3ダメージを与える。', target: 'enemyMonster', effect: { kind: 'damage', amount: 3 }, implementation: '実装済み' });
-    expect(toLeaderRecord(BUILTIN_CARD_SET.leaders[0])).toMatchObject({ maxHp: 20, implementation: '効果なし' });
+    expect(toLeaderRecord(BUILTIN_LEADER_CARDS[0])).toMatchObject({ maxHp: 20, implementation: '効果なし' });
   });
 
   it('keeps uploaded images as data URLs and built-in images as file names', () => {
@@ -100,7 +101,7 @@ describe('card records (JSON for AI)', () => {
   it('loads the imported spells, races and leader with their effects', () => {
     const find = (id: string) => BUILTIN_CARD_SET.cards.find(c => c.id === id);
     expect(find('s001')).toMatchObject({ name: '前衛支援', effect: { kind: 'buffFa', amount: 1 } });
-    expect(find('s003')).toMatchObject({ cost: 3, effect: { kind: 'damage', amount: 3 } });
+    expect(find('s003')).toMatchObject({ cost: 1, effect: { kind: 'damage', amount: 3 } });
     expect(find('cmvcf4e4u3szf')).toMatchObject({ name: '指揮低下', effect: { kind: 'disableLeader', amount: 1 } });
     expect(find('cmvcf6svl19jp')).toMatchObject({ name: '後衛支援', effect: { kind: 'buffBa', amount: 1 } });
     expect([find('m003')?.race, find('m011')?.race]).toEqual(['恐竜', '戦士']);
@@ -114,5 +115,19 @@ describe('card records (JSON for AI)', () => {
     expect(record.effect).toEqual({ kind: 'raceHpBonus', race: 'ゴーレム', amount: 1 });
     expect(isLeaderRecord({ ...record, effect: { kind: 'raceHpBonus', race: 'ゴーレム' } })).toBe(false);
     expect(fromLeaderRecord(record).ability).toEqual(record.effect);
+  });
+
+  it('loads the second batch: summon effect, new spells and the leader ability', () => {
+    const find = (id: string) => BUILTIN_CARD_SET.cards.find(c => c.id === id);
+    expect(find('cmvde9cnvtqso')).toMatchObject({ name: '見習い魔導士', ability: { kind: 'freeSpellOnSummon', maxCost: 1 } });
+    expect(find('cmvde4e0w32ku')).toMatchObject({ effect: { kind: 'catchUpEnergy' } });
+    expect(find('cmvdecarqav9w')).toMatchObject({ effect: { kind: 'damageBack', amount: 3 } });
+    expect(find('cmvdedg1ew8k5')).toMatchObject({ effect: { kind: 'forceMove' } });
+    const leader = BUILTIN_CARD_SET.leaders.find(l => l.id === 'l001');
+    expect(leader).toMatchObject({ ability: { kind: 'rallyEnergy', hpThreshold: 10, amount: 3 } });
+    const record = toMonsterRecord(find('cmvde9cnvtqso') as MonsterCard);
+    expect(record.effect).toEqual({ kind: 'freeSpellOnSummon', maxCost: 1 });
+    expect(isMonsterRecord({ ...record, effect: { kind: 'freeSpellOnSummon' } })).toBe(false);
+    expect(fromMonsterRecord(record).ability).toEqual(record.effect);
   });
 });

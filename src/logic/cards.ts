@@ -1,4 +1,4 @@
-import { Card, LeaderCard, MonsterCard, SpellEffect } from '../types/card';
+import { Card, IMPLEMENTED_EFFECT_KINDS, LeaderCard, MonsterCard, SpellEffect } from '../types/card';
 import { BUILTIN_LEADER_CARDS, BUILTIN_MONSTER_CARDS, BUILTIN_SPELL_CARDS } from './builtinCards';
 import { CardRecords, isLeaderRecord, isMonsterRecord, isSpellRecord, recordsToCards } from './cardData';
 import monsterRecords from '../data/cards/monsters.json';
@@ -50,7 +50,7 @@ const isSpellEffect = (effect: unknown): effect is SpellEffect => {
   const e = effect as SpellEffect;
   if (!e) return false;
   if (e.kind === 'custom') return true;
-  return ['buffFa', 'buffBa', 'heal', 'damage', 'drawDiscard', 'disableLeader'].includes(e.kind) && isNumber(e.amount);
+  return (IMPLEMENTED_EFFECT_KINDS as string[]).includes(e.kind) && isNumber(e.amount);
 };
 
 const isCard = (value: unknown): value is Card => {

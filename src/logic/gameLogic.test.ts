@@ -5,14 +5,16 @@ import {
   attack,
   castSpell,
   discardCards,
+  activateLeaderAbility,
   endTurn,
   getAttackPower,
   getEffectiveHp,
   moveMonster,
   nextPhase,
   playCard,
+  skipFreeSpell,
 } from './gameLogic';
-import { backSpell, disableSpell, drawSpell, emptyState, fireSpell, healSpell, inPhase, monster, spell, unwrap, withField, withGolemLeader, withPlayer } from './testUtils';
+import { apprentice, backSpell, catchUpSpell, disableSpell, drawSpell, forceMoveSpell, throwSpell, withRallyLeader, emptyState, fireSpell, healSpell, inPhase, monster, spell, unwrap, withField, withGolemLeader, withPlayer } from './testUtils';
 
 describe('phase progression', () => {
   it('does not draw on the first player\'s first turn, but still gains energy', () => {
@@ -306,6 +308,105 @@ describe('leader ability (マウンテンゴーレム)', () => {
     const strong = next.players.player2.field.frontRow[1]!;
     expect(getEffectiveHp(next, 'player2', strong)).toBe(5);
     expect(getEffectiveHp(endTurn(next), 'player2', strong)).toBe(6); // 次のターンには戻る
+  });
+});
+
+describe('投擲 (damage to the back row)', () => {
+  it('hits only a back-row enemy, even when the front row is occupied', () => {
+    let state = withField(emptyState(), 'player2', 'frontRow', [monster('f'), null, null]);
+    state = withField(state, 'player2', 'backRow', [monster('b', { cardHp: 3 }), null, null]);
+    state = withPlayer(state, 'player1', { hand: [throwSpell] });
+    expect(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 })).toEqual({ ok: false, error: '相手の後衛のモンスターを選んでください。' });
+    const next = unwrap(castSpell(state, 'player1', 0, { row: 'backRow', index: 0 }));
+    expect(next.players.player2.field.backRow[0]).toBeNull();
+  });
+});
+
+describe('強制移動 (forced move)', () => {
+  const setup = () => withPlayer(
+    withField(emptyState(), 'player2', 'frontRow', [null, monster('t'), null]),
+    'player1', { hand: [forceMoveSpell] },
+  );
+
+  it('moves the enemy to the same column of the other row and locks it during its owner\'s next turn', () => {
+    const next = unwrap(castSpell(setup(), 'player1', 0, { row: 'frontRow', index: 1 }));
+    expect(next.players.player2.field.frontRow[1]).toBeNull();
+    expect(next.players.player2.field.backRow[1]?.id).toBe('t');
+    const theirTurn = { ...endTurn(next), phase: 'Play' as const };
+    expect(moveMonster(theirTurn, 'player2', { row: 'backRow', index: 1 }, { row: 'frontRow', index: 1 }))
+      .toEqual({ ok: false, error: 'このモンスターは強制移動の効果で、このターンは移動できません。' });
+    const later = { ...endTurn(endTurn(theirTurn)), phase: 'Play' as const };
+    expect(moveMonster(later, 'player2', { row: 'backRow', index: 1 }, { row: 'frontRow', index: 1 }).ok).toBe(true);
+  });
+
+  it('uses another empty slot when the same column is taken, and fails when the row is full', () => {
+    let state = withField(setup(), 'player2', 'backRow', [null, monster('x'), monster('y')]);
+    const next = unwrap(castSpell(state, 'player1', 0, { row: 'frontRow', index: 1 }));
+    expect(next.players.player2.field.backRow[0]?.id).toBe('t');
+    state = withField(state, 'player2', 'backRow', [monster('w'), monster('x'), monster('y')]);
+    expect(castSpell(state, 'player1', 0, { row: 'frontRow', index: 1 }).ok).toBe(false);
+  });
+});
+
+describe('逆転の兆し (catch-up energy)', () => {
+  it('gains energy equal to how many more monsters the opponent has, up to the max', () => {
+    let state = withField(emptyState(), 'player2', 'frontRow', [monster('a'), monster('b'), monster('c')]);
+    state = withField(state, 'player1', 'frontRow', [monster('m'), null, null]);
+    state = withPlayer(state, 'player1', { hand: [catchUpSpell, catchUpSpell], currentEnergy: 5 });
+    const next = unwrap(castSpell(state, 'player1', 0));
+    expect(next.players.player1.currentEnergy).toBe(5 - 1 + 2);
+    const capped = unwrap(castSpell(withPlayer(next, 'player1', { currentEnergy: 10 }), 'player1', 0));
+    expect(capped.players.player1.currentEnergy).toBe(10 - 1 + 1); // 上限 10
+  });
+
+  it('gains nothing when the opponent does not have more monsters', () => {
+    const state = withPlayer(emptyState(), 'player1', { hand: [catchUpSpell], currentEnergy: 3 });
+    expect(unwrap(castSpell(state, 'player1', 0)).players.player1.currentEnergy).toBe(2);
+  });
+});
+
+describe('見習い魔導士 (free spell on summon)', () => {
+  const setup = (hand = [apprentice(), fireSpell, healSpell]) =>
+    withField(withPlayer(emptyState(), 'player1', { hand, currentEnergy: 1 }), 'player2', 'frontRow', [monster('e', { cardHp: 3 }), null, null]);
+
+  it('lets the player cast a cost-1 spell for free right after summoning', () => {
+    const fire = { ...fireSpell, cost: 1 };
+    const summoned = unwrap(playCard(setup([apprentice(), fire]), 'player1', 0, { row: 'backRow', index: 0 }));
+    expect(summoned.pendingFreeSpell).toEqual({ player: 'player1', maxCost: 1, source: '見習い魔導士' });
+    expect(summoned.players.player1.currentEnergy).toBe(0);
+    expect(nextPhase(summoned)).toBe(summoned); // 選ぶまで進めない
+    const next = unwrap(castSpell(summoned, 'player1', 0, { row: 'frontRow', index: 0 }));
+    expect(next.players.player2.field.frontRow[0]).toBeNull();
+    expect(next.players.player1.currentEnergy).toBe(0);
+    expect(next.pendingFreeSpell).toBeNull();
+  });
+
+  it('rejects spells above the cost limit and can be skipped', () => {
+    const expensive = { ...fireSpell, cost: 2 };
+    const summoned = unwrap(playCard(setup([apprentice(), expensive, spell]), 'player1', 0, { row: 'backRow', index: 0 }));
+    expect(castSpell(summoned, 'player1', 0, { row: 'frontRow', index: 0 }).ok).toBe(false);
+    expect(playCard(summoned, 'player1', 1, { row: 'frontRow', index: 0 }).ok).toBe(false);
+    const skipped = unwrap(skipFreeSpell(summoned, 'player1'));
+    expect(skipped.pendingFreeSpell).toBeNull();
+    expect(skipped.players.player1.hand).toHaveLength(2);
+  });
+
+  it('does not ask when there is no usable spell in hand', () => {
+    const summoned = unwrap(playCard(setup([apprentice(), monster('x')]), 'player1', 0, { row: 'backRow', index: 0 }));
+    expect(summoned.pendingFreeSpell).toBeNull();
+  });
+});
+
+describe('leader ability (大将: energy once when HP <= 10)', () => {
+  it('can be used once, only at 10 HP or less, and not while disabled', () => {
+    let state = withPlayer(withRallyLeader(emptyState(), 'player1'), 'player1', { currentEnergy: 2 });
+    expect(activateLeaderAbility(state, 'player1').ok).toBe(false); // HP 20
+    state = withPlayer(state, 'player1', { specialCardHp: 10 });
+    const disabled = { ...state, turnState: { ...state.turnState, disabledLeaders: ['player1' as const] } };
+    expect(activateLeaderAbility(disabled, 'player1').ok).toBe(false);
+    const next = unwrap(activateLeaderAbility(state, 'player1'));
+    expect(next.players.player1.currentEnergy).toBe(5);
+    expect(activateLeaderAbility(next, 'player1')).toEqual({ ok: false, error: '大将の効果はもう使いました。' });
   });
 });
 

@@ -41,6 +41,13 @@
 | `frontAttack` | FA（前衛にいるときの攻撃力） |
 | `backAttack` | BA（後衛にいるときの攻撃力） |
 | `hp` | HP |
+| `effect` | 実装済みの効果。まだなければ `null`（省略可） |
+
+モンスターの効果の種類（`kind`）：
+
+| kind | 内容 | 例 |
+|---|---|---|
+| `freeSpellOnSummon` | 召喚したとき、手札のコスト maxCost 以下のスペルを1枚、コストを払わずに使える | `{ "kind": "freeSpellOnSummon", "maxCost": 1 }` |
 
 ### スペルだけ
 
@@ -60,6 +67,9 @@
 | `buffBa` | 味方のモンスター1体の BA をターン終了まで amount 上げる | 味方のモンスター |
 | `drawDiscard` | カードを amount 枚引き、その後手札から amount 枚を選んで墓地に置く | なし |
 | `disableLeader` | このターンの間、相手の大将カードの効果をなくす（amount は使わないので 1） | 相手の大将 |
+| `damageBack` | 相手の後衛のモンスター1体に amount ダメージ | 相手の後衛のモンスター |
+| `forceMove` | 相手のモンスター1体を反対の列へ移動させ、相手の次のターンは移動できなくする（amount は 1） | 相手のモンスター |
+| `catchUpEnergy` | 相手のモンスターが自分より多いぶん、エネルギーを増やす（amount は 1） | なし |
 
 ### 大将だけ
 
@@ -73,6 +83,7 @@
 | kind | 内容 | 例 |
 |---|---|---|
 | `raceHpBonus` | 種族が race の自分のモンスターの HP を amount 上げる（大将ゾーンにあるあいだずっと） | `{ "kind": "raceHpBonus", "race": "ゴーレム", "amount": 1 }` |
+| `rallyEnergy` | 大将の HP が hpThreshold 以下のとき1回だけ使え、エネルギーを amount 増やす | `{ "kind": "rallyEnergy", "hpThreshold": 10, "amount": 3 }` |
 
 ## AI へのお願い（効果の実装）
 
@@ -84,7 +95,7 @@
   `src/logic/spellEffects.ts`（効果の文章）、`src/logic/cardData.ts`（JSON との変換）、
   `src/logic/cardEditor.ts`（カード作成画面の選択肢 `EFFECT_OPTIONS`）も更新します。
 - 大将の効果の種類は `src/types/card.ts` の `LeaderAbility` です。効果は `src/logic/gameLogic.ts` の `getHpBonus` などで計算します。
-- モンスターの効果（召喚したとき、攻撃したとき など）は、まだ仕組みがありません。最初に実装するときに仕組みを作ってください。
+- モンスターの効果の種類は `src/types/card.ts` の `MonsterAbility` です。召喚したときの効果は `gameLogic.ts` の `playCard` で処理しています。
 - 実装したら、そのカードの `implementation` を `実装済み` にし、`updatedAt` を今の日時にして、テスト（`src/logic/*.test.ts`）を追加してください。
   `updatedAt` を新しくしないと、ユーザーのブラウザに残っている未実装の版が使われ続けます。
 - ゲームのルールが変わる場合は、`RULES.md` も更新してください。

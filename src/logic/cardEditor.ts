@@ -6,6 +6,7 @@ import {
   SpellCard,
   SpellEffect,
   SpellTarget,
+  getSpellTarget,
   isImplementedEffect,
   isMonster,
 } from '../types/card';
@@ -42,6 +43,9 @@ export const EFFECT_OPTIONS: { kind: SpellEffect['kind']; label: string }[] = [
   { kind: 'buffBa', label: '味方のモンスターの BA を上げる' },
   { kind: 'drawDiscard', label: '引いて同じ枚数を捨てる' },
   { kind: 'disableLeader', label: '相手の大将の効果をなくす' },
+  { kind: 'damageBack', label: '相手の後衛のモンスターにダメージ' },
+  { kind: 'forceMove', label: '相手のモンスターを移動させる' },
+  { kind: 'catchUpEnergy', label: 'モンスターの数の差だけエネルギーを増やす' },
   { kind: 'custom', label: 'まだない効果' },
 ];
 
@@ -56,18 +60,7 @@ export const TARGET_OPTIONS: { target: SpellTarget; label: string }[] = [
 
 export { describeEffect, summarizeEffect };
 
-// 実装済みの効果の対象（まだない効果は card.target を使う）
-export const getSpellTarget = (spell: SpellCard): SpellTarget => {
-  switch (spell.effect.kind) {
-    case 'damage': return 'enemyMonster';
-    case 'heal':
-    case 'buffFa':
-    case 'buffBa': return 'allyMonster';
-    case 'drawDiscard': return 'none';
-    case 'disableLeader': return 'enemyLeader';
-    case 'custom': return spell.target ?? 'none';
-  }
-};
+export { getSpellTarget };
 
 // --- 白紙のカード ---
 

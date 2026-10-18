@@ -37,6 +37,33 @@ export const disableSpell: SpellCard = {
   id: 'cmvcf4e4u3szf-0', name: '指揮低下', type: 'Spell', description: '', cost: 1, effect: { kind: 'disableLeader', amount: 1 }, target: 'enemyLeader',
 };
 
+export const throwSpell: SpellCard = {
+  id: 'cmvdecarqav9w-0', name: '投擲', type: 'Spell', description: '', cost: 1, effect: { kind: 'damageBack', amount: 3 },
+};
+export const forceMoveSpell: SpellCard = {
+  id: 'cmvdedg1ew8k5-0', name: '強制移動', type: 'Spell', description: '', cost: 1, effect: { kind: 'forceMove', amount: 1 },
+};
+export const catchUpSpell: SpellCard = {
+  id: 'cmvde4e0w32ku-0', name: '逆転の兆し', type: 'Spell', description: '', cost: 1, effect: { kind: 'catchUpEnergy', amount: 1 },
+};
+// 召喚したとき、コスト1以下のスペルをコストなしで使える（見習い魔導士）
+export const apprentice = (id = 'cmvde9cnvtqso-0'): MonsterCard => ({
+  ...monster(id, { name: '見習い魔導士', frontAttack: 0, backAttack: 1, cardHp: 3 }),
+  ability: { kind: 'freeSpellOnSummon', maxCost: 1 },
+});
+
+// HP 10 以下で1回だけエネルギーを3増やす大将（大将）を持たせる
+export const withRallyLeader = (state: GameState, player: PlayerId): GameState => ({
+  ...state,
+  players: {
+    ...state.players,
+    [player]: {
+      ...state.players[player],
+      leader: { ...state.players[player].leader, ability: { kind: 'rallyEnergy', hpThreshold: 10, amount: 3 } },
+    },
+  },
+});
+
 // 種族ゴーレムの HP を +1 する大将（マウンテンゴーレム）を持たせる
 export const withGolemLeader = (state: GameState, player: PlayerId): GameState => ({
   ...state,

@@ -4,6 +4,7 @@ import { AttackTarget, FieldPosition, GameState, PlayerId, Row } from '../types/
 import {
   ActionResult,
   attack,
+  canUseLeaderAbility,
   castSpell,
   discardCards,
   findEmptySlot,
@@ -13,9 +14,12 @@ import {
   getHpBonus,
   getMonsterPositions,
   getOpponent,
+  isMoveLocked,
   moveMonster,
   otherRow,
   playCard,
+  skipFreeSpell,
+  activateLeaderAbility,
 } from './gameLogic';
 
 // AI（相手プレイヤー）の思考ルーチン。
@@ -43,7 +47,7 @@ const preferredRow = (card: MonsterCard): Row =>
 const aiMove = (state: GameState, player: PlayerId): GameState => {
   let best: { from: FieldPosition; to: FieldPosition; gain: number } | null = null;
   for (const { position: from, card } of monstersOnField(state, player)) {
-    if (state.turnState.summonedThisTurnIds.includes(card.id)) continue;
+    if (state.turnState.summonedThisTurnIds.includes(card.id) || isMoveLocked(state, player, card.id)) continue;
     const to = findEmptySlot(state, player, otherRow(from.row));
     if (!to) continue;
     const gain = getAttackPower(state, card, to.row) - getAttackPower(state, card, from.row);
@@ -72,7 +76,7 @@ const aiSummon = (state: GameState, player: PlayerId): GameState => {
       if (!slot) continue;
       const result = playCard(current, player, handIndex, slot);
       if (result.ok) {
-        current = result.state;
+        current = resolveAiFreeSpell(result.state, player);
         summoned = true;
         break;
       }
@@ -110,19 +114,40 @@ const findSpellTarget = (state: GameState, player: PlayerId, spell: SpellCard): 
         .sort((a, b) => monsterValue(b.card) - monsterValue(a.card));
       return damaged[0]?.position ?? null;
     }
-    case 'damage': {
-      const killable = monstersOnField(state, defender)
+    case 'damage':
+    case 'damageBack': {
+      const rows: Row[] | undefined = effect.kind === 'damageBack' ? ['backRow'] : undefined;
+      const killable = monstersOnField(state, defender, rows)
         .filter(({ card }) => getEffectiveHp(state, defender, card) <= effect.amount)
         .sort((a, b) => monsterValue(b.card) - monsterValue(a.card));
       return killable[0]?.position ?? null;
     }
+    case 'forceMove':
+      return findForceMoveTarget(state, player);
     case 'drawDiscard':
     case 'disableLeader':
+    case 'catchUpEnergy':
       return null; // 対象を選ばないスペル（shouldCastUntargeted で判断する）
   }
 };
 
-// 対象を選ばないスペルを使うか：引く枚数ぶん山札が残っていれば使う
+// 強制移動の対象：相手の前衛の最後の1体を後衛へ動かすと大将を攻撃できるなら、それを選ぶ。
+// そうでなければ、移動で攻撃力が一番下がる相手モンスター（2以上下がるときだけ）
+const findForceMoveTarget = (state: GameState, player: PlayerId): FieldPosition | null => {
+  const defender = getOpponent(player);
+  const movable = monstersOnField(state, defender).filter(({ position }) => findEmptySlot(state, defender, otherRow(position.row)));
+  const front = monstersOnField(state, defender, ['frontRow']);
+  const canHitLeader = monstersOnField(state, player, ['frontRow']).some(({ card }) => getAttackPower(state, card, 'frontRow') > 0);
+  if (front.length === 1 && canHitLeader && movable.some(({ card }) => card.id === front[0].card.id)) return front[0].position;
+  let best: { position: FieldPosition; loss: number } | null = null;
+  for (const { position, card } of movable) {
+    const loss = getAttackPower(state, card, position.row) - getAttackPower(state, card, otherRow(position.row));
+    if (loss >= 2 && (!best || loss > best.loss)) best = { position, loss };
+  }
+  return best?.position ?? null;
+};
+
+// 対象を選ばないスペルを使うか
 // - 引いて捨てる：引く枚数ぶん山札が残っていれば使う
 // - 相手の大将の効果をなくす：相手の大将の効果で HP が上がっている相手モンスターがいれば使う
 const shouldCastUntargeted = (state: GameState, player: PlayerId, spell: SpellCard): boolean => {
@@ -132,6 +157,11 @@ const shouldCastUntargeted = (state: GameState, player: PlayerId, spell: SpellCa
       return state.players[player].deck.length >= spell.effect.amount;
     case 'disableLeader':
       return monstersOnField(state, defender).some(({ card }) => getHpBonus(state, defender, card) > 0);
+    case 'catchUpEnergy': {
+      // 増えるエネルギーが払うコストより多いときだけ
+      const gain = monstersOnField(state, defender).length - monstersOnField(state, player).length;
+      return gain > (state.pendingFreeSpell ? 0 : spell.cost);
+    }
     default:
       return false;
   }
@@ -166,11 +196,16 @@ const aiCastSpells = (state: GameState, player: PlayerId): GameState => {
   }
 };
 
-const tryCastOneSpell = (state: GameState, player: PlayerId): GameState | null => {
-  const { hand, currentEnergy } = state.players[player];
+// 手札のスペルを1枚使う（使えたら新しい状態、使えなければ null）。canPay でコストを払えるかを判断する
+const tryCastOneSpell = (
+  state: GameState,
+  player: PlayerId,
+  canPay: (spell: SpellCard) => boolean = spell => spell.cost <= state.players[player].currentEnergy,
+): GameState | null => {
+  const { hand } = state.players[player];
   for (let handIndex = 0; handIndex < hand.length; handIndex++) {
     const card = hand[handIndex];
-    if (isMonster(card) || card.cost > currentEnergy) continue;
+    if (isMonster(card) || !canPay(card)) continue;
     if (isUntargetedSpell(card)) {
       if (!shouldCastUntargeted(state, player, card)) continue;
       const result = castSpell(state, player, handIndex);
@@ -185,8 +220,19 @@ const tryCastOneSpell = (state: GameState, player: PlayerId): GameState | null =
   return null;
 };
 
+// 召喚したときの効果でコストなしのスペルを使えるなら、使う価値のあるものを使う（なければ使わない）
+const resolveAiFreeSpell = (state: GameState, player: PlayerId): GameState => {
+  const pending = state.pendingFreeSpell;
+  if (pending?.player !== player) return state;
+  return tryCastOneSpell(state, player, spell => spell.cost <= pending.maxCost) ?? applyIfOk(state, skipFreeSpell(state, player));
+};
+
+// 1回だけ使える大将の効果は、使えるようになったらすぐ使う
+const aiUseLeaderAbility = (state: GameState, player: PlayerId): GameState =>
+  canUseLeaderAbility(state, player) ? applyIfOk(state, activateLeaderAbility(state, player)) : state;
+
 export const runAiPlayPhase = (state: GameState, player: PlayerId): GameState =>
-  aiCastSpells(aiSummon(aiMove(state, player), player), player);
+  aiCastSpells(aiSummon(aiMove(aiUseLeaderAbility(state, player), player), player), player);
 
 // --- Attack フェイズ ---
 

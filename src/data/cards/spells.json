@@ -31,8 +31,8 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-17T13:28:00.000Z",
-    "cost": 3,
+    "updatedAt": "2026-10-18T05:46:54.000Z",
+    "cost": 1,
     "target": "enemyMonster",
     "effect": {
       "kind": "damage",
@@ -96,6 +96,66 @@
     "target": "allyMonster",
     "effect": {
       "kind": "buffBa",
+      "amount": 1
+    }
+  },
+  {
+    "id": "cmvde4e0w32ku",
+    "name": "逆転の兆し",
+    "race": "スペル",
+    "effectText": "相手のモンスターの数と自分のモンスターの数の差分エネルギーを増やす",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T05:46:54.000Z",
+    "cost": 1,
+    "target": "none",
+    "effect": {
+      "kind": "catchUpEnergy",
+      "amount": 1
+    }
+  },
+  {
+    "id": "cmvdecarqav9w",
+    "name": "投擲",
+    "race": "スペル",
+    "effectText": "相手の後衛のモンスター1体に3ダメージ",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T05:46:54.000Z",
+    "cost": 1,
+    "target": "enemyMonster",
+    "effect": {
+      "kind": "damageBack",
+      "amount": 3
+    }
+  },
+  {
+    "id": "cmvdedg1ew8k5",
+    "name": "強制移動",
+    "race": "スペル",
+    "effectText": "相手モンスター1体を移動させる。相手は次の番そのモンスターを移動できない",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T05:46:54.000Z",
+    "cost": 1,
+    "target": "enemyMonster",
+    "effect": {
+      "kind": "forceMove",
       "amount": 1
     }
   }

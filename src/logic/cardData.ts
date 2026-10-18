@@ -1,4 +1,7 @@
-import { Card, ImplementationStatus, LeaderAbility, LeaderCard, MonsterCard, SpellCard, SpellEffect, SpellTarget } from '../types/card';
+import {
+  Card, IMPLEMENTED_EFFECT_KINDS, ImplementationStatus, LeaderAbility, LeaderCard, MonsterAbility, MonsterCard, SpellCard, SpellEffect, SpellTarget,
+  getSpellTarget,
+} from '../types/card';
 import { cardImage } from './builtinCards';
 import { summarizeEffect } from './spellEffects';
 
@@ -28,6 +31,7 @@ export interface MonsterRecord extends RecordBase {
   frontAttack: number;
   backAttack: number;
   hp: number;
+  effect?: MonsterAbility | null; // 実装済みの効果（まだなければ null）
 }
 
 export interface SpellRecord extends RecordBase {
@@ -84,19 +88,8 @@ export const toMonsterRecord = (card: MonsterCard): MonsterRecord => ({
   frontAttack: card.frontAttack,
   backAttack: card.backAttack,
   hp: card.cardHp,
+  ...(card.ability ? { effect: card.ability } : {}),
 });
-
-const spellTarget = (card: SpellCard): SpellTarget => {
-  switch (card.effect.kind) {
-    case 'damage': return 'enemyMonster';
-    case 'heal':
-    case 'buffFa':
-    case 'buffBa': return 'allyMonster';
-    case 'drawDiscard': return 'none';
-    case 'disableLeader': return 'enemyLeader';
-    case 'custom': return card.target ?? 'none';
-  }
-};
 
 export const toSpellRecord = (card: SpellCard): SpellRecord => {
   const { effect } = card;
@@ -108,7 +101,7 @@ export const toSpellRecord = (card: SpellCard): SpellRecord => {
     flavorText: card.flavorText ?? '',
     implementation: card.implementation ?? (implemented ? '実装済み' : '未実装'),
     cost: card.cost,
-    target: spellTarget(card),
+    target: getSpellTarget(card),
     effect: effect.kind === 'custom' ? null : { kind: effect.kind, amount: effect.amount },
   };
 };
@@ -150,6 +143,7 @@ export const fromMonsterRecord = (record: MonsterRecord): MonsterCard => ({
   frontAttack: record.frontAttack,
   backAttack: record.backAttack,
   cardHp: record.hp,
+  ...(record.effect ? { ability: record.effect } : {}),
 });
 
 export const fromSpellRecord = (record: SpellRecord): SpellCard => {
@@ -187,19 +181,30 @@ const isRecordBase = (r: RecordBase): boolean =>
 
 export const isMonsterRecord = (r: unknown): r is MonsterRecord => {
   const m = r as MonsterRecord;
-  return isRecordBase(m) && isNumber(m.cost) && isNumber(m.frontAttack) && isNumber(m.backAttack) && isNumber(m.hp);
+  return isRecordBase(m) && isNumber(m.cost) && isNumber(m.frontAttack) && isNumber(m.backAttack) && isNumber(m.hp)
+    && (m.effect === undefined || m.effect === null || isMonsterAbility(m.effect));
 };
 
 export const isSpellRecord = (r: unknown): r is SpellRecord => {
   const s = r as SpellRecord;
   const effectOk = s?.effect === null
-    || (!!s?.effect && ['damage', 'heal', 'buffFa', 'buffBa', 'drawDiscard', 'disableLeader'].includes(s.effect.kind) && isNumber(s.effect.amount));
+    || (!!s?.effect && IMPLEMENTED_EFFECT_KINDS.includes(s.effect.kind) && isNumber(s.effect.amount));
   return isRecordBase(s) && isNumber(s.cost) && TARGETS.includes(s.target) && effectOk;
 };
 
 const isLeaderAbility = (effect: unknown): effect is LeaderAbility => {
   const e = effect as LeaderAbility;
-  return !!e && e.kind === 'raceHpBonus' && isText(e.race) && isNumber(e.amount);
+  if (!e) return false;
+  switch (e.kind) {
+    case 'raceHpBonus': return isText(e.race) && isNumber(e.amount);
+    case 'rallyEnergy': return isNumber(e.hpThreshold) && isNumber(e.amount);
+    default: return false;
+  }
+};
+
+const isMonsterAbility = (effect: unknown): effect is MonsterAbility => {
+  const e = effect as MonsterAbility;
+  return !!e && e.kind === 'freeSpellOnSummon' && isNumber(e.maxCost);
 };
 
 export const isLeaderRecord = (r: unknown): r is LeaderRecord => {

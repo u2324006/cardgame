@@ -1,5 +1,25 @@
 [
   {
+    "id": "l001",
+    "name": "大将",
+    "race": "",
+    "effectText": "このカードのHPが10以下になったときに一度だけ使える自分のエネルギーを3つ増やす",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": "leader.svg"
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T05:46:54.000Z",
+    "maxHp": 20,
+    "effect": {
+      "kind": "rallyEnergy",
+      "hpThreshold": 10,
+      "amount": 3
+    }
+  },
+  {
     "id": "lmvcf1jj9pvni",
     "name": "マウンテンゴーレム",
     "race": "ゴーレム",

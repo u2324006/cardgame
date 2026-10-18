@@ -32,6 +32,7 @@ const createInitialPlayerState = (fullDeck: Card[], leader: LeaderCard = getDefa
       frontRow: emptyRow(),
       backRow: emptyRow(),
     },
+    leaderAbilityUsed: false,
   };
 };
 
@@ -60,4 +61,6 @@ export const createInitialGameState = (playerDeck: DeckList = createDefaultDeckL
   turnState: createInitialTurnState(),
   winner: null,
   pendingDiscard: null,
+  pendingFreeSpell: null,
+  moveLocks: [],
 });

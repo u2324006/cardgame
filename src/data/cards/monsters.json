@@ -88,5 +88,27 @@
     "frontAttack": 5,
     "backAttack": 2,
     "hp": 14
+  },
+  {
+    "id": "cmvde9cnvtqso",
+    "name": "見習い魔導士",
+    "race": "",
+    "effectText": "このカードを召喚したとき、手札からコスト1のスペルをコストを払わずに使用できる",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T05:46:54.000Z",
+    "cost": 1,
+    "frontAttack": 0,
+    "backAttack": 1,
+    "hp": 3,
+    "effect": {
+      "kind": "freeSpellOnSummon",
+      "maxCost": 1
+    }
   }
 ]

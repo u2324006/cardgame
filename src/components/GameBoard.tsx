@@ -3,7 +3,9 @@ import '../styles/GameBoard.css';
 import { createInitialGameState } from '../logic/initialState';
 import {
   ActionResult,
+  activateLeaderAbility,
   attack,
+  canUseLeaderAbility,
   castSpell,
   discardCards,
   endTurn,
@@ -16,6 +18,7 @@ import {
   moveMonster,
   nextPhase,
   playCard,
+  skipFreeSpell,
 } from '../logic/gameLogic';
 import { getSpellTargetSide, isMonster, isUntargetedSpell } from '../types/card';
 import { DeckList } from '../logic/deck';
@@ -60,7 +63,16 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
   // 自分のターンで行動済みのモンスター（攻撃済み・移動済み）は薄く表示する
   const usedLabels: Record<string, string> = {};
   if (isPlayerTurn && phase === 'Play' && turnState.movedMonsterId) usedLabels[turnState.movedMonsterId] = '移動済み';
+  if (isPlayerTurn && phase === 'Play') {
+    gameState.moveLocks.filter(lock => lock.player === HUMAN).forEach(lock => { usedLabels[lock.cardId] = '移動不可'; });
+  }
   if (isPlayerTurn && phase === 'Attack') turnState.attackedMonsterIds.forEach(id => { usedLabels[id] = '攻撃済み'; });
+
+  // 大将カードの効果が働いていないときのラベル
+  const leaderStatusOf = (player: PlayerId): string | undefined => {
+    if (!isLeaderActive(gameState, player)) return '効果停止中';
+    return players[player].leaderAbilityUsed ? '効果使用済み' : undefined;
+  };
 
   // 大将カードの効果で上がっている HP（両方のプレイヤーの場のモンスター）
   const hpBonusesOf = (owner: PlayerId): Record<string, number> => {
@@ -127,6 +139,10 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
     }
     setGameState(result.state);
   };
+
+  // モンスターの効果で、コストなしで使うスペルを選んでいるところ
+  const pendingFreeSpell = gameState.pendingFreeSpell?.player === HUMAN ? gameState.pendingFreeSpell : null;
+  const leaderAbility = players[HUMAN].leader.ability;
 
   // 選んだ手札が、対象を選ばずに使うスペルなら「使う」ボタンを出す
   const selectedHandCard = selection.kind === 'hand' ? players[HUMAN].hand[selection.index] : undefined;
@@ -249,6 +265,19 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
             「{untargetedSpell.name}」を使う
           </button>
         )}
+        {pendingFreeSpell && !pendingDiscard && (
+          <div className="discard-panel" role="alert">
+            <p>「{pendingFreeSpell.source}」の効果：手札のコスト{pendingFreeSpell.maxCost}以下のスペルを1枚、<b>コストを払わずに</b>使えます。</p>
+            <button type="button" className="secondary-button" onClick={() => apply(skipFreeSpell(gameState, HUMAN))}>
+              使わない
+            </button>
+          </div>
+        )}
+        {leaderAbility?.kind === 'rallyEnergy' && canUseLeaderAbility(gameState, HUMAN) && (
+          <button type="button" className="primary-button cast-button" onClick={() => apply(activateLeaderAbility(gameState, HUMAN))}>
+            大将の効果を使う（エネルギー +{leaderAbility.amount}）
+          </button>
+        )}
         {pendingDiscard && (
           <div className="discard-panel" role="alert">
             <p>手札から墓地に置くカードを<b>{pendingDiscard.count}枚</b>選んでください（{discardIndices.length} / {pendingDiscard.count}）。</p>
@@ -275,7 +304,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
           isLeaderTargetable={canDirectAttack}
           onInspect={setHovered}
           hpBonuses={hpBonusesOf(AI)}
-          isLeaderDisabled={!isLeaderActive(gameState, AI)}
+          leaderStatus={leaderStatusOf(AI)}
         />
         <div className="front-line" aria-hidden="true"><span>前線</span></div>
         <PlayerArea
@@ -289,7 +318,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
           usedLabels={usedLabels}
           markedHandIndices={discardIndices}
           hpBonuses={hpBonusesOf(HUMAN)}
-          isLeaderDisabled={!isLeaderActive(gameState, HUMAN)}
+          leaderStatus={leaderStatusOf(HUMAN)}
         />
       </div>
       <ControlPanel
@@ -297,7 +326,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
         phase={phase}
         isPlayerTurn={isPlayerTurn}
         canAttack={canAttackThisTurn(gameState)}
-        isBusy={!!pendingDiscard}
+        isBusy={!!pendingDiscard || !!pendingFreeSpell}
         onNextPhase={() => setGameState(nextPhase)}
         onEndTurn={() => setGameState(endTurn)}
         onExit={onExit}

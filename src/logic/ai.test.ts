@@ -1,6 +1,6 @@
 import { GameState, Phase } from '../types/gameState';
 import { runAiAttackPhase, runAiPlayPhase } from './ai';
-import { backSpell, disableSpell, drawSpell, emptyState, fireSpell, healSpell, inPhase, monster, spell, withField, withGolemLeader, withPlayer } from './testUtils';
+import { apprentice, backSpell, catchUpSpell, disableSpell, drawSpell, forceMoveSpell, throwSpell, withRallyLeader, emptyState, fireSpell, healSpell, inPhase, monster, spell, withField, withGolemLeader, withPlayer } from './testUtils';
 
 const aiTurn = (state: GameState, phase: Phase = 'Play'): GameState => inPhase(state, phase, 'player2');
 
@@ -158,6 +158,56 @@ describe('AI with leader-related spells', () => {
     state = withField(state, 'player2', 'backRow', [monster('archer', { frontAttack: 0, backAttack: 3 }), null, null]);
     const next = runAiPlayPhase(state, 'player2');
     expect(next.turnState.backAttackBuffs).toEqual({ archer: 1 });
+  });
+});
+
+describe('AI with the second batch of cards', () => {
+  it('casts a free spell after summoning 見習い魔導士', () => {
+    const fire = { ...fireSpell, cost: 1 };
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 1, hand: [apprentice(), fire] });
+    state = withField(state, 'player1', 'frontRow', [monster('weak', { cardHp: 3 }), null, null]);
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.pendingFreeSpell).toBeNull();
+    expect(next.players.player1.field.frontRow[0]).toBeNull();
+    expect(next.players.player2.hand).toHaveLength(0);
+  });
+
+  it('skips the free spell when nothing is worth casting', () => {
+    const state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 1, hand: [apprentice(), { ...fireSpell, cost: 1 }] });
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.pendingFreeSpell).toBeNull();
+    expect(next.players.player2.hand).toHaveLength(1);
+  });
+
+  it('throws at a back-row monster it can destroy', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 1, hand: [throwSpell] });
+    state = withField(state, 'player1', 'frontRow', [monster('f', { cardHp: 2 }), null, null]);
+    state = withField(state, 'player1', 'backRow', [monster('b', { cardHp: 3 }), null, null]);
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.players.player1.field.backRow[0]).toBeNull();
+    expect(next.players.player1.field.frontRow[0]).not.toBeNull();
+  });
+
+  it('force-moves the last front-row blocker so it can attack the leader', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 1, hand: [forceMoveSpell] });
+    state = withField(state, 'player2', 'frontRow', [monster('atk', { frontAttack: 4 }), null, null]);
+    state = withField(state, 'player1', 'frontRow', [null, monster('wall', { cardHp: 20 }), null]);
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.players.player1.field.frontRow[1]).toBeNull();
+    expect(next.players.player1.field.backRow[1]?.id).toBe('wall');
+  });
+
+  it('casts 逆転の兆し only when it gains more energy than it costs, and uses the leader ability', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 1, hand: [catchUpSpell] });
+    state = withField(state, 'player1', 'frontRow', [monster('a'), null, null]);
+    expect(runAiPlayPhase(state, 'player2').players.player2.hand).toHaveLength(1);
+    state = withField(state, 'player1', 'backRow', [monster('b'), monster('c'), null]);
+    expect(runAiPlayPhase(state, 'player2').players.player2.currentEnergy).toBe(3);
+
+    const rally = withPlayer(withRallyLeader(aiTurn(emptyState()), 'player2'), 'player2', { currentEnergy: 0, specialCardHp: 8 });
+    const next = runAiPlayPhase(rally, 'player2');
+    expect(next.players.player2.leaderAbilityUsed).toBe(true);
+    expect(next.players.player2.currentEnergy).toBe(3);
   });
 });
 

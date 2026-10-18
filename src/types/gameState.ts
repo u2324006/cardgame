@@ -18,6 +18,7 @@ export interface PlayerState {
   hand: Card[];
   graveyard: Card[];
   field: Record<Row, (MonsterCard | null)[]>; // 場に出せるのはモンスターのみ
+  leaderAbilityUsed: boolean; // 1回だけ使える大将の効果を使ったか
 }
 
 // ターン終了時にリセットされる状態
@@ -36,6 +37,19 @@ export interface PendingDiscard {
   count: number;
 }
 
+// モンスターの効果で、手札のスペルをコストを払わずに使えるところ（使うか、使わないを選ぶ）
+export interface PendingFreeSpell {
+  player: PlayerId;
+  maxCost: number;
+  source: string; // 効果を出したカードの名前
+}
+
+// 移動できなくなっているモンスター（player の次のターンが終わるまで）
+export interface MoveLock {
+  player: PlayerId;
+  cardId: string;
+}
+
 export interface GameState {
   players: Record<PlayerId, PlayerState>;
   currentPlayer: PlayerId;
@@ -44,6 +58,8 @@ export interface GameState {
   turnState: TurnState;
   winner: PlayerId | null;
   pendingDiscard: PendingDiscard | null; // 手札から墓地に置くカードを選んでいる途中（その間はほかの行動ができない）
+  pendingFreeSpell: PendingFreeSpell | null; // コストなしで使うスペルを選んでいる途中（その間はほかの行動ができない）
+  moveLocks: MoveLock[];
 }
 
 export type AttackTarget =
