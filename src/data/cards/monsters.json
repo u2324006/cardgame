@@ -136,7 +136,7 @@
     "id": "m014",
     "name": "槍兵",
     "race": "戦士",
-    "effectText": "前衛から攻撃したとき、相手の後衛のモンスター1体（HPが一番低いもの）にも1ダメージを与える。",
+    "effectText": "前衛から攻撃したとき、相手の後衛のモンスター1体を選び、1ダメージを与える。",
     "flavorText": "",
     "illustration": {
       "prompt": "",
@@ -144,7 +144,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "updatedAt": "2026-10-18T06:25:35.000Z",
     "cost": 2,
     "frontAttack": 3,
     "backAttack": 0,

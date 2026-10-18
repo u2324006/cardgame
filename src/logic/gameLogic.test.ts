@@ -424,7 +424,7 @@ describe('front/back row monsters', () => {
     expect(unwrap(attack(state, 'player1', { row: 'backRow', index: 0 }, target)).players.player2.field.backRow[0]).toBeNull();
   });
 
-  it('槍兵 also deals 1 damage to the weakest back-row enemy when attacking from the front', () => {
+  it('槍兵 also deals 1 damage to the chosen back-row enemy (the weakest when not chosen)', () => {
     let state = withField(emptyState(), 'player1', 'frontRow', [withAbility('sp', { kind: 'pierce', amount: 1 }, { frontAttack: 3 }), null, null]);
     state = withField(state, 'player2', 'frontRow', [null, monster('f', { cardHp: 9 }), null]);
     state = atk(withField(state, 'player2', 'backRow', [monster('b1', { cardHp: 4 }), null, monster('b2', { cardHp: 2 })]));
@@ -432,6 +432,8 @@ describe('front/back row monsters', () => {
     expect(next.players.player2.field.frontRow[1]?.cardHp).toBe(6);
     expect(next.players.player2.field.backRow[2]?.cardHp).toBe(1);
     expect(next.players.player2.field.backRow[0]?.cardHp).toBe(4);
+    const chosen = unwrap(attack(state, 'player1', { row: 'frontRow', index: 0 }, { type: 'monster', position: { row: 'frontRow', index: 1 } }, { row: 'backRow', index: 0 }));
+    expect([chosen.players.player2.field.backRow[0]?.cardHp, chosen.players.player2.field.backRow[2]?.cardHp]).toEqual([3, 2]);
   });
 
   it('盾兵 takes 1 less damage only in the front row', () => {
@@ -562,6 +564,17 @@ describe('front/back row spells', () => {
   });
 });
 
+describe('move locks and own spells', () => {
+  it('a monster locked by the opponent can still be moved by its owner\'s spells, but not by a normal move', () => {
+    let state = withField(emptyState(), 'player1', 'frontRow', [monster('m001-0', { cardHp: 2 }), null, null]);
+    state = { ...state, moveLocks: [{ player: 'player1', cardId: 'm001-0' }] };
+    state = withPlayer(state, 'player1', { hand: [spellOf('retreat', { kind: 'retreat', amount: 2 })] });
+    expect(moveMonster(state, 'player1', { row: 'frontRow', index: 0 }, { row: 'backRow', index: 0 }).ok).toBe(false);
+    const next = unwrap(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 }));
+    expect(next.players.player1.field.backRow[0]?.id).toBe('m001-0');
+  });
+});
+
 describe('front/back row leaders', () => {
   it('軍師 heals a monster by 1 whenever it moves', () => {
     let state = withLeaderAbility(emptyState(), 'player1', { kind: 'healOnMove', amount: 1 });
@@ -570,10 +583,12 @@ describe('front/back row leaders', () => {
     expect(next.players.player1.field.backRow[0]?.cardHp).toBe(3);
   });
 
-  it('弓兵隊長 raises the BA of own back-row monsters', () => {
-    let state = withLeaderAbility(emptyState(), 'player1', { kind: 'backRowBaBonus', amount: 1 });
+  it('弓兵隊長 raises the BA of own back-row monsters once its HP is half or less', () => {
+    let state = withLeaderAbility(emptyState(), 'player1', { kind: 'backRowBaBonus', amount: 1, hpRatio: 0.5 });
     state = withField(state, 'player1', 'backRow', [monster('a', { backAttack: 2 }), null, null]);
     state = withField(state, 'player2', 'backRow', [monster('e', { backAttack: 2 }), null, null]);
+    expect(getAttackPower(state, state.players.player1.field.backRow[0]!, 'backRow')).toBe(2); // HP 20 / 20
+    state = withPlayer(state, 'player1', { specialCardHp: 10 });
     expect(getAttackPower(state, state.players.player1.field.backRow[0]!, 'backRow')).toBe(3);
     expect(getAttackPower(state, state.players.player2.field.backRow[0]!, 'backRow')).toBe(2);
   });

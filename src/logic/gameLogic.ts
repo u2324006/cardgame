@@ -69,7 +69,9 @@ export const getAttackPower = (state: GameState, card: MonsterCard, row: Row): n
   }
   const owner = ownerOf(state, card.id);
   const leaderAbility = owner ? getActiveLeaderAbility(state, owner) : undefined;
-  const leaderBonus = leaderAbility?.kind === 'backRowBaBonus' ? leaderAbility.amount : 0;
+  const leaderBonus = owner && leaderAbility?.kind === 'backRowBaBonus' && isLeaderHpLowEnough(state, owner, leaderAbility.hpRatio)
+    ? leaderAbility.amount
+    : 0;
   return card.backAttack + (turnState.backAttackBuffs[card.id] ?? 0) + leaderBonus;
 };
 
@@ -77,6 +79,12 @@ export const getAttackPower = (state: GameState, card: MonsterCard, row: Row): n
 
 export const isLeaderActive = (state: GameState, player: PlayerId): boolean =>
   !state.turnState.disabledLeaders.includes(player);
+
+// 大将の HP が最大 HP × ratio 以下か（ratio がなければ条件なし）
+const isLeaderHpLowEnough = (state: GameState, player: PlayerId, ratio?: number): boolean => {
+  const { specialCardHp, leader } = state.players[player];
+  return ratio === undefined || specialCardHp <= leader.maxHp * ratio;
+};
 
 // 今働いている大将の効果（指揮低下でなくなっていれば undefined）
 const getActiveLeaderAbility = (state: GameState, player: PlayerId): LeaderAbility | undefined =>
@@ -544,6 +552,7 @@ export const attack = (
   attackerPlayer: PlayerId,
   attackerPosition: FieldPosition,
   target: AttackTarget,
+  pierceTarget?: FieldPosition, // 槍兵の追加ダメージを与える相手の後衛（なければ HP が一番低いもの）
 ): ActionResult => {
   const turnError = checkTurn(state, attackerPlayer, 'Attack');
   if (turnError) return failure(turnError);
@@ -577,18 +586,24 @@ export const attack = (
     next = damageSpecialCard(state, defender, attackPower);
   }
 
-  // 槍兵：前衛から攻撃したとき、相手の後衛のモンスター（HP が一番低いもの）にもダメージ
+  // 槍兵：前衛から攻撃したとき、選んだ相手の後衛のモンスターにもダメージ（選んだものがいなければ HP が一番低いもの）
   const pierce = attacker.ability;
   if (pierce?.kind === 'pierce' && attackerPosition.row === 'frontRow') {
     const hpAt = (position: FieldPosition) => getEffectiveHp(next, defender, getCardAt(next, defender, position) as MonsterCard);
-    const weakest = getMonsterPositions(next, defender, ['backRow']).sort((a, b) => hpAt(a) - hpAt(b))[0];
-    if (weakest) next = damageMonster(next, defender, weakest, pierce.amount);
+    const chosen = pierceTarget?.row === 'backRow' && getCardAt(next, defender, pierceTarget) ? pierceTarget : undefined;
+    const victim = chosen ?? getMonsterPositions(next, defender, ['backRow']).sort((a, b) => hpAt(a) - hpAt(b))[0];
+    if (victim) next = damageMonster(next, defender, victim, pierce.amount);
   }
 
   return success(updateTurnState(next, {
     attackedMonsterIds: [...next.turnState.attackedMonsterIds, attacker.id],
   }));
 };
+
+// 槍兵の追加ダメージの対象を選ぶ必要があるか（前衛から攻撃し、相手の後衛に2体以上いるとき）
+export const needsPierceTarget = (state: GameState, player: PlayerId, attackerPosition: FieldPosition): boolean =>
+  getCardAt(state, player, attackerPosition)?.ability?.kind === 'pierce' && attackerPosition.row === 'frontRow'
+  && getMonsterPositions(state, getOpponent(player), ['backRow']).length >= 2;
 
 // 狙撃手：後衛にいれば、相手の前衛にモンスターがいても相手の後衛を攻撃できる
 export const canSnipe = (attacker: MonsterCard, position: FieldPosition): boolean =>

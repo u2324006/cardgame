@@ -62,7 +62,7 @@
     "id": "l003",
     "name": "弓兵隊長",
     "race": "",
-    "effectText": "自分の後衛のモンスターのBAを1上げる。",
+    "effectText": "このカードのHPが半分以下のとき、自分の後衛のモンスターのBAを1上げる。",
     "flavorText": "",
     "illustration": {
       "prompt": "",
@@ -70,11 +70,12 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "updatedAt": "2026-10-18T06:25:35.000Z",
     "maxHp": 20,
     "effect": {
       "kind": "backRowBaBonus",
-      "amount": 1
+      "amount": 1,
+      "hpRatio": 0.5
     }
   },
   {

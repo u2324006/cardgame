@@ -49,7 +49,7 @@
 |---|---|---|
 | `freeSpellOnSummon` | 召喚したとき、手札のコスト maxCost 以下のスペルを1枚、コストを払わずに使える | `{ "kind": "freeSpellOnSummon", "maxCost": 1 }` |
 | `sniper` | 後衛にいるとき、相手の前衛にモンスターがいても相手の後衛を攻撃できる | `{ "kind": "sniper" }` |
-| `pierce` | 前衛から攻撃したとき、相手の後衛の一番 HP が低いモンスターにも amount ダメージ | `{ "kind": "pierce", "amount": 1 }` |
+| `pierce` | 前衛から攻撃したとき、相手の後衛のモンスター1体（プレイヤーが選ぶ。AI は一番 HP が低いもの）にも amount ダメージ | `{ "kind": "pierce", "amount": 1 }` |
 | `frontGuard` | 前衛にいるとき、受けるダメージを amount 減らす | `{ "kind": "frontGuard", "amount": 1 }` |
 | `medic` | 後衛にいるとき、自分のターン終了時に同じ位置の前衛の味方の HP を amount 回復 | `{ "kind": "medic", "amount": 2 }` |
 | `commander` | 後衛にいるとき、1ターンに1回、前衛の味方1体の FA をそのターンだけ amount 上げる | `{ "kind": "commander", "amount": 1 }` |
@@ -100,7 +100,7 @@
 | `raceHpBonus` | 種族が race の自分のモンスターの HP を amount 上げる（大将ゾーンにあるあいだずっと） | `{ "kind": "raceHpBonus", "race": "ゴーレム", "amount": 1 }` |
 | `rallyEnergy` | 大将の HP が hpThreshold 以下のとき1回だけ使え、エネルギーを amount 増やす | `{ "kind": "rallyEnergy", "hpThreshold": 10, "amount": 3 }` |
 | `healOnMove` | 自分のモンスターが移動したとき、そのモンスターの HP を amount 回復 | `{ "kind": "healOnMove", "amount": 1 }` |
-| `backRowBaBonus` | 自分の後衛のモンスターの BA を amount 上げる | `{ "kind": "backRowBaBonus", "amount": 1 }` |
+| `backRowBaBonus` | 自分の後衛のモンスターの BA を amount 上げる。hpRatio があれば、大将の HP が最大 HP × hpRatio 以下のときだけ | `{ "kind": "backRowBaBonus", "amount": 1, "hpRatio": 0.5 }` |
 | `extraDrawWhenBehind` | ターン開始時、自分のモンスターが相手より margin 体以上少なければ amount 枚多く引く | `{ "kind": "extraDrawWhenBehind", "margin": 2, "amount": 1 }` |
 
 ## AI へのお願い（効果の実装）

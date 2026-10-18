@@ -198,8 +198,8 @@ const isLeaderAbility = (effect: unknown): effect is LeaderAbility => {
   switch (e.kind) {
     case 'raceHpBonus': return isText(e.race) && isNumber(e.amount);
     case 'rallyEnergy': return isNumber(e.hpThreshold) && isNumber(e.amount);
-    case 'healOnMove':
-    case 'backRowBaBonus': return isNumber(e.amount);
+    case 'healOnMove': return isNumber(e.amount);
+    case 'backRowBaBonus': return isNumber(e.amount) && (e.hpRatio === undefined || isNumber(e.hpRatio));
     case 'extraDrawWhenBehind': return isNumber(e.margin) && isNumber(e.amount);
     default: return false;
   }

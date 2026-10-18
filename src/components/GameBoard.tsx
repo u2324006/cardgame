@@ -19,13 +19,14 @@ import {
   isLeaderActive,
   hasFrontRowMonsters,
   moveMonster,
+  needsPierceTarget,
   nextPhase,
   playCard,
   skipFreeSpell,
 } from '../logic/gameLogic';
 import { getSpellTargetSide, isMonster, isUntargetedSpell } from '../types/card';
 import { DeckList } from '../logic/deck';
-import { FieldPosition, GameState, PlayerId, Row } from '../types/gameState';
+import { AttackTarget, FieldPosition, GameState, PlayerId, Row } from '../types/gameState';
 import { useAutoProgress } from '../hooks/useAutoProgress';
 import { useTimedMessage } from '../hooks/useTimedMessage';
 import PlayerArea from './PlayerArea';
@@ -42,7 +43,8 @@ type Selection =
   | { kind: 'hand'; index: number } // 召喚・スペルに使う手札
   | { kind: 'move'; from: FieldPosition } // 移動させるモンスター
   | { kind: 'attacker'; from: FieldPosition } // 攻撃させるモンスター
-  | { kind: 'command'; from: FieldPosition }; // 指揮する指揮官（次に FA を上げる前衛の味方を選ぶ）
+  | { kind: 'command'; from: FieldPosition } // 指揮する指揮官（次に FA を上げる前衛の味方を選ぶ）
+  | { kind: 'pierce'; from: FieldPosition; target: AttackTarget }; // 槍兵の攻撃（次に追加ダメージを与える相手の後衛を選ぶ）
 
 const NO_SELECTION: Selection = { kind: 'none' };
 
@@ -218,8 +220,19 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
     selectMoveSource(position);
   };
 
+  // 攻撃する。槍兵で相手の後衛が2体以上いるときは、追加ダメージの対象を選んでから攻撃する
+  const startAttack = (from: FieldPosition, target: AttackTarget) => {
+    if (needsPierceTarget(gameState, HUMAN, from)) setSelection({ kind: 'pierce', from, target });
+    else apply(attack(gameState, HUMAN, from, target));
+  };
+
   const handleAttackPhaseClick = (player: PlayerId, position: FieldPosition) => {
     const clickedCard = getCardAt(gameState, player, position);
+    if (selection.kind === 'pierce') {
+      if (player === AI && clickedCard && position.row === 'backRow') apply(attack(gameState, HUMAN, selection.from, selection.target, position));
+      else showMessage('追加で1ダメージを与える相手の後衛のモンスターを選んでください。');
+      return;
+    }
     if (player === HUMAN && clickedCard) {
       if (selection.kind === 'attacker' && samePosition(selection.from, position)) {
         setSelection(NO_SELECTION);
@@ -229,7 +242,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
         setSelection({ kind: 'attacker', from: position });
       }
     } else if (player === AI && clickedCard && selection.kind === 'attacker') {
-      apply(attack(gameState, HUMAN, selection.from, { type: 'monster', position }));
+      startAttack(selection.from, { type: 'monster', position });
     } else {
       setSelection(NO_SELECTION);
     }
@@ -258,7 +271,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
   // 相手の大将カードをクリック（ダイレクトアタック）
   const handleOpponentLeaderClick = () => {
     if (!isPlayerTurn || phase !== 'Attack' || selection.kind !== 'attacker') return;
-    apply(attack(gameState, HUMAN, selection.from, { type: 'player' }));
+    startAttack(selection.from, { type: 'player' });
   };
 
   if (winner) {
@@ -297,6 +310,12 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
           <button type="button" className="primary-button cast-button" onClick={() => setSelection({ kind: 'command', from: selection.from })}>
             指揮する（前衛の味方1体の FA を上げる）
           </button>
+        )}
+        {selection.kind === 'pierce' && (
+          <div className="discard-panel" role="status">
+            <p>槍兵の効果：追加で1ダメージを与える<b>相手の後衛のモンスター</b>を選んでください。</p>
+            <button type="button" className="secondary-button" onClick={() => setSelection(NO_SELECTION)}>攻撃をやめる</button>
+          </div>
         )}
         {selection.kind === 'command' && (
           <div className="discard-panel" role="status">
