@@ -64,8 +64,8 @@
 | `drawOnFrontDeath` | 前衛で倒されたとき amount 枚引く | `{ "kind": "drawOnFrontDeath", "amount": 1 }` |
 | `drawIfLowEnergy` | 後衛にいるとき、ターン終了時にエネルギーが threshold 以下なら amount 枚引く | `{ "kind": "drawIfLowEnergy", "amount": 1, "threshold": 1 }` |
 | `discardOnSummon` | 召喚したとき、手札を amount 枚選んで捨てる | `{ "kind": "discardOnSummon", "amount": 1 }` |
-| `damageWhenDiscarded` | 相手の効果で手札から捨てられたとき、相手のモンスター1体に amount ダメージ | `{ "kind": "damageWhenDiscarded", "amount": 2 }` |
-| `summonWhenDiscarded` | 相手の効果で手札から捨てられたとき、空きがあれば場に出る | `{ "kind": "summonWhenDiscarded" }` |
+| `damageWhenDiscarded` | 相手の効果で手札から捨てられたとき、持ち主が選んだ相手のモンスター1体に amount ダメージ | `{ "kind": "damageWhenDiscarded", "amount": 2 }` |
+| `summonWhenDiscarded` | 相手の効果で手札から捨てられたとき、空きがあれば持ち主が選んだ空きスロットに出る | `{ "kind": "summonWhenDiscarded" }` |
 
 ### スペルだけ
 

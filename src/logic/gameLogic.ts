@@ -253,6 +253,11 @@ const checkTurn = (state: GameState, player: PlayerId, phase: Phase, allow?: 'fr
   if (state.currentPlayer !== player) return '自分のターンではありません。';
   if (state.pendingDiscard) return `先に、墓地に置くカードを${state.pendingDiscard.count}枚選んでください。`;
   if (state.pendingPick) return `先に、「${state.pendingPick.source}」の効果でカードを選んでください。`;
+  if (state.pendingReaction) {
+    return state.pendingReaction.player === player
+      ? `先に、「${state.pendingReaction.card.name}」の効果の対象を選んでください。`
+      : `相手が「${state.pendingReaction.card.name}」の効果の対象を選んでいます。`;
+  }
   if (state.pendingFreeSpell && allow !== 'freeSpell') return `先に、「${state.pendingFreeSpell.source}」の効果で使うスペルを選ぶか、「使わない」を選んでください。`;
   if (state.pendingFreeSummon && allow !== 'freeSummon') return `先に、「${state.pendingFreeSummon.source}」の効果で召喚するモンスターを選ぶか、「召喚しない」を選んでください。`;
   if (state.phase !== phase) return `${phase} フェイズではありません。`;
@@ -299,7 +304,7 @@ const getExtraDraws = (state: GameState, player: PlayerId): number => {
 };
 
 const isBusy = (state: GameState): boolean =>
-  !!(state.winner || state.pendingDiscard || state.pendingFreeSpell || state.pendingFreeSummon || state.pendingPick);
+  !!(state.winner || state.pendingDiscard || state.pendingFreeSpell || state.pendingFreeSummon || state.pendingPick || state.pendingReaction);
 
 // ターン終了時の効果（衛生兵：後衛から同じ位置の前衛の味方を回復、研究者：エネルギーが少なければ引く）
 const applyEndOfTurnEffects = (state: GameState): GameState => {
@@ -502,7 +507,7 @@ const castSupplyLine = (state: GameState, player: PlayerId, handIndex: number, c
   return success(updatePlayer(sacrificed, player, p => drawCards(p, unique.length)));
 };
 
-// 相手の効果で手札を捨てさせられる。怨霊は相手のモンスターにダメージ、幻影兵は場に出る
+// 相手の効果で手札を捨てさせられる。怨霊（相手のモンスターにダメージ）と幻影兵（場に出る）は、持ち主が対象を選ぶ
 const forceDiscard = (state: GameState, victim: PlayerId, handIndex: number): GameState => {
   const card = state.players[victim].hand[handIndex];
   if (!card) return state;
@@ -510,21 +515,27 @@ const forceDiscard = (state: GameState, victim: PlayerId, handIndex: number): Ga
   const toGraveyard = updatePlayer(removed, victim, p => ({ ...p, graveyard: [...p.graveyard, card] }));
   if (!isMonster(card)) return toGraveyard;
   const { ability } = card;
-  if (ability?.kind === 'summonWhenDiscarded') {
-    const row: Row = card.backAttack > card.frontAttack ? 'backRow' : 'frontRow';
-    const slot = findEmptySlot(removed, victim, row) ?? findEmptySlot(removed, victim, otherRow(row));
-    return slot ? updatePlayer(removed, victim, p => ({ ...p, field: setSlot(p.field, slot, card) })) : toGraveyard;
+  if (ability?.kind === 'summonWhenDiscarded' && ROWS.some(row => findEmptySlot(removed, victim, row))) {
+    return { ...removed, pendingReaction: { player: victim, card, kind: 'summon', amount: 0 } };
   }
-  if (ability?.kind === 'damageWhenDiscarded') {
-    const forcer = getOpponent(victim);
-    const hpOf = (pos: FieldPosition) => getEffectiveHp(toGraveyard, forcer, getCardAt(toGraveyard, forcer, pos) as MonsterCard);
-    const costOf = (pos: FieldPosition) => (getCardAt(toGraveyard, forcer, pos) as MonsterCard).cost;
-    // 倒せるモンスターのうちコストが一番高いもの。倒せなければコストが一番高いもの
-    const target = getMonsterPositions(toGraveyard, forcer)
-      .sort((a, b) => Number(hpOf(b) <= ability.amount) - Number(hpOf(a) <= ability.amount) || costOf(b) - costOf(a))[0];
-    return target ? damageMonster(toGraveyard, forcer, target, ability.amount) : toGraveyard;
+  if (ability?.kind === 'damageWhenDiscarded' && countMonsters(toGraveyard, getOpponent(victim)) > 0) {
+    return { ...toGraveyard, pendingReaction: { player: victim, card, kind: 'damage', amount: ability.amount } };
   }
   return toGraveyard;
+};
+
+// 捨てられたカードの効果の対象を選ぶ（怨霊：相手のモンスター、幻影兵：自分の空きスロット）
+export const resolveReaction = (state: GameState, player: PlayerId, position: FieldPosition): ActionResult => {
+  const pending = state.pendingReaction;
+  if (pending?.player !== player) return failure('いまは選ぶ場面ではありません。');
+  const done = { ...state, pendingReaction: null };
+  if (pending.kind === 'summon') {
+    if (getCardAt(state, player, position)) return failure('空いているスロットを選んでください。');
+    return success(updatePlayer(done, player, p => ({ ...p, field: setSlot(p.field, position, pending.card) })));
+  }
+  const opponent = getOpponent(player);
+  if (!getCardAt(state, opponent, position)) return failure('相手のモンスターを選んでください。');
+  return success(damageMonster(done, opponent, position, pending.amount));
 };
 
 // 墓地や相手の手札からカードを選ぶ（墓荒らし：墓地のモンスターを手札へ、情報戦：相手のスペルを捨てさせる）。
@@ -621,7 +632,7 @@ const castUntargetedSpell = (state: GameState, player: PlayerId, handIndex: numb
       return success({ ...paid, pendingDiscard: { player, count: 1, then: { kind: 'draw', amount: effect.amount } } });
     case 'randomDiscard': {
       let next = paid;
-      for (let i = 0; i < effect.amount && next.players[opponent].hand.length > 0; i++) {
+      for (let i = 0; i < effect.amount && next.players[opponent].hand.length > 0 && !next.pendingReaction; i++) {
         next = forceDiscard(next, opponent, Math.floor(Math.random() * next.players[opponent].hand.length));
       }
       return success(next);

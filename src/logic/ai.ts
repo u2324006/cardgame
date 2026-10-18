@@ -26,6 +26,7 @@ import {
   otherRow,
   pickCard,
   playCard,
+  resolveReaction,
   skipFreeSpell,
   skipFreeSummon,
   activateLeaderAbility,
@@ -423,12 +424,28 @@ const resolveAiPick = (state: GameState, player: PlayerId): GameState => {
   return applyIfOk(state, pickCard(state, player, scored[0]?.index ?? null));
 };
 
+// 捨てられた怨霊・幻影兵の対象を選ぶ（怨霊：倒せる中で一番強い相手、なければ一番強い相手。幻影兵：得意な列の空き）
+export const resolveAiReaction = (state: GameState, player: PlayerId): GameState => {
+  const pending = state.pendingReaction;
+  if (pending?.player !== player) return state;
+  if (pending.kind === 'summon') {
+    const row = preferredRow(pending.card);
+    const slot = findEmptySlot(state, player, row) ?? findEmptySlot(state, player, otherRow(row));
+    return slot ? applyIfOk(state, resolveReaction(state, player, slot)) : state;
+  }
+  const defender = getOpponent(player);
+  const target = monstersOnField(state, defender)
+    .map(m => ({ ...m, kills: getEffectiveHp(state, defender, m.card) <= pending.amount }))
+    .sort((a, b) => Number(b.kills) - Number(a.kills) || monsterValue(b.card) - monsterValue(a.card))[0];
+  return target ? applyIfOk(state, resolveReaction(state, player, target.position)) : state;
+};
+
 // 選ぶ途中の場面（捨てる・コストなしのスペルや召喚・カードを選ぶ）がなくなるまで片付ける
 const resolveAiPending = (state: GameState, player: PlayerId): GameState => {
   let current = state;
   for (let i = 0; i < 10; i++) {
     const before = current;
-    current = resolveAiPick(resolveAiFreeSummon(resolveAiFreeSpell(resolveAiDiscard(current, player), player), player), player);
+    current = resolveAiReaction(resolveAiPick(resolveAiFreeSummon(resolveAiFreeSpell(resolveAiDiscard(current, player), player), player), player), player);
     if (current === before) return current;
   }
   return current;

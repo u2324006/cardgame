@@ -90,6 +90,15 @@ export interface LeaderGuard {
   amount: number;
 }
 
+// 相手の効果で手札から捨てられたカードの効果を、持ち主が選ぶところ
+// （怨霊：ダメージを与える相手のモンスター、幻影兵：出る空きスロット）
+export interface PendingReaction {
+  player: PlayerId; // 捨てられたカードの持ち主（選ぶ人）
+  card: MonsterCard;
+  kind: 'damage' | 'summon';
+  amount: number;
+}
+
 export interface GameState {
   players: Record<PlayerId, PlayerState>;
   currentPlayer: PlayerId;
@@ -101,6 +110,7 @@ export interface GameState {
   pendingFreeSpell: PendingFreeSpell | null; // コストなしで使うスペルを選んでいる途中（その間はほかの行動ができない）
   pendingFreeSummon: PendingFreeSummon | null; // コストなしで召喚するモンスターを選んでいる途中
   pendingPick: PendingPick | null; // 墓地や相手の手札からカードを選んでいる途中
+  pendingReaction: PendingReaction | null; // 捨てられたカードの効果の対象を、持ち主が選んでいる途中
   moveLocks: MoveLock[];
   leaderGuards: LeaderGuard[]; // 大将が受けるダメージを減らす効果（籠城）
 }

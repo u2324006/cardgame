@@ -13,6 +13,7 @@ import {
   nextPhase,
   commandMonster,
   pickCard,
+  resolveReaction,
   skipFreeSummon,
   getSummonCost,
   playCard,
@@ -803,7 +804,11 @@ describe('resource cards: discarding', () => {
     state = withPlayer(state, 'player1', { hand: [spellOf('loot', { kind: 'randomDiscard', amount: 1 }, 2)], currentEnergy: 2 });
     const looted = unwrap(castSpell(state, 'player1', 0));
     expect(looted.players.player2.hand).toHaveLength(0);
-    expect(looted.players.player1.field.frontRow[0]).toBeNull(); // 怨霊の 2 ダメージ
+    expect(looted.pendingReaction).toMatchObject({ player: 'player2', kind: 'damage', amount: 2 });
+    expect(endTurn(looted)).toBe(looted); // 怨霊の持ち主が選ぶまで進めない
+    expect(resolveReaction(looted, 'player2', { row: 'frontRow', index: 1 }).ok).toBe(false); // 空きは選べない
+    const struck = unwrap(resolveReaction(looted, 'player2', { row: 'frontRow', index: 0 }));
+    expect(struck.players.player1.field.frontRow[0]).toBeNull(); // 選んだモンスターに 2 ダメージ
 
     const phantom = withAbility('ph', { kind: 'summonWhenDiscarded' }, { frontAttack: 3, backAttack: 3 });
     let spy = withPlayer(emptyState(), 'player2', { hand: [phantom, spell] });
@@ -812,18 +817,23 @@ describe('resource cards: discarding', () => {
     expect(revealed.pendingPick?.kind).toBe('opponentHand');
     expect(pickCard(revealed, 'player1', 0).ok).toBe(false); // モンスターは選べない
     expect(unwrap(pickCard(revealed, 'player1', 1)).players.player2.hand.map(c => c.id)).toEqual(['ph']);
+    expect(unwrap(pickCard(revealed, 'player1', 1)).pendingReaction).toBeNull(); // スペルを捨てても反応はない
     // 自分の効果で捨てた幻影兵は場に出ない（相手の効果のときだけ）
     const own = withPlayer(emptyState(), 'player1', { hand: [spellOf('alchemy', { kind: 'discardDraw', amount: 1 }), phantom], deck });
     const discarded = unwrap(discardCards(unwrap(castSpell(own, 'player1', 0)), 'player1', [0]));
     expect(discarded.players.player1.field.frontRow.every(c => c === null)).toBe(true);
   });
 
-  it('幻影兵 enters the field when discarded by the opponent', () => {
+  it('幻影兵 enters the slot its owner chooses when discarded by the opponent', () => {
     const phantom = withAbility('ph', { kind: 'summonWhenDiscarded' }, { frontAttack: 3, backAttack: 3 });
-    let state = withPlayer(emptyState(), 'player2', { hand: [phantom] });
+    let state = withField(withPlayer(emptyState(), 'player2', { hand: [phantom] }), 'player2', 'backRow', [monster('x'), null, null]);
     state = withPlayer(state, 'player1', { hand: [spellOf('loot', { kind: 'randomDiscard', amount: 1 }, 2)], currentEnergy: 2 });
     const next = unwrap(castSpell(state, 'player1', 0));
-    expect(next.players.player2.field.frontRow[0]?.id).toBe('ph');
+    expect(next.pendingReaction).toMatchObject({ player: 'player2', kind: 'summon' });
+    expect(resolveReaction(next, 'player2', { row: 'backRow', index: 0 }).ok).toBe(false); // 埋まっている
+    const placed = unwrap(resolveReaction(next, 'player2', { row: 'backRow', index: 2 }));
+    expect(placed.players.player2.field.backRow[2]?.id).toBe('ph');
+    expect(placed.players.player2.graveyard).toHaveLength(0);
   });
 
   it('仕切り直し discards the whole hand and draws the same number', () => {

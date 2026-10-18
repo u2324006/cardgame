@@ -71,6 +71,7 @@ export const createInitialGameState = (playerDeck: DeckList = createDefaultDeckL
   pendingFreeSpell: null,
   pendingFreeSummon: null,
   pendingPick: null,
+  pendingReaction: null,
   moveLocks: [],
   leaderGuards: [],
 });

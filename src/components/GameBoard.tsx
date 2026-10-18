@@ -23,6 +23,7 @@ import {
   needsPierceTarget,
   nextPhase,
   pickCard,
+  resolveReaction,
   playCard,
   skipFreeSpell,
   skipFreeSummon,
@@ -169,6 +170,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
   const pendingFreeSpell = gameState.pendingFreeSpell?.player === HUMAN ? gameState.pendingFreeSpell : null;
   const pendingFreeSummon = gameState.pendingFreeSummon?.player === HUMAN ? gameState.pendingFreeSummon : null;
   const pendingPick = gameState.pendingPick?.player === HUMAN ? gameState.pendingPick : null;
+  const pendingReaction = gameState.pendingReaction?.player === HUMAN ? gameState.pendingReaction : null;
   const leaderAbility = players[HUMAN].leader.ability;
 
   // 選んだ手札が、対象を選ばずに使うスペルなら「使う」ボタンを出す
@@ -284,6 +286,13 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
   };
 
   const handleFieldClick = (player: PlayerId, row: Row, index: number) => {
+    // 捨てられた怨霊・幻影兵の対象選び（相手のターン中でも選ぶ）
+    if (pendingReaction) {
+      const expected = pendingReaction.kind === 'damage' ? AI : HUMAN;
+      if (player === expected) apply(resolveReaction(gameState, HUMAN, { row, index }));
+      else showMessage(pendingReaction.kind === 'damage' ? '相手のモンスターを選んでください。' : '自分の空いているスロットを選んでください。');
+      return;
+    }
     if (!isPlayerTurn) return;
     if (pendingDiscard) {
       showMessage(`先に、墓地に置くカードを${pendingDiscard.count}枚選んでください。`);
@@ -359,6 +368,13 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
             >
               使う（{selection.positions.length}枚引く）
             </button>
+          </div>
+        )}
+        {pendingReaction && (
+          <div className="discard-panel" role="alert">
+            {pendingReaction.kind === 'damage'
+              ? <p>相手の効果で「{pendingReaction.card.name}」が捨てられました。<b>{pendingReaction.amount}ダメージを与える相手のモンスター</b>を選んでください。</p>
+              : <p>相手の効果で「{pendingReaction.card.name}」が捨てられました。<b>場に出す自分の空きスロット</b>を選んでください。</p>}
           </div>
         )}
         {pendingFreeSummon && (
@@ -447,7 +463,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
         phase={phase}
         isPlayerTurn={isPlayerTurn}
         canAttack={canAttackThisTurn(gameState)}
-        isBusy={!!pendingDiscard || !!pendingFreeSpell || !!pendingFreeSummon || !!pendingPick}
+        isBusy={!!pendingDiscard || !!pendingFreeSpell || !!pendingFreeSummon || !!pendingPick || !!gameState.pendingReaction}
         onNextPhase={() => setGameState(nextPhase)}
         onEndTurn={() => setGameState(endTurn)}
         onExit={onExit}

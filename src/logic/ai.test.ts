@@ -1,7 +1,7 @@
 import { GameState, Phase } from '../types/gameState';
 import { createInitialGameState } from './initialState';
 import { nextPhase } from './gameLogic';
-import { runAiAttackPhase, runAiPlayPhase } from './ai';
+import { resolveAiReaction, runAiAttackPhase, runAiPlayPhase } from './ai';
 import { apprentice, spellOf, withAbility, backSpell, catchUpSpell, disableSpell, drawSpell, forceMoveSpell, throwSpell, withRallyLeader, emptyState, fireSpell, healSpell, inPhase, monster, spell, withField, withGolemLeader, withPlayer } from './testUtils';
 
 const aiTurn = (state: GameState, phase: Phase = 'Play'): GameState => inPhase(state, phase, 'player2');
@@ -268,6 +268,11 @@ describe('AI vs AI full games', () => {
     let state = createInitialGameState();
     for (let step = 0; step < 2000 && !state.winner; step++) {
       const player = state.currentPlayer;
+      if (state.pendingReaction) {
+        // 相手の効果で捨てられた怨霊・幻影兵は、その持ち主（相手側の AI）が選ぶ
+        state = resolveAiReaction(state, state.pendingReaction.player);
+        continue;
+      }
       if (state.phase === 'Play') state = runAiPlayPhase(state, player);
       else if (state.phase === 'Attack') state = runAiAttackPhase(state, player);
       const advanced = nextPhase(state);
@@ -282,6 +287,16 @@ describe('AI vs AI full games', () => {
       const finished = playGame();
       expect(finished.winner).not.toBeNull();
     }
+  });
+});
+
+describe('AI reactions to discards', () => {
+  it('chooses a target for 怨霊 discarded by the opponent', () => {
+    let state = withField(emptyState(), 'player1', 'frontRow', [monster('tough', { cardHp: 9 }), monster('weak', { cardHp: 2, cost: 3 }), null]);
+    state = { ...state, pendingReaction: { player: 'player2', card: monster('wr'), kind: 'damage', amount: 2 } };
+    const next = resolveAiReaction(state, 'player2');
+    expect(next.pendingReaction).toBeNull();
+    expect(next.players.player1.field.frontRow[1]).toBeNull();
   });
 });
 
