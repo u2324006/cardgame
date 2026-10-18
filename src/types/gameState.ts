@@ -29,6 +29,8 @@ export interface TurnState {
   attackBuffs: Record<string, number>; // { [cardId]: FA上昇値 }
   backAttackBuffs: Record<string, number>; // { [cardId]: BA上昇値 }
   disabledLeaders: PlayerId[]; // このターンの間、大将カードの効果がなくなっているプレイヤー
+  movedToFrontIds: string[]; // このターンに後衛から前衛へ移動したモンスター（突撃兵の効果）
+  commandUsedIds: string[]; // このターンに指揮した指揮官
 }
 
 // 「カードを引いてその後手札から墓地に置く」効果などで、捨てるカードを選んでいるところ
@@ -50,6 +52,12 @@ export interface MoveLock {
   cardId: string;
 }
 
+// player の大将が受けるダメージを1回につき amount 減らす（player の相手のターンが終わるまで）
+export interface LeaderGuard {
+  player: PlayerId;
+  amount: number;
+}
+
 export interface GameState {
   players: Record<PlayerId, PlayerState>;
   currentPlayer: PlayerId;
@@ -60,6 +68,7 @@ export interface GameState {
   pendingDiscard: PendingDiscard | null; // 手札から墓地に置くカードを選んでいる途中（その間はほかの行動ができない）
   pendingFreeSpell: PendingFreeSpell | null; // コストなしで使うスペルを選んでいる途中（その間はほかの行動ができない）
   moveLocks: MoveLock[];
+  leaderGuards: LeaderGuard[]; // 大将が受けるダメージを減らす効果（籠城）
 }
 
 export type AttackTarget =

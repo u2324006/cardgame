@@ -20,6 +20,8 @@ interface PlayerAreaProps {
   markedHandIndices?: number[]; // 捨てるカードとして選んだ手札
   hpBonuses?: Record<string, number>; // { [カードID]: 大将の効果で上がっている HP }
   leaderStatus?: string; // 大将の効果が働いていないときのラベル（効果停止中など）
+  leaderBadge?: string; // 大将にかかっている効果（籠城など）
+  handCosts?: number[]; // 手札のカードの今のコスト（効果で下がっているとき）
 }
 
 const ROW_LABELS: Record<Row, string> = { frontRow: '前衛', backRow: '後衛' };
@@ -39,6 +41,8 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
   markedHandIndices,
   hpBonuses = {},
   leaderStatus,
+  leaderBadge,
+  handCosts,
 }) => {
   // 自分から見て前衛が中央側になるよう、相手は後衛→前衛の順に並べる
   const rows: Row[] = isOpponent ? ['backRow', 'frontRow'] : ['frontRow', 'backRow'];
@@ -52,6 +56,7 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
         onCardHover={card => onInspect(card ? { kind: 'card', card } : null)}
         selectedCardIndex={selectedCardIndex}
         markedIndices={markedHandIndices}
+        costs={handCosts}
       />
     );
 
@@ -87,6 +92,7 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
             onClick={onLeaderClick}
             isTargetable={isLeaderTargetable}
             statusLabel={leaderStatus}
+            badge={leaderBadge}
             onMouseEnter={() => onInspect({ kind: 'leader', leader, hp: specialCardHp, statusLabel: leaderStatus })}
             onMouseLeave={() => onInspect(null)}
           />

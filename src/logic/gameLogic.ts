@@ -1,4 +1,4 @@
-import { Card, MonsterCard, getSpellTargetSide, isImplementedEffect, isMonster, isUntargetedSpell } from '../types/card';
+import { Card, LeaderAbility, MonsterCard, getSpellTargetSide, isImplementedEffect, isMonster, isUntargetedSpell } from '../types/card';
 import {
   AttackTarget,
   FieldPosition,
@@ -55,26 +55,46 @@ export const getRound = (turn: number): number => Math.ceil(turn / 2);
 // 先手の1ターン目（ゲーム全体の1ターン目）は攻撃できない
 export const canAttackThisTurn = (state: GameState): boolean => state.turn > 1;
 
-// 攻撃力：前衛なら FA ＋ FA を上げる効果、後衛なら BA ＋ BA を上げる効果
-export const getAttackPower = (state: GameState, card: MonsterCard, row: Row): number =>
-  row === 'frontRow'
-    ? card.frontAttack + (state.turnState.attackBuffs[card.id] ?? 0)
-    : card.backAttack + (state.turnState.backAttackBuffs[card.id] ?? 0);
+// 場にいるモンスターの持ち主（場にいなければ null）
+const ownerOf = (state: GameState, cardId: string): PlayerId | null =>
+  (['player1', 'player2'] as PlayerId[]).find(player =>
+    ROWS.some(row => state.players[player].field[row].some(card => card?.id === cardId))) ?? null;
+
+// 攻撃力：前衛なら FA、後衛なら BA に、上げる効果（スペル・突撃兵・大将の効果）を足したもの
+export const getAttackPower = (state: GameState, card: MonsterCard, row: Row): number => {
+  const { turnState } = state;
+  if (row === 'frontRow') {
+    const charge = card.ability?.kind === 'charge' && turnState.movedToFrontIds.includes(card.id) ? card.ability.amount : 0;
+    return card.frontAttack + (turnState.attackBuffs[card.id] ?? 0) + charge;
+  }
+  const owner = ownerOf(state, card.id);
+  const leaderAbility = owner ? getActiveLeaderAbility(state, owner) : undefined;
+  const leaderBonus = leaderAbility?.kind === 'backRowBaBonus' ? leaderAbility.amount : 0;
+  return card.backAttack + (turnState.backAttackBuffs[card.id] ?? 0) + leaderBonus;
+};
 
 // --- 大将カードの効果 ---
 
 export const isLeaderActive = (state: GameState, player: PlayerId): boolean =>
   !state.turnState.disabledLeaders.includes(player);
 
+// 今働いている大将の効果（指揮低下でなくなっていれば undefined）
+const getActiveLeaderAbility = (state: GameState, player: PlayerId): LeaderAbility | undefined =>
+  isLeaderActive(state, player) ? state.players[player].leader.ability : undefined;
+
 // 大将カードの効果で上がっている HP（owner はそのモンスターの持ち主）
 export const getHpBonus = (state: GameState, owner: PlayerId, card: MonsterCard): number => {
-  const ability = state.players[owner].leader.ability;
-  if (!ability || !isLeaderActive(state, owner)) return 0;
-  switch (ability.kind) {
-    case 'raceHpBonus': return card.race === ability.race ? ability.amount : 0;
-    case 'rallyEnergy': return 0;
-  }
+  const ability = getActiveLeaderAbility(state, owner);
+  return ability?.kind === 'raceHpBonus' && card.race === ability.race ? ability.amount : 0;
 };
+
+// 召喚のコスト（伏兵：相手の場のモンスターが自分より多いと下がる）
+export const getSummonCost = (state: GameState, player: PlayerId, card: MonsterCard): number =>
+  card.ability?.kind === 'ambush' && countMonsters(state, getOpponent(player)) > countMonsters(state, player)
+    ? Math.max(0, card.cost - card.ability.amount)
+    : card.cost;
+
+export const countMonsters = (state: GameState, player: PlayerId): number => getMonsterPositions(state, player).length;
 
 // 1回だけ使える大将の効果（rallyEnergy）を、いま使えるか
 export const canUseLeaderAbility = (state: GameState, player: PlayerId): boolean => {
@@ -121,6 +141,37 @@ const setSlot = (
   [position.row]: field[position.row].map((slot, i) => (i === position.index ? card : slot)),
 });
 
+// 移動したあとの効果：後衛から前衛へ動いたことの記録（突撃兵）と、大将の効果での回復（軍師）
+const afterMoved = (state: GameState, player: PlayerId, to: FieldPosition, fromRow: Row): GameState => {
+  const card = getCardAt(state, player, to);
+  if (!card || fromRow === to.row) return state;
+  let next = fromRow === 'backRow'
+    ? updateTurnState(state, { movedToFrontIds: [...state.turnState.movedToFrontIds, card.id] })
+    : state;
+  const ability = getActiveLeaderAbility(next, player);
+  if (ability?.kind === 'healOnMove') {
+    const healed = { ...card, cardHp: Math.min(card.cardHp + ability.amount, getMaxHp(card)) };
+    next = updatePlayer(next, player, p => ({ ...p, field: setSlot(p.field, to, healed) }));
+  }
+  return next;
+};
+
+// a と b のモンスターを入れ替える（片方が空なら、ただの移動）
+const swapMonsters = (state: GameState, player: PlayerId, a: FieldPosition, b: FieldPosition): GameState => {
+  const cardA = getCardAt(state, player, a);
+  const cardB = getCardAt(state, player, b);
+  let next = updatePlayer(state, player, p => ({ ...p, field: setSlot(setSlot(p.field, a, cardB), b, cardA) }));
+  if (cardA) next = afterMoved(next, player, b, a.row);
+  if (cardB) next = afterMoved(next, player, a, b.row);
+  return next;
+};
+
+// 反対の列の移動先：同じ位置。埋まっていれば反対の列の空いている一番左（どこも埋まっていれば null）
+const otherRowDestination = (state: GameState, player: PlayerId, from: FieldPosition): FieldPosition | null => {
+  const sameColumn = { row: otherRow(from.row), index: from.index };
+  return getCardAt(state, player, sameColumn) ? findEmptySlot(state, player, sameColumn.row) : sameColumn;
+};
+
 // 手札からカードを取り除き、コストを支払う
 const payFromHand = (playerState: PlayerState, handIndex: number, cost: number): PlayerState => ({
   ...playerState,
@@ -132,7 +183,9 @@ const payFromHand = (playerState: PlayerState, handIndex: number, cost: number):
 const damageMonster = (state: GameState, player: PlayerId, position: FieldPosition, amount: number): GameState => {
   const card = getCardAt(state, player, position);
   if (!card) return state;
-  const newHp = card.cardHp - amount;
+  // 盾兵：前衛にいるとき受けるダメージが減る
+  const reduction = card.ability?.kind === 'frontGuard' && position.row === 'frontRow' ? card.ability.amount : 0;
+  const newHp = card.cardHp - Math.max(0, amount - reduction);
   return updatePlayer(state, player, p =>
     newHp + getHpBonus(state, player, card) <= 0
       ? { ...p, field: setSlot(p.field, position, null), graveyard: [...p.graveyard, toOriginalCard(card)] }
@@ -149,8 +202,10 @@ const removeDefeatedMonsters = (state: GameState): GameState =>
     }, current), state);
 
 // 大将カードにダメージを与え、HPが0以下になったら相手の勝利とする
+// 籠城の効果があれば、1回のダメージを減らす
 const damageSpecialCard = (state: GameState, player: PlayerId, amount: number): GameState => {
-  const next = updatePlayer(state, player, p => ({ ...p, specialCardHp: p.specialCardHp - amount }));
+  const guard = state.leaderGuards.filter(g => g.player === player).reduce((sum, g) => sum + g.amount, 0);
+  const next = updatePlayer(state, player, p => ({ ...p, specialCardHp: p.specialCardHp - Math.max(0, amount - guard) }));
   return next.players[player].specialCardHp <= 0 && !next.winner
     ? { ...next, winner: getOpponent(player) }
     : next;
@@ -177,30 +232,43 @@ const drawPhase = (state: GameState): GameState => {
   const afterDeckOut = state.players[player].deck.length === 0
     ? damageSpecialCard(state, player, RULES.deckOutDamage)
     : state;
+  // 不屈の将：自分の場のモンスターが相手より margin 体以上少なければ、多く引く
+  const ability = getActiveLeaderAbility(state, player);
+  const extra = ability?.kind === 'extraDrawWhenBehind'
+    && countMonsters(state, getOpponent(player)) - countMonsters(state, player) >= ability.margin ? ability.amount : 0;
   const next = updatePlayer(afterDeckOut, player, playerState => {
-    if (skipDraw) {
-      return { ...playerState, currentEnergy: Math.min(playerState.currentEnergy + 1, playerState.maxEnergy) };
-    }
-    const [drawnCard, ...deck] = playerState.deck;
-    return {
-      ...playerState,
-      deck,
-      hand: drawnCard ? [...playerState.hand, drawnCard] : playerState.hand,
-      currentEnergy: Math.min(playerState.currentEnergy + 1, playerState.maxEnergy),
-    };
+    const charged = { ...playerState, currentEnergy: Math.min(playerState.currentEnergy + 1, playerState.maxEnergy) };
+    return skipDraw ? charged : drawCards(charged, 1 + extra);
   });
   return { ...next, phase: 'Play' };
 };
 
 const isBusy = (state: GameState): boolean => !!(state.winner || state.pendingDiscard || state.pendingFreeSpell);
 
+// ターン終了時の効果（衛生兵：後衛から同じ位置の前衛の味方を回復）
+const applyEndOfTurnEffects = (state: GameState): GameState => {
+  const player = state.currentPlayer;
+  return getMonsterPositions(state, player, ['backRow']).reduce((next, position) => {
+    const ability = getCardAt(next, player, position)?.ability;
+    if (ability?.kind !== 'medic') return next;
+    const front: FieldPosition = { row: 'frontRow', index: position.index };
+    const ally = getCardAt(next, player, front);
+    if (!ally) return next;
+    const healed = { ...ally, cardHp: Math.min(ally.cardHp + ability.amount, getMaxHp(ally)) };
+    return updatePlayer(next, player, p => ({ ...p, field: setSlot(p.field, front, healed) }));
+  }, state);
+};
+
 export const endTurn = (state: GameState): GameState => {
   if (isBusy(state)) return state;
+  const ended = applyEndOfTurnEffects(state);
   return {
-    ...state,
+    ...ended,
     // 自分のモンスターにかかっていた「次のターンは移動できない」は、自分のターンが終わると切れる
-    moveLocks: state.moveLocks.filter(lock => lock.player !== state.currentPlayer),
-    turn: state.turn + 1,
+    moveLocks: ended.moveLocks.filter(lock => lock.player !== state.currentPlayer),
+    // 籠城は、使ったプレイヤーの相手のターンが終わると切れる
+    leaderGuards: ended.leaderGuards.filter(guard => guard.player === state.currentPlayer),
+    turn: ended.turn + 1,
     currentPlayer: getOpponent(state.currentPlayer),
     phase: 'Draw',
     turnState: createInitialTurnState(),
@@ -230,11 +298,12 @@ export const playCard = (
   const card = playerState.hand[handIndex];
   if (!card) return failure('カードが選択されていません。');
   if (!isMonster(card)) return failure('スペルカードは味方モンスターを選んで使用してください。');
-  if (playerState.currentEnergy < card.cost) return failure('エネルギーが足りません！');
+  const cost = getSummonCost(state, player, card);
+  if (playerState.currentEnergy < cost) return failure('エネルギーが足りません！');
   if (getCardAt(state, player, position)) return failure('そのスロットには既にカードがあります。');
 
   const next = updatePlayer(state, player, p => ({
-    ...payFromHand(p, handIndex, card.cost),
+    ...payFromHand(p, handIndex, cost),
     field: setSlot(p.field, position, card),
   }));
   const summoned = updateTurnState(next, {
@@ -284,31 +353,50 @@ const castUntargetedSpell = (state: GameState, player: PlayerId, handIndex: numb
   const spell = state.players[player].hand[handIndex];
   if (!spell || isMonster(spell)) return failure('スペルカードが選択されていません。');
   const { effect } = spell;
-  if (effect.kind !== 'drawDiscard' && effect.kind !== 'disableLeader' && effect.kind !== 'catchUpEnergy') {
-    return failure('このスペルの効果はまだ実装されていません。');
+  const opponent = getOpponent(player);
+  if (effect.kind === 'lastStand' && countMonsters(state, player) >= countMonsters(state, opponent)) {
+    return failure('自分の場のモンスターが相手より少ないときだけ使えます。');
   }
 
   const paid = updatePlayer(state, player, p => ({
     ...payFromHand(p, handIndex, cost),
     graveyard: [...p.graveyard, spell],
   }));
-  if (effect.kind === 'catchUpEnergy') {
-    const opponent = getOpponent(player);
-    const gain = Math.max(0, getMonsterPositions(paid, opponent).length - getMonsterPositions(paid, player).length);
-    return success(updatePlayer(paid, player, p => ({ ...p, currentEnergy: Math.min(p.currentEnergy + gain, p.maxEnergy) })));
+  switch (effect.kind) {
+    case 'catchUpEnergy': {
+      const gain = Math.max(0, countMonsters(paid, opponent) - countMonsters(paid, player));
+      return success(updatePlayer(paid, player, p => ({ ...p, currentEnergy: Math.min(p.currentEnergy + gain, p.maxEnergy) })));
+    }
+    case 'disableLeader': {
+      const { disabledLeaders } = paid.turnState;
+      const disabled = updateTurnState(paid, {
+        disabledLeaders: disabledLeaders.includes(opponent) ? disabledLeaders : [...disabledLeaders, opponent],
+      });
+      return success(removeDefeatedMonsters(disabled));
+    }
+    case 'damageFrontAll':
+      return success(getMonsterPositions(paid, opponent, ['frontRow'])
+        .reduce((next, position) => damageMonster(next, opponent, position, effect.amount), paid));
+    case 'lastStand':
+      return success(getMonsterPositions(paid, player).reduce((next, position) => {
+        const card = getCardAt(next, player, position) as MonsterCard;
+        return addBuff(addBuff(next, 'attackBuffs', card.id, effect.amount), 'backAttackBuffs', card.id, effect.amount);
+      }, paid));
+    case 'guardLeader':
+      return success({ ...paid, leaderGuards: [...paid.leaderGuards, { player, amount: effect.amount }] });
+    case 'drawDiscard': {
+      const drawn = updatePlayer(paid, player, p => drawCards(p, effect.amount));
+      const count = Math.min(effect.amount, drawn.players[player].hand.length);
+      return success(count > 0 ? { ...drawn, pendingDiscard: { player, count } } : drawn);
+    }
+    default:
+      return failure('このスペルの効果はまだ実装されていません。');
   }
-  if (effect.kind === 'disableLeader') {
-    const opponent = getOpponent(player);
-    const { disabledLeaders } = paid.turnState;
-    const disabled = updateTurnState(paid, {
-      disabledLeaders: disabledLeaders.includes(opponent) ? disabledLeaders : [...disabledLeaders, opponent],
-    });
-    return success(removeDefeatedMonsters(disabled));
-  }
-  const drawn = updatePlayer(paid, player, p => drawCards(p, effect.amount));
-  const count = Math.min(effect.amount, drawn.players[player].hand.length);
-  return success(count > 0 ? { ...drawn, pendingDiscard: { player, count } } : drawn);
 };
+
+// そのターンだけ攻撃力を上げる
+const addBuff = (state: GameState, key: 'attackBuffs' | 'backAttackBuffs', cardId: string, amount: number): GameState =>
+  updateTurnState(state, { [key]: { ...state.turnState[key], [cardId]: (state.turnState[key][cardId] ?? 0) + amount } });
 
 // 手札から選んだカードを墓地に置く（pendingDiscard の枚数ちょうど）
 export const discardCards = (state: GameState, player: PlayerId, handIndices: number[]): ActionResult => {
@@ -325,12 +413,6 @@ export const discardCards = (state: GameState, player: PlayerId, handIndices: nu
     graveyard: [...p.graveyard, ...unique.map(i => p.hand[i])],
   }));
   return success({ ...next, pendingDiscard: null });
-};
-
-// 強制移動の移動先：反対の列の同じ位置。埋まっていれば反対の列の空いている一番左
-const forceMoveDestination = (state: GameState, player: PlayerId, from: FieldPosition): FieldPosition | null => {
-  const sameColumn = { row: otherRow(from.row), index: from.index };
-  return getCardAt(state, player, sameColumn) ? findEmptySlot(state, player, sameColumn.row) : sameColumn;
 };
 
 // スペルを使う。対象を選ぶスペルは、効果に応じて味方または相手の場のモンスターを targetPosition で指定する。
@@ -369,51 +451,68 @@ const castSpellUnchecked = (
   if (!target) {
     return failure(targetSide === 'ally' ? '対象の味方モンスターを選んでください。' : '対象の相手モンスターを選んでください。');
   }
-  if (spell.effect.kind === 'heal' && target.cardHp >= getMaxHp(target)) {
-    return failure('このモンスターはダメージを受けていません。');
-  }
-  if (spell.effect.kind === 'damageBack' && targetPosition.row !== 'backRow') {
-    return failure('相手の後衛のモンスターを選んでください。');
-  }
-  const destination = spell.effect.kind === 'forceMove' ? forceMoveDestination(state, targetPlayer, targetPosition) : null;
-  if (spell.effect.kind === 'forceMove' && !destination) return failure('反対の列に空きがないので移動させられません。');
+  const { effect } = spell;
+  const backCount = getMonsterPositions(state, player, ['backRow']).length;
+  const destination = effect.kind === 'forceMove' || effect.kind === 'retreat'
+    ? otherRowDestination(state, targetPlayer, targetPosition)
+    : { row: otherRow(targetPosition.row), index: targetPosition.index }; // 陣形転換・挑発は同じ位置の反対の列
+  const targetError = ((): string | null => {
+    switch (effect.kind) {
+      case 'heal': return target.cardHp >= getMaxHp(target) ? 'このモンスターはダメージを受けていません。' : null;
+      case 'damageBack':
+      case 'pullForward': return targetPosition.row !== 'backRow' ? '相手の後衛のモンスターを選んでください。' : null;
+      case 'volley':
+        if (targetPosition.row !== 'frontRow') return '相手の前衛のモンスターを選んでください。';
+        return backCount === 0 ? '自分の後衛にモンスターがいないので使えません。' : null;
+      case 'retreat':
+        if (targetPosition.row !== 'frontRow') return '自分の前衛のモンスターを選んでください。';
+        return destination ? null : '後衛に空きがないので下げられません。';
+      case 'forceMove': return destination ? null : '反対の列に空きがないので移動させられません。';
+      default: return null;
+    }
+  })();
+  if (targetError) return failure(targetError);
 
   const paid = updatePlayer(state, player, p => ({
     ...payFromHand(p, handIndex, cost),
     graveyard: [...p.graveyard, spell],
   }));
+  const to = destination as FieldPosition;
 
-  const { effect } = spell;
   switch (effect.kind) {
-    case 'buffFa': {
-      const { attackBuffs } = paid.turnState;
-      return success(updateTurnState(paid, {
-        attackBuffs: { ...attackBuffs, [target.id]: (attackBuffs[target.id] ?? 0) + effect.amount },
-      }));
-    }
+    case 'buffFa':
+      return success(addBuff(paid, 'attackBuffs', target.id, effect.amount));
+    case 'buffBa':
+      return success(addBuff(paid, 'backAttackBuffs', target.id, effect.amount));
     case 'heal': {
       const healed = { ...target, cardHp: Math.min(target.cardHp + effect.amount, getMaxHp(target)) };
       return success(updatePlayer(paid, player, p => ({ ...p, field: setSlot(p.field, targetPosition, healed) })));
     }
-    case 'buffBa': {
-      const { backAttackBuffs } = paid.turnState;
-      return success(updateTurnState(paid, {
-        backAttackBuffs: { ...backAttackBuffs, [target.id]: (backAttackBuffs[target.id] ?? 0) + effect.amount },
-      }));
-    }
     case 'damage':
     case 'damageBack':
       return success(damageMonster(paid, targetPlayer, targetPosition, effect.amount));
+    case 'volley':
+      return success(damageMonster(paid, targetPlayer, targetPosition, backCount * effect.amount));
     case 'forceMove': {
-      const moved = updatePlayer(paid, targetPlayer, p => ({
-        ...p,
-        field: setSlot(setSlot(p.field, targetPosition, null), destination as FieldPosition, target),
-      }));
+      const moved = swapMonsters(paid, targetPlayer, targetPosition, to);
       return success({ ...moved, moveLocks: [...moved.moveLocks, { player: targetPlayer, cardId: target.id }] });
     }
-    case 'drawDiscard':
-    case 'disableLeader':
-    case 'catchUpEnergy':
+    case 'pullForward': {
+      // 前衛に相手のモンスターがいれば入れ替える。動いたモンスターはどちらも次のターン移動できない
+      const displaced = getCardAt(paid, targetPlayer, to);
+      const moved = swapMonsters(paid, targetPlayer, targetPosition, to);
+      const locks = [target, displaced].flatMap(card => (card ? [{ player: targetPlayer, cardId: card.id }] : []));
+      return success({ ...moved, moveLocks: [...moved.moveLocks, ...locks] });
+    }
+    case 'retreat': {
+      const moved = swapMonsters(paid, player, targetPosition, to);
+      const card = getCardAt(moved, player, to) as MonsterCard;
+      const healed = { ...card, cardHp: Math.min(card.cardHp + effect.amount, getMaxHp(card)) };
+      return success(updatePlayer(moved, player, p => ({ ...p, field: setSlot(p.field, to, healed) })));
+    }
+    case 'swapColumn':
+      return success(swapMonsters(paid, player, targetPosition, to));
+    default:
       return failure('このスペルは対象を選ばずに使います。'); // isUntargetedSpell で先に処理している
   }
 };
@@ -436,10 +535,7 @@ export const moveMonster = (
   if (from.row === to.row) return failure('同じ列の中では移動できません。');
   if (getCardAt(state, player, to)) return failure('移動先には既にカードがあります。');
 
-  const next = updatePlayer(state, player, p => ({
-    ...p,
-    field: setSlot(setSlot(p.field, from, null), to, card),
-  }));
+  const next = swapMonsters(state, player, from, to);
   return success(updateTurnState(next, { movedMonsterId: card.id }));
 };
 
@@ -464,18 +560,63 @@ export const attack = (
 
   let next: GameState;
   if (target.type === 'monster') {
-    if (!getCardAt(state, defender, target.position)) return failure('攻撃対象のモンスターがいません。');
-    if (target.position.row === 'backRow' && frontRowBlocked) {
+    const defenderCard = getCardAt(state, defender, target.position);
+    if (!defenderCard) return failure('攻撃対象のモンスターがいません。');
+    if (target.position.row === 'backRow' && frontRowBlocked && !canSnipe(attacker, attackerPosition)) {
       return failure('前衛にモンスターがいるため、後衛を攻撃できません。');
     }
     next = damageMonster(state, defender, target.position, attackPower);
+    // 殿：前衛で倒されたら、攻撃したモンスターにダメージを返す
+    const { ability } = defenderCard;
+    if (ability?.kind === 'rearguard' && target.position.row === 'frontRow' && !getCardAt(next, defender, target.position)) {
+      next = damageMonster(next, attackerPlayer, attackerPosition, ability.amount);
+    }
   } else {
     if (attackerPosition.row === 'backRow') return failure('後衛のモンスターは大将カードを攻撃できません。');
     if (frontRowBlocked) return failure('前衛にモンスターがいるため、直接攻撃できません。');
     next = damageSpecialCard(state, defender, attackPower);
   }
 
+  // 槍兵：前衛から攻撃したとき、相手の後衛のモンスター（HP が一番低いもの）にもダメージ
+  const pierce = attacker.ability;
+  if (pierce?.kind === 'pierce' && attackerPosition.row === 'frontRow') {
+    const hpAt = (position: FieldPosition) => getEffectiveHp(next, defender, getCardAt(next, defender, position) as MonsterCard);
+    const weakest = getMonsterPositions(next, defender, ['backRow']).sort((a, b) => hpAt(a) - hpAt(b))[0];
+    if (weakest) next = damageMonster(next, defender, weakest, pierce.amount);
+  }
+
   return success(updateTurnState(next, {
     attackedMonsterIds: [...next.turnState.attackedMonsterIds, attacker.id],
   }));
+};
+
+// 狙撃手：後衛にいれば、相手の前衛にモンスターがいても相手の後衛を攻撃できる
+export const canSnipe = (attacker: MonsterCard, position: FieldPosition): boolean =>
+  attacker.ability?.kind === 'sniper' && position.row === 'backRow';
+
+// 指揮官が使えるか（後衛にいて、このターンまだ指揮していない）
+export const canCommand = (state: GameState, player: PlayerId, position: FieldPosition): boolean => {
+  const card = getCardAt(state, player, position);
+  return card?.ability?.kind === 'commander' && position.row === 'backRow'
+    && !state.turnState.commandUsedIds.includes(card.id) && !checkTurn(state, player, 'Play');
+};
+
+// 指揮官で、前衛の味方1体の FA をこのターンだけ上げる
+export const commandMonster = (
+  state: GameState,
+  player: PlayerId,
+  commanderPosition: FieldPosition,
+  targetPosition: FieldPosition,
+): ActionResult => {
+  const turnError = checkTurn(state, player, 'Play');
+  if (turnError) return failure(turnError);
+  const commander = getCardAt(state, player, commanderPosition);
+  const ability = commander?.ability;
+  if (!commander || ability?.kind !== 'commander') return failure('指揮できるモンスターではありません。');
+  if (commanderPosition.row !== 'backRow') return failure('指揮官は後衛にいるときだけ指揮できます。');
+  if (state.turnState.commandUsedIds.includes(commander.id)) return failure('この指揮官は、このターンもう指揮しました。');
+  const target = getCardAt(state, player, targetPosition);
+  if (!target || targetPosition.row !== 'frontRow') return failure('前衛の味方のモンスターを選んでください。');
+  const buffed = addBuff(state, 'attackBuffs', target.id, ability.amount);
+  return success(updateTurnState(buffed, { commandUsedIds: [...buffed.turnState.commandUsedIds, commander.id] }));
 };

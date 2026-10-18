@@ -49,6 +49,7 @@ npm run build  # 本番用ビルド（build/ に出力）
 | 引いて捨てる | 手札から捨てるカードを選び、左の「墓地に置く」を押す |
 | 移動 | 自分のモンスター → 反対の列の空きスロット |
 | 攻撃 | 自分のモンスター → 相手のモンスター、または相手の大将カード（HP。前衛のモンスターだけ） |
+| 指揮（指揮官） | プレイフェイズに後衛の指揮官を選び、左の「指揮する」→ 前衛の味方 |
 
 選んだものをもう一度クリックすると選択を解除できます。
 
@@ -120,8 +121,8 @@ JSON の項目と、AI がやることは [src/data/cards/README.md](src/data/ca
 
 プログラムで追加するときは、`src/logic/builtinCards.ts` の `BUILTIN_MONSTER_CARDS` または `BUILTIN_SPELL_CARDS` にカードを加えます。
 カードの ID は英数字と `_` だけにしてください（`-` は1枚ごとの個別IDの区切りに使います）。
-スペルの効果は `effect` で指定します（`buffFa`：FA上昇、`buffBa`：BA上昇、`heal`：回復、`damage`：相手にダメージ、`drawDiscard`：引いて捨てる、`disableLeader`：相手の大将の効果をなくす、`damageBack`：相手の後衛にダメージ、`forceMove`：相手を移動、`catchUpEnergy`：数の差だけエネルギー）。
-モンスターの効果は `ability`（`freeSpellOnSummon`：召喚したときコストなしでスペル）で指定します。
+スペルの効果は `effect` で指定します（`buffFa`：FA上昇、`buffBa`：BA上昇、`heal`：回復、`damage`：相手にダメージ、`drawDiscard`：引いて捨てる、`disableLeader`：相手の大将の効果をなくす、`damageBack`：相手の後衛にダメージ、`forceMove`：相手を移動、`catchUpEnergy`：数の差だけエネルギー など。一覧は src/data/cards/README.md）。
+モンスター・大将の効果は `ability` で指定します。効果の種類の一覧は [src/data/cards/README.md](src/data/cards/README.md) にあります。
 スライム・妖精・オーク兵・騎士・ドラゴン・回復の呪文・炎の呪文は、デッキを組めるようにするための仮のカードです。
 カードを変えたら [RULES.md](RULES.md) のカード一覧も更新してください。
 デッキを40枚組めるよう、カードは最低14種類（同名3枚まで × 14 = 42枚）必要です。

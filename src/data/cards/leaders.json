@@ -38,5 +38,63 @@
       "race": "ゴーレム",
       "amount": 1
     }
+  },
+  {
+    "id": "l002",
+    "name": "軍師",
+    "race": "",
+    "effectText": "自分のモンスターが移動したとき、そのモンスターのHPを1回復する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "maxHp": 20,
+    "effect": {
+      "kind": "healOnMove",
+      "amount": 1
+    }
+  },
+  {
+    "id": "l003",
+    "name": "弓兵隊長",
+    "race": "",
+    "effectText": "自分の後衛のモンスターのBAを1上げる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "maxHp": 20,
+    "effect": {
+      "kind": "backRowBaBonus",
+      "amount": 1
+    }
+  },
+  {
+    "id": "l004",
+    "name": "不屈の将",
+    "race": "",
+    "effectText": "ターン開始時、自分の場のモンスターが相手より2体以上少なければ、カードを1枚多く引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "maxHp": 18,
+    "effect": {
+      "kind": "extraDrawWhenBehind",
+      "margin": 2,
+      "amount": 1
+    }
   }
 ]

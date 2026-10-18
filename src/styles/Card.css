@@ -386,3 +386,22 @@
   font-size: 12px;
   line-height: 1.5;
 }
+
+/* 伏兵などでコストが下がっている */
+.card-cost.reduced {
+  background: #7FE0A8;
+  color: #12301f;
+}
+
+/* 籠城などで大将にかかっている効果 */
+.leader-guard-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(30, 60, 110, 0.9);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+}

@@ -18,6 +18,7 @@ interface CardProps extends HoverHandlers {
   usedLabel?: string; // 行動済みのとき（例: '攻撃済み'）。カードを薄く表示してラベルを出す
   markLabel?: string; // 選んだ印（例: '墓地へ'）。カードに赤い枠とラベルを出す
   hpBonus?: number; // 大将カードの効果などで上がっている HP（表示する HP に足す）
+  displayCost?: number; // 今のコスト（伏兵などで下がっているとき）
 }
 
 // 裏向きのカード（相手の手札など）
@@ -35,7 +36,7 @@ export const CardArt: React.FC<{ image?: string; label?: string; children?: Reac
   </div>
 );
 
-const Card: React.FC<CardProps> = ({ card, onClick, isSelected = false, row, size = 'normal', usedLabel, markLabel, hpBonus = 0, onMouseEnter, onMouseLeave }) => {
+const Card: React.FC<CardProps> = ({ card, onClick, isSelected = false, row, size = 'normal', usedLabel, markLabel, hpBonus = 0, displayCost, onMouseEnter, onMouseLeave }) => {
   const monster = isMonster(card) ? card : null;
   const spell = isMonster(card) ? null : card;
   const classes = ['card', card.type.toLowerCase(), size, isSelected && 'selected', usedLabel && 'used', markLabel && 'marked'].filter(Boolean).join(' ');
@@ -44,7 +45,7 @@ const Card: React.FC<CardProps> = ({ card, onClick, isSelected = false, row, siz
       {usedLabel && <div className="card-used-label">{usedLabel}</div>}
       {markLabel && <div className="card-used-label mark">{markLabel}</div>}
       <div className="card-header">
-        <div className="card-cost">{card.cost}</div>
+        <div className={`card-cost ${displayCost !== undefined && displayCost < card.cost ? 'reduced' : ''}`}>{displayCost ?? card.cost}</div>
         <div className="card-name">{card.name}</div>
       </div>
 

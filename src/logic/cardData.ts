@@ -1,5 +1,5 @@
 import {
-  Card, IMPLEMENTED_EFFECT_KINDS, ImplementationStatus, LeaderAbility, LeaderCard, MonsterAbility, MonsterCard, SpellCard, SpellEffect, SpellTarget,
+  Card, IMPLEMENTED_EFFECT_KINDS, ImplementationStatus, LeaderAbility, LeaderCard, MONSTER_ABILITY_KINDS, MonsterAbility, MonsterCard, SpellCard, SpellEffect, SpellTarget,
   getSpellTarget,
 } from '../types/card';
 import { cardImage } from './builtinCards';
@@ -198,13 +198,18 @@ const isLeaderAbility = (effect: unknown): effect is LeaderAbility => {
   switch (e.kind) {
     case 'raceHpBonus': return isText(e.race) && isNumber(e.amount);
     case 'rallyEnergy': return isNumber(e.hpThreshold) && isNumber(e.amount);
+    case 'healOnMove':
+    case 'backRowBaBonus': return isNumber(e.amount);
+    case 'extraDrawWhenBehind': return isNumber(e.margin) && isNumber(e.amount);
     default: return false;
   }
 };
 
 const isMonsterAbility = (effect: unknown): effect is MonsterAbility => {
   const e = effect as MonsterAbility;
-  return !!e && e.kind === 'freeSpellOnSummon' && isNumber(e.maxCost);
+  if (!e || !MONSTER_ABILITY_KINDS.includes(e.kind)) return false;
+  if (e.kind === 'freeSpellOnSummon') return isNumber(e.maxCost);
+  return e.kind === 'sniper' || isNumber(e.amount);
 };
 
 export const isLeaderRecord = (r: unknown): r is LeaderRecord => {

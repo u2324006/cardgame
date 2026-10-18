@@ -1,6 +1,6 @@
 import { GameState, Phase } from '../types/gameState';
 import { runAiAttackPhase, runAiPlayPhase } from './ai';
-import { apprentice, backSpell, catchUpSpell, disableSpell, drawSpell, forceMoveSpell, throwSpell, withRallyLeader, emptyState, fireSpell, healSpell, inPhase, monster, spell, withField, withGolemLeader, withPlayer } from './testUtils';
+import { apprentice, spellOf, withAbility, backSpell, catchUpSpell, disableSpell, drawSpell, forceMoveSpell, throwSpell, withRallyLeader, emptyState, fireSpell, healSpell, inPhase, monster, spell, withField, withGolemLeader, withPlayer } from './testUtils';
 
 const aiTurn = (state: GameState, phase: Phase = 'Play'): GameState => inPhase(state, phase, 'player2');
 
@@ -208,6 +208,32 @@ describe('AI with the second batch of cards', () => {
     const next = runAiPlayPhase(rally, 'player2');
     expect(next.players.player2.leaderAbilityUsed).toBe(true);
     expect(next.players.player2.currentEnergy).toBe(3);
+  });
+});
+
+describe('AI with front/back row cards', () => {
+  it('snipes a back-row monster it can destroy past the front row', () => {
+    let state = withField(aiTurn(emptyState(), 'Attack'), 'player2', 'backRow', [withAbility('sn', { kind: 'sniper' }, { backAttack: 3 }), null, null]);
+    state = withField(state, 'player1', 'frontRow', [monster('wall', { cardHp: 20 }), null, null]);
+    state = withField(state, 'player1', 'backRow', [monster('soft', { cardHp: 3 }), null, null]);
+    expect(runAiAttackPhase(state, 'player2').players.player1.field.backRow[0]).toBeNull();
+  });
+
+  it('sweeps a crowded front row and commands from the back row', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 3, hand: [spellOf('sweep', { kind: 'damageFrontAll', amount: 2 }, 3)] });
+    state = withField(state, 'player1', 'frontRow', [monster('a', { cardHp: 2 }), monster('b', { cardHp: 6 }), null]);
+    state = withField(state, 'player2', 'backRow', [withAbility('cm', { kind: 'commander', amount: 1 }, { frontAttack: 1, backAttack: 2 }), null, null]);
+    state = withField(state, 'player2', 'frontRow', [monster('f', { frontAttack: 3 }), null, null]);
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.players.player1.field.frontRow[0]).toBeNull();
+    expect(next.players.player1.field.frontRow[1]?.cardHp).toBe(4);
+    expect(next.turnState.attackBuffs).toEqual({ f: 1 });
+  });
+
+  it('summons 伏兵 at the reduced cost when outnumbered', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 1, hand: [withAbility('am', { kind: 'ambush', amount: 1 }, { cost: 2 })] });
+    state = withField(state, 'player1', 'frontRow', [monster('a'), null, null]);
+    expect(runAiPlayPhase(state, 'player2').players.player2.hand).toHaveLength(0);
   });
 });
 

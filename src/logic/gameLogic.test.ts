@@ -11,10 +11,12 @@ import {
   getEffectiveHp,
   moveMonster,
   nextPhase,
+  commandMonster,
+  getSummonCost,
   playCard,
   skipFreeSpell,
 } from './gameLogic';
-import { apprentice, backSpell, catchUpSpell, disableSpell, drawSpell, forceMoveSpell, throwSpell, withRallyLeader, emptyState, fireSpell, healSpell, inPhase, monster, spell, unwrap, withField, withGolemLeader, withPlayer } from './testUtils';
+import { apprentice, spellOf, withAbility, withLeaderAbility, backSpell, catchUpSpell, disableSpell, drawSpell, forceMoveSpell, throwSpell, withRallyLeader, emptyState, fireSpell, healSpell, inPhase, monster, spell, unwrap, withField, withGolemLeader, withPlayer } from './testUtils';
 
 describe('phase progression', () => {
   it('does not draw on the first player\'s first turn, but still gains energy', () => {
@@ -407,6 +409,180 @@ describe('leader ability (大将: energy once when HP <= 10)', () => {
     const next = unwrap(activateLeaderAbility(state, 'player1'));
     expect(next.players.player1.currentEnergy).toBe(5);
     expect(activateLeaderAbility(next, 'player1')).toEqual({ ok: false, error: '大将の効果はもう使いました。' });
+  });
+});
+
+describe('front/back row monsters', () => {
+  const atk = (state: GameState) => inPhase(state, 'Attack');
+
+  it('狙撃手 can hit the back row from the back row even when the front row is occupied', () => {
+    let state = withField(emptyState(), 'player1', 'backRow', [withAbility('sn', { kind: 'sniper' }, { backAttack: 3 }), monster('n', { backAttack: 3 }), null]);
+    state = withField(state, 'player2', 'frontRow', [monster('f'), null, null]);
+    state = atk(withField(state, 'player2', 'backRow', [monster('b', { cardHp: 3 }), null, null]));
+    const target = { type: 'monster' as const, position: { row: 'backRow' as const, index: 0 } };
+    expect(attack(state, 'player1', { row: 'backRow', index: 1 }, target).ok).toBe(false);
+    expect(unwrap(attack(state, 'player1', { row: 'backRow', index: 0 }, target)).players.player2.field.backRow[0]).toBeNull();
+  });
+
+  it('槍兵 also deals 1 damage to the weakest back-row enemy when attacking from the front', () => {
+    let state = withField(emptyState(), 'player1', 'frontRow', [withAbility('sp', { kind: 'pierce', amount: 1 }, { frontAttack: 3 }), null, null]);
+    state = withField(state, 'player2', 'frontRow', [null, monster('f', { cardHp: 9 }), null]);
+    state = atk(withField(state, 'player2', 'backRow', [monster('b1', { cardHp: 4 }), null, monster('b2', { cardHp: 2 })]));
+    const next = unwrap(attack(state, 'player1', { row: 'frontRow', index: 0 }, { type: 'monster', position: { row: 'frontRow', index: 1 } }));
+    expect(next.players.player2.field.frontRow[1]?.cardHp).toBe(6);
+    expect(next.players.player2.field.backRow[2]?.cardHp).toBe(1);
+    expect(next.players.player2.field.backRow[0]?.cardHp).toBe(4);
+  });
+
+  it('盾兵 takes 1 less damage only in the front row', () => {
+    const shield = (id: string) => withAbility(id, { kind: 'frontGuard', amount: 1 }, { cardHp: 9 });
+    let state = withField(emptyState(), 'player2', 'frontRow', [shield('s1'), null, null]);
+    state = withField(state, 'player2', 'backRow', [shield('s2'), null, null]);
+    state = withPlayer(state, 'player1', { hand: [fireSpell, fireSpell] });
+    let next = unwrap(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 }));
+    next = unwrap(castSpell(next, 'player1', 0, { row: 'backRow', index: 0 }));
+    expect(next.players.player2.field.frontRow[0]?.cardHp).toBe(7);
+    expect(next.players.player2.field.backRow[0]?.cardHp).toBe(6);
+  });
+
+  it('衛生兵 heals the front ally in the same column at the end of its owner\'s turn', () => {
+    let state = withField(emptyState(), 'player1', 'backRow', [withAbility('md', { kind: 'medic', amount: 2 }), null, null]);
+    state = withField(state, 'player1', 'frontRow', [{ ...monster('m001-0'), cardHp: 1 }, { ...monster('m001-1'), cardHp: 1 }, null]);
+    const next = endTurn(state);
+    expect(next.players.player1.field.frontRow[0]?.cardHp).toBe(3);
+    expect(next.players.player1.field.frontRow[1]?.cardHp).toBe(1);
+  });
+
+  it('指揮官 raises one front ally\'s FA once per turn from the back row', () => {
+    let state = withField(emptyState(), 'player1', 'backRow', [withAbility('cm', { kind: 'commander', amount: 1 }), null, null]);
+    state = withField(state, 'player1', 'frontRow', [monster('a', { frontAttack: 3 }), monster('b'), null]);
+    const next = unwrap(commandMonster(state, 'player1', { row: 'backRow', index: 0 }, { row: 'frontRow', index: 0 }));
+    expect(getAttackPower(next, next.players.player1.field.frontRow[0]!, 'frontRow')).toBe(4);
+    expect(commandMonster(next, 'player1', { row: 'backRow', index: 0 }, { row: 'frontRow', index: 1 }).ok).toBe(false);
+    expect(commandMonster(inPhase(endTurn(endTurn(next)), 'Play'), 'player1', { row: 'backRow', index: 0 }, { row: 'frontRow', index: 1 }).ok).toBe(true);
+  });
+
+  it('突撃兵 gets FA +2 on the turn it moves from the back row to the front row', () => {
+    const state = withField(emptyState(), 'player1', 'backRow', [withAbility('ch', { kind: 'charge', amount: 2 }, { frontAttack: 2 }), null, null]);
+    const next = unwrap(moveMonster(state, 'player1', { row: 'backRow', index: 0 }, { row: 'frontRow', index: 0 }));
+    const card = next.players.player1.field.frontRow[0]!;
+    expect(getAttackPower(next, card, 'frontRow')).toBe(4);
+    expect(getAttackPower(endTurn(next), card, 'frontRow')).toBe(2);
+  });
+
+  it('殿 strikes back when destroyed in the front row by an attack', () => {
+    let state = withField(emptyState(), 'player1', 'frontRow', [monster('a', { frontAttack: 6, cardHp: 5 }), null, null]);
+    state = atk(withField(state, 'player2', 'frontRow', [withAbility('rg', { kind: 'rearguard', amount: 3 }, { cardHp: 6 }), null, null]));
+    const next = unwrap(attack(state, 'player1', { row: 'frontRow', index: 0 }, { type: 'monster', position: { row: 'frontRow', index: 0 } }));
+    expect(next.players.player2.field.frontRow[0]).toBeNull();
+    expect(next.players.player1.field.frontRow[0]?.cardHp).toBe(2);
+  });
+
+  it('伏兵 costs 1 less while the opponent has more monsters', () => {
+    const ambush = withAbility('am', { kind: 'ambush', amount: 1 }, { cost: 2 });
+    let state = withPlayer(emptyState(), 'player1', { hand: [ambush], currentEnergy: 1 });
+    expect(getSummonCost(state, 'player1', ambush)).toBe(2);
+    expect(playCard(state, 'player1', 0, { row: 'frontRow', index: 0 }).ok).toBe(false);
+    state = withField(state, 'player2', 'frontRow', [monster('e'), null, null]);
+    const next = unwrap(playCard(state, 'player1', 0, { row: 'frontRow', index: 0 }));
+    expect(next.players.player1.currentEnergy).toBe(0);
+  });
+});
+
+describe('front/back row spells', () => {
+  it('薙ぎ払い hits every enemy front-row monster', () => {
+    let state = withField(emptyState(), 'player2', 'frontRow', [monster('a', { cardHp: 2 }), monster('b', { cardHp: 5 }), null]);
+    state = withField(state, 'player2', 'backRow', [monster('c', { cardHp: 2 }), null, null]);
+    state = withPlayer(state, 'player1', { hand: [spellOf('sweep', { kind: 'damageFrontAll', amount: 2 }, 3)] });
+    const next = unwrap(castSpell(state, 'player1', 0));
+    expect(next.players.player2.field.frontRow[0]).toBeNull();
+    expect(next.players.player2.field.frontRow[1]?.cardHp).toBe(3);
+    expect(next.players.player2.field.backRow[0]?.cardHp).toBe(2);
+  });
+
+  it('一斉射撃 deals damage equal to the number of own back-row monsters to an enemy front monster', () => {
+    const volley = spellOf('volley', { kind: 'volley', amount: 1 }, 2);
+    let state = withField(emptyState(), 'player2', 'frontRow', [monster('a', { cardHp: 5 }), null, null]);
+    state = withPlayer(state, 'player1', { hand: [volley] });
+    expect(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 }).ok).toBe(false); // 後衛がいない
+    state = withField(state, 'player1', 'backRow', [monster('x'), monster('y'), null]);
+    const next = unwrap(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 }));
+    expect(next.players.player2.field.frontRow[0]?.cardHp).toBe(3);
+  });
+
+  it('撤退命令 moves a front ally to the back row and heals it without using the move', () => {
+    let state = withField(emptyState(), 'player1', 'frontRow', [null, { ...monster('m001-0'), cardHp: 2 }, null]);
+    state = withPlayer(state, 'player1', { hand: [spellOf('retreat', { kind: 'retreat', amount: 2 })] });
+    const next = unwrap(castSpell(state, 'player1', 0, { row: 'frontRow', index: 1 }));
+    expect(next.players.player1.field.backRow[1]?.cardHp).toBe(4);
+    expect(next.turnState.movedMonsterId).toBeNull();
+  });
+
+  it('陣形転換 swaps the front and back monsters of a column', () => {
+    let state = withField(emptyState(), 'player1', 'frontRow', [monster('f'), null, null]);
+    state = withField(state, 'player1', 'backRow', [monster('b'), null, null]);
+    state = withPlayer(state, 'player1', { hand: [spellOf('swap', { kind: 'swapColumn', amount: 1 })] });
+    const next = unwrap(castSpell(state, 'player1', 0, { row: 'backRow', index: 0 }));
+    expect([next.players.player1.field.frontRow[0]?.id, next.players.player1.field.backRow[0]?.id]).toEqual(['b', 'f']);
+    expect(next.turnState.movedMonsterId).toBeNull();
+  });
+
+  it('挑発 moves an enemy back-row monster forward, swapping with the front, and locks both', () => {
+    let state = withField(emptyState(), 'player2', 'frontRow', [null, monster('f'), null]);
+    state = withField(state, 'player2', 'backRow', [monster('solo'), monster('b'), null]);
+    state = withPlayer(state, 'player1', { hand: [spellOf('taunt', { kind: 'pullForward', amount: 1 }), spellOf('taunt2', { kind: 'pullForward', amount: 1 })] });
+    expect(castSpell(state, 'player1', 0, { row: 'frontRow', index: 1 }).ok).toBe(false); // 前衛は選べない
+    let next = unwrap(castSpell(state, 'player1', 0, { row: 'backRow', index: 1 }));
+    expect([next.players.player2.field.frontRow[1]?.id, next.players.player2.field.backRow[1]?.id]).toEqual(['b', 'f']);
+    next = unwrap(castSpell(next, 'player1', 0, { row: 'backRow', index: 0 }));
+    expect(next.players.player2.field.frontRow[0]?.id).toBe('solo');
+    expect(next.moveLocks.map(l => l.cardId).sort()).toEqual(['b', 'f', 'solo']);
+  });
+
+  it('背水の陣 boosts all own monsters only when outnumbered', () => {
+    const stand = spellOf('stand', { kind: 'lastStand', amount: 2 }, 2);
+    let state = withField(emptyState(), 'player1', 'frontRow', [monster('a', { frontAttack: 3 }), null, null]);
+    state = withPlayer(state, 'player1', { hand: [stand] });
+    expect(castSpell(state, 'player1', 0).ok).toBe(false);
+    state = withField(state, 'player2', 'frontRow', [monster('x'), monster('y'), null]);
+    const next = unwrap(castSpell(state, 'player1', 0));
+    const card = next.players.player1.field.frontRow[0]!;
+    expect([getAttackPower(next, card, 'frontRow'), getAttackPower(next, card, 'backRow')]).toEqual([5, 3]);
+  });
+
+  it('籠城 reduces each hit on the leader during the opponent\'s next turn', () => {
+    let state = withPlayer(emptyState(), 'player1', { hand: [spellOf('guard', { kind: 'guardLeader', amount: 2 }, 2)] });
+    state = withField(state, 'player2', 'frontRow', [monster('a', { frontAttack: 3 }), monster('b', { frontAttack: 1 }), null]);
+    const guarded = endTurn(unwrap(castSpell(state, 'player1', 0)));
+    let theirAttack = inPhase(guarded, 'Attack', 'player2');
+    theirAttack = unwrap(attack(theirAttack, 'player2', { row: 'frontRow', index: 0 }, { type: 'player' }));
+    theirAttack = unwrap(attack(theirAttack, 'player2', { row: 'frontRow', index: 1 }, { type: 'player' }));
+    expect(theirAttack.players.player1.specialCardHp).toBe(20 - 1);
+    expect(endTurn(theirAttack).leaderGuards).toEqual([]);
+  });
+});
+
+describe('front/back row leaders', () => {
+  it('軍師 heals a monster by 1 whenever it moves', () => {
+    let state = withLeaderAbility(emptyState(), 'player1', { kind: 'healOnMove', amount: 1 });
+    state = withField(state, 'player1', 'frontRow', [{ ...monster('m001-0'), cardHp: 2 }, null, null]);
+    const next = unwrap(moveMonster(state, 'player1', { row: 'frontRow', index: 0 }, { row: 'backRow', index: 0 }));
+    expect(next.players.player1.field.backRow[0]?.cardHp).toBe(3);
+  });
+
+  it('弓兵隊長 raises the BA of own back-row monsters', () => {
+    let state = withLeaderAbility(emptyState(), 'player1', { kind: 'backRowBaBonus', amount: 1 });
+    state = withField(state, 'player1', 'backRow', [monster('a', { backAttack: 2 }), null, null]);
+    state = withField(state, 'player2', 'backRow', [monster('e', { backAttack: 2 }), null, null]);
+    expect(getAttackPower(state, state.players.player1.field.backRow[0]!, 'backRow')).toBe(3);
+    expect(getAttackPower(state, state.players.player2.field.backRow[0]!, 'backRow')).toBe(2);
+  });
+
+  it('不屈の将 draws an extra card when two or more monsters behind', () => {
+    let state = withLeaderAbility(emptyState(), 'player1', { kind: 'extraDrawWhenBehind', margin: 2, amount: 1 });
+    state = { ...withPlayer(state, 'player1', { deck: [monster('d1'), monster('d2'), monster('d3')] }), phase: 'Draw' };
+    expect(nextPhase(withField(state, 'player2', 'frontRow', [monster('a'), null, null])).players.player1.hand).toHaveLength(1);
+    expect(nextPhase(withField(state, 'player2', 'frontRow', [monster('a'), monster('b'), null])).players.player1.hand).toHaveLength(2);
   });
 });
 

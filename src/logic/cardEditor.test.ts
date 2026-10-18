@@ -85,9 +85,11 @@ describe('card editor', () => {
   });
 
   it('flags a monster much stronger than others of the same cost', () => {
-    expect(getBalance(dragon, BUILTIN_CARD_SET).label).toBe('標準');
+    // 比べる相手はコスト3の騎士とドラゴンだけにする（指揮官は効果持ちで能力値が低い）
+    const set = { ...BUILTIN_CARD_SET, cards: BUILTIN_CARD_SET.cards.filter(c => c.id !== 'm017') };
+    expect(getBalance(dragon, set).label).toBe('標準');
     const overpowered = { ...dragon, frontAttack: 12 };
-    expect(getBalance(overpowered, BUILTIN_CARD_SET).label).toBe('強め');
+    expect(getBalance(overpowered, set).label).toBe('強め');
   });
 
   it('warns when there are not enough kinds of cards for a 40-card deck', () => {

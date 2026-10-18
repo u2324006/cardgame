@@ -3,7 +3,7 @@ import { GameState } from '../types/gameState';
 // 対戦の途中経過をこのブラウザに保存し、再読み込み後に続きから遊べるようにする。
 // GameState の形を変えたときは VERSION を上げる（古い保存データは読み込まない）。
 const STORAGE_KEY = 'cardgame.battle';
-const VERSION = 4;
+const VERSION = 5;
 
 interface SavedBattle {
   version: number;

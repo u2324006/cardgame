@@ -46,6 +46,13 @@ export const EFFECT_OPTIONS: { kind: SpellEffect['kind']; label: string }[] = [
   { kind: 'damageBack', label: '相手の後衛のモンスターにダメージ' },
   { kind: 'forceMove', label: '相手のモンスターを移動させる' },
   { kind: 'catchUpEnergy', label: 'モンスターの数の差だけエネルギーを増やす' },
+  { kind: 'damageFrontAll', label: '相手の前衛すべてにダメージ' },
+  { kind: 'volley', label: '自分の後衛の数だけ相手の前衛にダメージ' },
+  { kind: 'retreat', label: '自分の前衛を後衛へ下げて回復' },
+  { kind: 'swapColumn', label: '自分の前衛と後衛を入れ替える' },
+  { kind: 'pullForward', label: '相手の後衛を前衛へ移動させる' },
+  { kind: 'lastStand', label: '劣勢のとき全員の攻撃力を上げる' },
+  { kind: 'guardLeader', label: '自分の大将が受けるダメージを減らす' },
   { kind: 'custom', label: 'まだない効果' },
 ];
 

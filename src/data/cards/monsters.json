@@ -110,5 +110,180 @@
       "kind": "freeSpellOnSummon",
       "maxCost": 1
     }
+  },
+  {
+    "id": "m013",
+    "name": "狙撃手",
+    "race": "戦士",
+    "effectText": "後衛にいるとき、相手の前衛にモンスターがいても相手の後衛を攻撃できる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 3,
+    "hp": 4,
+    "effect": {
+      "kind": "sniper"
+    }
+  },
+  {
+    "id": "m014",
+    "name": "槍兵",
+    "race": "戦士",
+    "effectText": "前衛から攻撃したとき、相手の後衛のモンスター1体（HPが一番低いもの）にも1ダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "cost": 2,
+    "frontAttack": 3,
+    "backAttack": 0,
+    "hp": 6,
+    "effect": {
+      "kind": "pierce",
+      "amount": 1
+    }
+  },
+  {
+    "id": "m015",
+    "name": "盾兵",
+    "race": "戦士",
+    "effectText": "前衛にいるとき、受けるダメージを1減らす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "cost": 2,
+    "frontAttack": 1,
+    "backAttack": 0,
+    "hp": 9,
+    "effect": {
+      "kind": "frontGuard",
+      "amount": 1
+    }
+  },
+  {
+    "id": "m016",
+    "name": "衛生兵",
+    "race": "戦士",
+    "effectText": "後衛にいるとき、自分のターン終了時に、同じ位置の前衛の味方のHPを2回復する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 1,
+    "hp": 4,
+    "effect": {
+      "kind": "medic",
+      "amount": 2
+    }
+  },
+  {
+    "id": "m017",
+    "name": "指揮官",
+    "race": "戦士",
+    "effectText": "後衛にいるとき、1ターンに1回、前衛の味方1体を選び、そのターンの間FAを1上げる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "cost": 3,
+    "frontAttack": 1,
+    "backAttack": 2,
+    "hp": 7,
+    "effect": {
+      "kind": "commander",
+      "amount": 1
+    }
+  },
+  {
+    "id": "m018",
+    "name": "突撃兵",
+    "race": "戦士",
+    "effectText": "後衛から前衛へ移動したターン、FAが2上がる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "cost": 1,
+    "frontAttack": 2,
+    "backAttack": 1,
+    "hp": 4,
+    "effect": {
+      "kind": "charge",
+      "amount": 2
+    }
+  },
+  {
+    "id": "m019",
+    "name": "殿",
+    "race": "戦士",
+    "effectText": "前衛で攻撃されて倒されたとき、攻撃したモンスターに3ダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "cost": 2,
+    "frontAttack": 2,
+    "backAttack": 0,
+    "hp": 6,
+    "effect": {
+      "kind": "rearguard",
+      "amount": 3
+    }
+  },
+  {
+    "id": "m020",
+    "name": "伏兵",
+    "race": "戦士",
+    "effectText": "相手の場のモンスターが自分より多いとき、コストが1下がる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "cost": 2,
+    "frontAttack": 3,
+    "backAttack": 2,
+    "hp": 5,
+    "effect": {
+      "kind": "ambush",
+      "amount": 1
+    }
   }
 ]

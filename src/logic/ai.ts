@@ -4,8 +4,13 @@ import { AttackTarget, FieldPosition, GameState, PlayerId, Row } from '../types/
 import {
   ActionResult,
   attack,
+  canAttackThisTurn,
+  canCommand,
+  canSnipe,
   canUseLeaderAbility,
   castSpell,
+  commandMonster,
+  countMonsters,
   discardCards,
   findEmptySlot,
   getAttackPower,
@@ -14,6 +19,7 @@ import {
   getHpBonus,
   getMonsterPositions,
   getOpponent,
+  getSummonCost,
   isMoveLocked,
   moveMonster,
   otherRow,
@@ -38,8 +44,21 @@ const monstersOnField = (state: GameState, player: PlayerId, rows?: Row[]) =>
 const monsterValue = (card: MonsterCard): number =>
   Math.max(card.frontAttack, card.backAttack) * 2 + card.cardHp + card.cost;
 
+// 効果が働く列（その列にいるときだけ効果があるモンスター）
+const abilityRow = (card: MonsterCard): Row | null => {
+  switch (card.ability?.kind) {
+    case 'sniper':
+    case 'medic':
+    case 'commander': return 'backRow';
+    case 'pierce':
+    case 'frontGuard':
+    case 'rearguard': return 'frontRow';
+    default: return null;
+  }
+};
+
 const preferredRow = (card: MonsterCard): Row =>
-  card.backAttack > card.frontAttack ? 'backRow' : 'frontRow';
+  abilityRow(card) ?? (card.backAttack > card.frontAttack ? 'backRow' : 'frontRow');
 
 // --- Play フェイズ ---
 
@@ -48,6 +67,7 @@ const aiMove = (state: GameState, player: PlayerId): GameState => {
   let best: { from: FieldPosition; to: FieldPosition; gain: number } | null = null;
   for (const { position: from, card } of monstersOnField(state, player)) {
     if (state.turnState.summonedThisTurnIds.includes(card.id) || isMoveLocked(state, player, card.id)) continue;
+    if (abilityRow(card) === from.row) continue; // 効果が働く列からは動かさない
     const to = findEmptySlot(state, player, otherRow(from.row));
     if (!to) continue;
     const gain = getAttackPower(state, card, to.row) - getAttackPower(state, card, from.row);
@@ -61,10 +81,11 @@ const aiMove = (state: GameState, player: PlayerId): GameState => {
 const aiSummon = (state: GameState, player: PlayerId): GameState => {
   let current = state;
   for (;;) {
-    const { hand, currentEnergy } = current.players[player];
+    const snapshot = current;
+    const { hand, currentEnergy } = snapshot.players[player];
     const candidates = hand
       .map((card, handIndex) => ({ card, handIndex }))
-      .flatMap(({ card, handIndex }) => (isMonster(card) && card.cost <= currentEnergy ? [{ card, handIndex }] : []))
+      .flatMap(({ card, handIndex }) => (isMonster(card) && getSummonCost(snapshot, player, card) <= currentEnergy ? [{ card, handIndex }] : []))
       .sort((a, b) => monsterValue(b.card) - monsterValue(a.card));
 
     let summoned = false;
@@ -124,9 +145,31 @@ const findSpellTarget = (state: GameState, player: PlayerId, spell: SpellCard): 
     }
     case 'forceMove':
       return findForceMoveTarget(state, player);
+    case 'volley': {
+      const damage = monstersOnField(state, player, ['backRow']).length * effect.amount;
+      const killable = monstersOnField(state, defender, ['frontRow'])
+        .filter(({ card }) => getEffectiveHp(state, defender, card) <= damage)
+        .sort((a, b) => monsterValue(b.card) - monsterValue(a.card));
+      return killable[0]?.position ?? null;
+    }
+    case 'retreat': {
+      // 倒されそうな（HP 3 以下の）前衛の味方を下げる
+      if (!findEmptySlot(state, player, 'backRow')) return null;
+      const endangered = monstersOnField(state, player, ['frontRow'])
+        .filter(({ card }) => getEffectiveHp(state, player, card) <= 3 && card.cardHp < getMaxHp(card))
+        .sort((a, b) => monsterValue(b.card) - monsterValue(a.card));
+      return endangered[0]?.position ?? null;
+    }
+    case 'swapColumn':
+      return findColumnSwap(state, player, player, 2);
+    case 'pullForward':
+      return findColumnSwap(state, player, defender, -2, ['backRow']);
     case 'drawDiscard':
     case 'disableLeader':
     case 'catchUpEnergy':
+    case 'damageFrontAll':
+    case 'lastStand':
+    case 'guardLeader':
       return null; // 対象を選ばないスペル（shouldCastUntargeted で判断する）
   }
 };
@@ -147,6 +190,22 @@ const findForceMoveTarget = (state: GameState, player: PlayerId): FieldPosition 
   return best?.position ?? null;
 };
 
+// 同じ位置の前衛と後衛を入れ替えたときの、owner の攻撃力の合計の変化が threshold 以上（負なら以下）になる位置を探す。
+// 自分の陣形転換なら上がる位置（threshold > 0）、相手への挑発なら下がる位置（threshold < 0）
+const findColumnSwap = (state: GameState, player: PlayerId, owner: PlayerId, threshold: number, rows?: Row[]): FieldPosition | null => {
+  const columnPower = (front: MonsterCard | null, back: MonsterCard | null) =>
+    (front ? getAttackPower(state, front, 'frontRow') : 0) + (back ? getAttackPower(state, back, 'backRow') : 0);
+  let best: { position: FieldPosition; change: number } | null = null;
+  for (const { position } of monstersOnField(state, owner, rows)) {
+    const front = getCardAt(state, owner, { row: 'frontRow', index: position.index });
+    const back = getCardAt(state, owner, { row: 'backRow', index: position.index });
+    const change = columnPower(back, front) - columnPower(front, back);
+    const better = threshold > 0 ? change >= threshold && (!best || change > best.change) : change <= threshold && (!best || change < best.change);
+    if (better) best = { position, change };
+  }
+  return best?.position ?? null;
+};
+
 // 対象を選ばないスペルを使うか
 // - 引いて捨てる：引く枚数ぶん山札が残っていれば使う
 // - 相手の大将の効果をなくす：相手の大将の効果で HP が上がっている相手モンスターがいれば使う
@@ -157,6 +216,16 @@ const shouldCastUntargeted = (state: GameState, player: PlayerId, spell: SpellCa
       return state.players[player].deck.length >= spell.effect.amount;
     case 'disableLeader':
       return monstersOnField(state, defender).some(({ card }) => getHpBonus(state, defender, card) > 0);
+    case 'damageFrontAll': {
+      const front = monstersOnField(state, defender, ['frontRow']);
+      return front.length >= 2 || front.some(({ card }) => getEffectiveHp(state, defender, card) <= (spell.effect as { amount: number }).amount);
+    }
+    case 'lastStand': {
+      const attackers = monstersOnField(state, player).filter(({ position, card }) => getAttackPower(state, card, position.row) > 0);
+      return canAttackThisTurn(state) && countMonsters(state, player) < countMonsters(state, defender) && attackers.length >= 2;
+    }
+    case 'guardLeader':
+      return state.players[player].specialCardHp <= 10 && countMonsters(state, defender) >= 2;
     case 'catchUpEnergy': {
       // 増えるエネルギーが払うコストより多いときだけ
       const gain = monstersOnField(state, defender).length - monstersOnField(state, player).length;
@@ -231,8 +300,17 @@ const resolveAiFreeSpell = (state: GameState, player: PlayerId): GameState => {
 const aiUseLeaderAbility = (state: GameState, player: PlayerId): GameState =>
   canUseLeaderAbility(state, player) ? applyIfOk(state, activateLeaderAbility(state, player)) : state;
 
+// 指揮官で、前衛の一番攻撃力の高い味方の FA を上げる
+const aiCommand = (state: GameState, player: PlayerId): GameState =>
+  monstersOnField(state, player, ['backRow']).reduce((current, { position }) => {
+    if (!canCommand(current, player, position)) return current;
+    const target = monstersOnField(current, player, ['frontRow'])
+      .sort((a, b) => getAttackPower(current, b.card, 'frontRow') - getAttackPower(current, a.card, 'frontRow'))[0];
+    return target ? applyIfOk(current, commandMonster(current, player, position, target.position)) : current;
+  }, state);
+
 export const runAiPlayPhase = (state: GameState, player: PlayerId): GameState =>
-  aiCastSpells(aiSummon(aiMove(aiUseLeaderAbility(state, player), player), player), player);
+  aiCommand(aiCastSpells(aiSummon(aiMove(aiUseLeaderAbility(state, player), player), player), player), player);
 
 // --- Attack フェイズ ---
 
@@ -257,13 +335,16 @@ const chooseAttack = (state: GameState, player: PlayerId): AttackPlan | null => 
     const frontAttacker = attackers.find(({ position }) => position.row === 'frontRow');
     if (frontAttacker) return { attacker: frontAttacker.position, target: { type: 'player' } };
   }
-  // 前衛が空なら、残り（後衛）の攻撃役で相手の後衛を狙う
-  const targets = frontTargets.length > 0 ? frontTargets : monstersOnField(state, defender, ['backRow']);
-  if (targets.length === 0) return null;
+  const backTargets = monstersOnField(state, defender, ['backRow']);
+  // 攻撃役ごとに狙える相手：前衛がいれば前衛（狙撃手は後衛も）、前衛が空なら後衛
+  const targetsOf = (attacker: { position: FieldPosition; card: MonsterCard }) => {
+    if (frontTargets.length === 0) return backTargets;
+    return canSnipe(attacker.card, attacker.position) ? [...frontTargets, ...backTargets] : frontTargets;
+  };
 
   let bestKill: { plan: AttackPlan; value: number; overkill: number } | null = null;
   for (const attacker of attackers) {
-    for (const target of targets) {
+    for (const target of targetsOf(attacker)) {
       const hp = getEffectiveHp(state, defender, target.card);
       if (attacker.power < hp) continue;
       const value = monsterValue(target.card);
@@ -275,9 +356,11 @@ const chooseAttack = (state: GameState, player: PlayerId): AttackPlan | null => 
   }
   if (bestKill) return bestKill.plan;
 
-  const strongest = attackers.reduce((a, b) => (b.power > a.power ? b : a));
   const hpOf = (target: { card: MonsterCard }) => getEffectiveHp(state, defender, target.card);
-  const weakest = targets.reduce((a, b) => (hpOf(b) < hpOf(a) ? b : a));
+  const usable = attackers.filter(attacker => targetsOf(attacker).length > 0);
+  if (usable.length === 0) return null;
+  const strongest = usable.reduce((a, b) => (b.power > a.power ? b : a));
+  const weakest = targetsOf(strongest).reduce((a, b) => (hpOf(b) < hpOf(a) ? b : a));
   return { attacker: strongest.position, target: { type: 'monster', position: weakest.position } };
 };
 

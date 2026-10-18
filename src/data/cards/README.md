@@ -48,6 +48,14 @@
 | kind | 内容 | 例 |
 |---|---|---|
 | `freeSpellOnSummon` | 召喚したとき、手札のコスト maxCost 以下のスペルを1枚、コストを払わずに使える | `{ "kind": "freeSpellOnSummon", "maxCost": 1 }` |
+| `sniper` | 後衛にいるとき、相手の前衛にモンスターがいても相手の後衛を攻撃できる | `{ "kind": "sniper" }` |
+| `pierce` | 前衛から攻撃したとき、相手の後衛の一番 HP が低いモンスターにも amount ダメージ | `{ "kind": "pierce", "amount": 1 }` |
+| `frontGuard` | 前衛にいるとき、受けるダメージを amount 減らす | `{ "kind": "frontGuard", "amount": 1 }` |
+| `medic` | 後衛にいるとき、自分のターン終了時に同じ位置の前衛の味方の HP を amount 回復 | `{ "kind": "medic", "amount": 2 }` |
+| `commander` | 後衛にいるとき、1ターンに1回、前衛の味方1体の FA をそのターンだけ amount 上げる | `{ "kind": "commander", "amount": 1 }` |
+| `charge` | 後衛から前衛へ移動したターン、FA が amount 上がる | `{ "kind": "charge", "amount": 2 }` |
+| `rearguard` | 前衛で攻撃されて倒されたとき、攻撃したモンスターに amount ダメージ | `{ "kind": "rearguard", "amount": 3 }` |
+| `ambush` | 相手の場のモンスターが自分より多いとき、コストが amount 下がる | `{ "kind": "ambush", "amount": 1 }` |
 
 ### スペルだけ
 
@@ -70,6 +78,13 @@
 | `damageBack` | 相手の後衛のモンスター1体に amount ダメージ | 相手の後衛のモンスター |
 | `forceMove` | 相手のモンスター1体を反対の列へ移動させ、相手の次のターンは移動できなくする（amount は 1） | 相手のモンスター |
 | `catchUpEnergy` | 相手のモンスターが自分より多いぶん、エネルギーを増やす（amount は 1） | なし |
+| `damageFrontAll` | 相手の前衛のモンスターすべてに amount ダメージ | なし |
+| `volley` | 相手の前衛のモンスター1体に、自分の後衛のモンスターの数 × amount ダメージ | 相手の前衛のモンスター |
+| `retreat` | 自分の前衛のモンスター1体を後衛へ下げ、HP を amount 回復 | 自分の前衛のモンスター |
+| `swapColumn` | 自分のモンスターがいる位置の前衛と後衛を入れ替える（amount は 1） | 自分のモンスター |
+| `pullForward` | 相手の後衛のモンスターを同じ位置の前衛へ（埋まっていれば入れ替え）。動いたモンスターは次のターン移動できない（amount は 1） | 相手の後衛のモンスター |
+| `lastStand` | 自分のモンスターが相手より少ないとき、このターン全モンスターの FA・BA を amount 上げる | なし |
+| `guardLeader` | 次の相手のターン、自分の大将が受けるダメージを1回につき amount 減らす | 自分の大将 |
 
 ### 大将だけ
 
@@ -84,6 +99,9 @@
 |---|---|---|
 | `raceHpBonus` | 種族が race の自分のモンスターの HP を amount 上げる（大将ゾーンにあるあいだずっと） | `{ "kind": "raceHpBonus", "race": "ゴーレム", "amount": 1 }` |
 | `rallyEnergy` | 大将の HP が hpThreshold 以下のとき1回だけ使え、エネルギーを amount 増やす | `{ "kind": "rallyEnergy", "hpThreshold": 10, "amount": 3 }` |
+| `healOnMove` | 自分のモンスターが移動したとき、そのモンスターの HP を amount 回復 | `{ "kind": "healOnMove", "amount": 1 }` |
+| `backRowBaBonus` | 自分の後衛のモンスターの BA を amount 上げる | `{ "kind": "backRowBaBonus", "amount": 1 }` |
+| `extraDrawWhenBehind` | ターン開始時、自分のモンスターが相手より margin 体以上少なければ amount 枚多く引く | `{ "kind": "extraDrawWhenBehind", "margin": 2, "amount": 1 }` |
 
 ## AI へのお願い（効果の実装）
 

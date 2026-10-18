@@ -1,4 +1,4 @@
-import { MonsterCard, SpellCard } from '../types/card';
+import { LeaderCard, MonsterCard, SpellCard } from '../types/card';
 import { GameState, Phase, PlayerId, PlayerState } from '../types/gameState';
 import { ActionResult } from './gameLogic';
 import { createInitialGameState } from './initialState';
@@ -62,6 +62,16 @@ export const withRallyLeader = (state: GameState, player: PlayerId): GameState =
       leader: { ...state.players[player].leader, ability: { kind: 'rallyEnergy', hpThreshold: 10, amount: 3 } },
     },
   },
+});
+
+// 効果を持つモンスター・スペル・大将を作る（新しいカードのテスト用）
+export const withAbility = (id: string, ability: MonsterCard['ability'], overrides: Partial<MonsterCard> = {}): MonsterCard =>
+  ({ ...monster(id, overrides), ability });
+export const spellOf = (id: string, effect: SpellCard['effect'], cost = 1): SpellCard =>
+  ({ id, name: id, type: 'Spell', description: '', cost, effect });
+export const withLeaderAbility = (state: GameState, player: PlayerId, ability: LeaderCard['ability']): GameState => ({
+  ...state,
+  players: { ...state.players, [player]: { ...state.players[player], leader: { ...state.players[player].leader, ability } } },
 });
 
 // 種族ゴーレムの HP を +1 する大将（マウンテンゴーレム）を持たせる

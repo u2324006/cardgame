@@ -158,5 +158,145 @@
       "kind": "forceMove",
       "amount": 1
     }
+  },
+  {
+    "id": "s004",
+    "name": "薙ぎ払い",
+    "race": "スペル",
+    "effectText": "相手の前衛のモンスターすべてに2ダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "cost": 3,
+    "target": "none",
+    "effect": {
+      "kind": "damageFrontAll",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s005",
+    "name": "一斉射撃",
+    "race": "スペル",
+    "effectText": "相手の前衛のモンスター1体に、自分の後衛にいるモンスターの数だけダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "cost": 2,
+    "target": "enemyMonster",
+    "effect": {
+      "kind": "volley",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s006",
+    "name": "撤退命令",
+    "race": "スペル",
+    "effectText": "自分の前衛のモンスター1体を後衛へ下げ、HPを2回復する（移動の回数を使わない）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "cost": 1,
+    "target": "allyMonster",
+    "effect": {
+      "kind": "retreat",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s007",
+    "name": "陣形転換",
+    "race": "スペル",
+    "effectText": "自分のモンスター1体がいる位置の、前衛と後衛のモンスターを入れ替える（移動の回数を使わない）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "cost": 1,
+    "target": "allyMonster",
+    "effect": {
+      "kind": "swapColumn",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s008",
+    "name": "挑発",
+    "race": "スペル",
+    "effectText": "相手の後衛のモンスター1体を同じ位置の前衛へ移動させる。前衛にモンスターがいるときは入れ替える。移動したモンスターは次のターン移動できない。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "cost": 1,
+    "target": "enemyMonster",
+    "effect": {
+      "kind": "pullForward",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s009",
+    "name": "背水の陣",
+    "race": "スペル",
+    "effectText": "自分の場のモンスターが相手より少ないとき、このターン自分の全モンスターのFA・BAを2上げる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "cost": 2,
+    "target": "none",
+    "effect": {
+      "kind": "lastStand",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s010",
+    "name": "籠城",
+    "race": "スペル",
+    "effectText": "次の相手のターン、自分の大将が受けるダメージを1回につき2減らす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "cost": 2,
+    "target": "allyLeader",
+    "effect": {
+      "kind": "guardLeader",
+      "amount": 2
+    }
   }
 ]

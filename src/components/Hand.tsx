@@ -9,10 +9,11 @@ interface HandProps {
   onCardHover?: (card: CardType | null) => void;
   selectedCardIndex?: number | null;
   markedIndices?: number[]; // 捨てるカードとして選んだ手札
+  costs?: number[]; // 今のコスト（効果で下がっているとき。なければカードのコスト）
   faceDown?: boolean;
 }
 
-const Hand: React.FC<HandProps> = ({ cards, onCardClick, onCardHover, selectedCardIndex, markedIndices = [], faceDown = false }) => {
+const Hand: React.FC<HandProps> = ({ cards, onCardClick, onCardHover, selectedCardIndex, markedIndices = [], costs, faceDown = false }) => {
   if (faceDown) {
     return (
       <div className="hand-container face-down">
@@ -31,6 +32,7 @@ const Hand: React.FC<HandProps> = ({ cards, onCardClick, onCardHover, selectedCa
           onMouseLeave={() => onCardHover?.(null)}
           isSelected={selectedCardIndex === index}
           markLabel={markedIndices.includes(index) ? '墓地へ' : undefined}
+          displayCost={costs?.[index]}
         />
       ))}
     </div>

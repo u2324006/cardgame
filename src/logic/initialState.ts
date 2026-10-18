@@ -43,6 +43,8 @@ export const createInitialTurnState = (): TurnState => ({
   attackBuffs: {},
   backAttackBuffs: {},
   disabledLeaders: [],
+  movedToFrontIds: [],
+  commandUsedIds: [],
 });
 
 const createPlayerFromDeck = (deck: DeckList): PlayerState =>
@@ -63,4 +65,5 @@ export const createInitialGameState = (playerDeck: DeckList = createDefaultDeckL
   pendingDiscard: null,
   pendingFreeSpell: null,
   moveLocks: [],
+  leaderGuards: [],
 });

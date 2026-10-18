@@ -5,14 +5,17 @@ import {
   ActionResult,
   activateLeaderAbility,
   attack,
+  canCommand,
   canUseLeaderAbility,
   castSpell,
+  commandMonster,
   discardCards,
   endTurn,
   canAttackThisTurn,
   getCardAt,
   getHpBonus,
   getMonsterPositions,
+  getSummonCost,
   isLeaderActive,
   hasFrontRowMonsters,
   moveMonster,
@@ -38,7 +41,8 @@ type Selection =
   | { kind: 'none' }
   | { kind: 'hand'; index: number } // 召喚・スペルに使う手札
   | { kind: 'move'; from: FieldPosition } // 移動させるモンスター
-  | { kind: 'attacker'; from: FieldPosition }; // 攻撃させるモンスター
+  | { kind: 'attacker'; from: FieldPosition } // 攻撃させるモンスター
+  | { kind: 'command'; from: FieldPosition }; // 指揮する指揮官（次に FA を上げる前衛の味方を選ぶ）
 
 const NO_SELECTION: Selection = { kind: 'none' };
 
@@ -59,7 +63,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
 
   const { players, turn, phase, currentPlayer, winner, turnState } = gameState;
   const isPlayerTurn = currentPlayer === HUMAN && !winner;
-  const selectedFieldPosition = selection.kind === 'move' || selection.kind === 'attacker' ? selection.from : null;
+  const selectedFieldPosition = selection.kind === 'none' || selection.kind === 'hand' ? null : selection.from;
   // 自分のターンで行動済みのモンスター（攻撃済み・移動済み）は薄く表示する
   const usedLabels: Record<string, string> = {};
   if (isPlayerTurn && phase === 'Play' && turnState.movedMonsterId) usedLabels[turnState.movedMonsterId] = '移動済み';
@@ -67,6 +71,14 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
     gameState.moveLocks.filter(lock => lock.player === HUMAN).forEach(lock => { usedLabels[lock.cardId] = '移動不可'; });
   }
   if (isPlayerTurn && phase === 'Attack') turnState.attackedMonsterIds.forEach(id => { usedLabels[id] = '攻撃済み'; });
+
+  // 籠城の効果（大将が受けるダメージを減らす）
+  const guardOf = (player: PlayerId): string | undefined => {
+    const amount = gameState.leaderGuards.filter(g => g.player === player).reduce((sum, g) => sum + g.amount, 0);
+    return amount > 0 ? `籠城 ダメージ -${amount}` : undefined;
+  };
+  // 手札のモンスターの召喚コスト（伏兵の効果で下がる）
+  const handCosts = players[HUMAN].hand.map(card => (isMonster(card) ? getSummonCost(gameState, HUMAN, card) : card.cost));
 
   // 大将カードの効果が働いていないときのラベル
   const leaderStatusOf = (player: PlayerId): string | undefined => {
@@ -163,7 +175,9 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
   const selectMoveSource = (position: FieldPosition) => {
     const card = getCardAt(gameState, HUMAN, position);
     if (!card) return;
-    if (turnState.summonedThisTurnIds.includes(card.id)) {
+    if (canCommand(gameState, HUMAN, position)) {
+      setSelection({ kind: 'move', from: position }); // 指揮官は移動できなくても選べる（指揮するため）
+    } else if (turnState.summonedThisTurnIds.includes(card.id)) {
       showMessage('このモンスターは召喚されたターンには移動できません。');
     } else if (turnState.movedMonsterId) {
       showMessage('モンスターの移動は1ターンに1回までです。');
@@ -180,6 +194,12 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
       if (!clickedCard) apply(playCard(gameState, HUMAN, selection.index, position));
       else if (selectedCard && !isMonster(selectedCard)) apply(castSpell(gameState, HUMAN, selection.index, position));
       else selectMoveSource(position);
+      return;
+    }
+
+    if (selection.kind === 'command') {
+      if (clickedCard && !samePosition(selection.from, position)) apply(commandMonster(gameState, HUMAN, selection.from, position));
+      else setSelection(NO_SELECTION);
       return;
     }
 
@@ -273,6 +293,17 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
             </button>
           </div>
         )}
+        {selection.kind === 'move' && canCommand(gameState, HUMAN, selection.from) && (
+          <button type="button" className="primary-button cast-button" onClick={() => setSelection({ kind: 'command', from: selection.from })}>
+            指揮する（前衛の味方1体の FA を上げる）
+          </button>
+        )}
+        {selection.kind === 'command' && (
+          <div className="discard-panel" role="status">
+            <p>FA を上げる<b>前衛の味方</b>を選んでください。</p>
+            <button type="button" className="secondary-button" onClick={() => setSelection(NO_SELECTION)}>やめる</button>
+          </div>
+        )}
         {leaderAbility?.kind === 'rallyEnergy' && canUseLeaderAbility(gameState, HUMAN) && (
           <button type="button" className="primary-button cast-button" onClick={() => apply(activateLeaderAbility(gameState, HUMAN))}>
             大将の効果を使う（エネルギー +{leaderAbility.amount}）
@@ -305,6 +336,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
           onInspect={setHovered}
           hpBonuses={hpBonusesOf(AI)}
           leaderStatus={leaderStatusOf(AI)}
+          leaderBadge={guardOf(AI)}
         />
         <div className="front-line" aria-hidden="true"><span>前線</span></div>
         <PlayerArea
@@ -319,6 +351,8 @@ const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange
           markedHandIndices={discardIndices}
           hpBonuses={hpBonusesOf(HUMAN)}
           leaderStatus={leaderStatusOf(HUMAN)}
+          leaderBadge={guardOf(HUMAN)}
+          handCosts={handCosts}
         />
       </div>
       <ControlPanel
