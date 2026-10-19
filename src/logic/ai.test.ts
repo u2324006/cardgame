@@ -300,3 +300,31 @@ describe('AI reactions to discards', () => {
   });
 });
 
+describe('AI energy planning', () => {
+  it('casts an impactful spell before spending energy on summons', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 2, hand: [monster('cheap', { cost: 2 }), { ...fireSpell, cost: 2 }] });
+    state = withField(state, 'player1', 'frontRow', [monster('weak', { cardHp: 3 }), null, null]);
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.players.player1.field.frontRow[0]).toBeNull();
+    expect(next.players.player2.hand.map(c => c.id)).toEqual(['cheap']);
+  });
+
+  it('saves energy for a much stronger monster when only a couple of slots are left', () => {
+    let state = withField(aiTurn(emptyState()), 'player2', 'frontRow', [monster('a'), monster('b'), null]);
+    state = withField(state, 'player2', 'backRow', [monster('c'), monster('d'), null]);
+    state = withPlayer(state, 'player2', { currentEnergy: 1, hand: [monster('filler', { cost: 1, frontAttack: 1, cardHp: 2 }), monster('big', { cost: 2, frontAttack: 6, cardHp: 20 })] });
+    expect(runAiPlayPhase(state, 'player2').players.player2.hand).toHaveLength(2);
+  });
+
+  it('uses 錬成 to replace a card it cannot use soon', () => {
+    const state = withPlayer(aiTurn(emptyState()), 'player2', {
+      currentEnergy: 1,
+      hand: [spellOf('alchemy', { kind: 'discardDraw', amount: 2 }), monster('huge', { cost: 9 }), monster('ok', { cost: 5 })],
+      deck: ['d1', 'd2', 'd3', 'd4', 'd5'].map(id => monster(id, { cost: 9 })),
+    });
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.players.player2.graveyard.map(c => c.id)).toEqual(expect.arrayContaining(['alchemy']));
+    expect(next.pendingDiscard).toBeNull();
+  });
+});
+

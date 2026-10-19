@@ -53,6 +53,7 @@ export interface MonsterCard extends BaseCard {
   frontAttack: number; // FA: 前衛にいるときの攻撃力
   backAttack: number; // BA: 後衛にいるときの攻撃力
   cardHp: number;
+  maxHp?: number; // 最大HP（カード一覧にないカード用。なければ一覧の元のカードの HP）
 }
 
 // スペルの効果

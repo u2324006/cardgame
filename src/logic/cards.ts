@@ -199,7 +199,7 @@ export const toOriginalCard = <T extends Card>(card: T): T => {
 // ダメージを受ける前の最大HP（元のカードが見つからなければ今のHP）
 export const getMaxHp = (card: MonsterCard): number => {
   const original = toOriginalCard(card);
-  return Math.max(original.cardHp, card.cardHp);
+  return Math.max(card.maxHp ?? original.cardHp, card.cardHp);
 };
 
 // 新しいカードのID（'-' は個別IDの区切りに使うので含めない）
