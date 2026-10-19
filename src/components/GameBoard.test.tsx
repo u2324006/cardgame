@@ -35,11 +35,12 @@ describe('GameBoard', () => {
 
   it('shows rule violations on screen instead of an alert', () => {
     jest.spyOn(Math, 'random').mockReturnValue(0); // シャッフル結果を固定する
-    const { container } = render(<GameBoard />);
+    // コスト2のモンスターだけのデッキ
+    const { container } = render(<GameBoard deck={{ leaderId: 'l001', cards: { m005: 3, w10: 3, w12: 3 } }} />);
     advance(500);
-    // 2コストのカードは1エネルギーでは召喚できない
+    // コスト2以上のモンスターは1エネルギーでは召喚できない
     const handCards = Array.from(container.querySelectorAll('.self-area .hand-container .card'));
-    const expensive = handCards.find(card => card.querySelector('.card-cost')?.textContent === '2' && card.classList.contains('monster'));
+    const expensive = handCards.find(card => Number(card.querySelector('.card-cost')?.textContent) >= 2 && card.classList.contains('monster'));
     expect(expensive).toBeDefined();
     fireEvent.click(expensive!);
     fireEvent.click(container.querySelector('.self-area .front-row .card-slot')!);

@@ -55,7 +55,7 @@ describe('card set storage', () => {
   });
 
   it('uses the newer version when a card exists both in the browser and in the program', () => {
-    const local = { ...BUILTIN_CARD_SET.cards[0], id: 'cx', name: 'ブラウザ版' };
+    const local = { ...BUILTIN_CARD_SET.cards[0], id: 'cx', name: 'ブラウザ版', updatedAt: undefined };
     const program = { ...BUILTIN_CARD_SET, cards: [...BUILTIN_CARD_SET.cards, { ...local, name: '取り込んだ版', updatedAt: '2026-10-17T10:00:00.000Z' }] };
     expect(applyChanges({ cards: [local], leaders: [], deleted: [] }, program).cards.find(c => c.id === 'cx')?.name).toBe('取り込んだ版');
     const newerLocal = { ...local, updatedAt: '2026-10-18T00:00:00.000Z' };

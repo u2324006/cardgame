@@ -65,7 +65,7 @@ describe('card records (JSON for AI)', () => {
 
   it('describes built-in cards without notes sensibly', () => {
     const fire = BUILTIN_CARD_SET.cards.find(c => c.id === 's003') as SpellCard;
-    expect(toSpellRecord(fire)).toMatchObject({ effectText: '相手のモンスター1体に3ダメージを与える。', target: 'enemyMonster', effect: { kind: 'damage', amount: 3 }, implementation: '実装済み' });
+    expect(toSpellRecord(fire)).toMatchObject({ effectText: '相手のモンスター1体に6ダメージを与える。', target: 'enemyMonster', effect: { kind: 'damage', amount: 6 }, implementation: '実装済み' });
     expect(toLeaderRecord(BUILTIN_LEADER_CARDS[0])).toMatchObject({ maxHp: 42, implementation: '効果なし' });
   });
 
@@ -101,7 +101,7 @@ describe('card records (JSON for AI)', () => {
   it('loads the imported spells, races and leader with their effects', () => {
     const find = (id: string) => BUILTIN_CARD_SET.cards.find(c => c.id === id);
     expect(find('s001')).toMatchObject({ name: '前衛支援', effect: { kind: 'buffFa', amount: 1 } });
-    expect(find('s003')).toMatchObject({ cost: 1, effect: { kind: 'damage', amount: 3 } });
+    expect(find('s003')).toMatchObject({ cost: 1, effect: { kind: 'damage', amount: 6 } });
     expect(find('cmvcf4e4u3szf')).toMatchObject({ name: '指揮低下', effect: { kind: 'disableLeader', amount: 1 } });
     expect(find('cmvcf6svl19jp')).toMatchObject({ name: '後衛支援', effect: { kind: 'buffBa', amount: 1 } });
     expect([find('m003')?.race, find('m011')?.race]).toEqual(['恐竜', '戦士']);
@@ -121,7 +121,7 @@ describe('card records (JSON for AI)', () => {
     const find = (id: string) => BUILTIN_CARD_SET.cards.find(c => c.id === id);
     expect(find('cmvde9cnvtqso')).toMatchObject({ name: '見習い魔導士', ability: { kind: 'freeSpellOnSummon', maxCost: 1 } });
     expect(find('cmvde4e0w32ku')).toMatchObject({ effect: { kind: 'catchUpEnergy' } });
-    expect(find('cmvdecarqav9w')).toMatchObject({ effect: { kind: 'damageBack', amount: 3 } });
+    expect(find('cmvdecarqav9w')).toMatchObject({ effect: { kind: 'damageBack', amount: 6 } });
     expect(find('cmvdedg1ew8k5')).toMatchObject({ effect: { kind: 'forceMove' } });
     const leader = BUILTIN_CARD_SET.leaders.find(l => l.id === 'l001');
     expect(leader).toMatchObject({ ability: { kind: 'rallyEnergy', hpRatio: 0.5, amount: 3 } });

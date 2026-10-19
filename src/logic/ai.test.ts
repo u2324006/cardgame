@@ -275,6 +275,7 @@ describe('AI vs AI full games', () => {
       }
       if (state.phase === 'Play') state = runAiPlayPhase(state, player);
       else if (state.phase === 'Attack') state = runAiAttackPhase(state, player);
+      if (state.pendingReaction) continue; // 相手側が選ぶ場面（次のループで相手の AI が選ぶ）
       const advanced = nextPhase(state);
       if (advanced === state && !state.winner) throw new Error(`stuck at turn ${state.turn} ${state.phase}`);
       state = advanced;

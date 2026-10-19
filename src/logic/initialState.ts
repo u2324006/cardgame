@@ -50,6 +50,8 @@ export const createInitialTurnState = (): TurnState => ({
   summonDiscount: 0,
   spoilsDraw: 0,
   spellEnergyUsed: false,
+  movedIds: [],
+  boostedIds: [],
 });
 
 const createPlayerFromDeck = (deck: DeckList): PlayerState =>

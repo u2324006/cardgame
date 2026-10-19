@@ -60,19 +60,40 @@ const ownerOf = (state: GameState, cardId: string): PlayerId | null =>
   (['player1', 'player2'] as PlayerId[]).find(player =>
     ROWS.some(row => state.players[player].field[row].some(card => card?.id === cardId))) ?? null;
 
-// 攻撃力：前衛なら FA、後衛なら BA に、上げる効果（スペル・突撃兵・大将の効果）を足したもの
+// 攻撃力：前衛なら FA、後衛なら BA に、上げる効果（スペル・突撃兵・大将の効果・種族の効果）を足したもの
 export const getAttackPower = (state: GameState, card: MonsterCard, row: Row): number => {
   const { turnState } = state;
-  if (row === 'frontRow') {
-    const charge = card.ability?.kind === 'charge' && turnState.movedToFrontIds.includes(card.id) ? card.ability.amount : 0;
-    return card.frontAttack + (turnState.attackBuffs[card.id] ?? 0) + charge;
-  }
   const owner = ownerOf(state, card.id);
+  const race = owner ? getRaceBonus(state, owner, card) : { fa: 0, ba: 0 };
+  const { ability } = card;
+  const moved = ability?.kind === 'moveBuff' && turnState.movedIds.includes(card.id) ? ability : { fa: 0, ba: 0 };
+  if (row === 'frontRow') {
+    const charge = ability?.kind === 'charge' && turnState.movedToFrontIds.includes(card.id) ? ability.amount : 0;
+    return card.frontAttack + (turnState.attackBuffs[card.id] ?? 0) + charge + race.fa + moved.fa;
+  }
   const leaderAbility = owner ? getActiveLeaderAbility(state, owner) : undefined;
   const leaderBonus = owner && leaderAbility?.kind === 'backRowBaBonus' && isLeaderHpLowEnough(state, owner, leaderAbility.hpRatio)
     ? leaderAbility.amount
     : 0;
-  return card.backAttack + (turnState.backAttackBuffs[card.id] ?? 0) + leaderBonus;
+  return card.backAttack + (turnState.backAttackBuffs[card.id] ?? 0) + leaderBonus + race.ba + moved.ba;
+};
+
+// 自分の場のほかのモンスター
+const otherAllies = (state: GameState, owner: PlayerId, card: MonsterCard): MonsterCard[] =>
+  getMonsterPositions(state, owner).map(p => getCardAt(state, owner, p) as MonsterCard).filter(c => c.id !== card.id);
+
+// 種族の効果で上がる攻撃力（仲間が多いほど強くなる・特定の種族がいると強くなる）
+const getRaceBonus = (state: GameState, owner: PlayerId, card: MonsterCard): { fa: number; ba: number } => {
+  const { ability } = card;
+  if (ability?.kind === 'packBonus') {
+    const count = otherAllies(state, owner, card).filter(c => c.race === ability.race).length;
+    const bonus = Math.min(count * ability.amount, ability.max);
+    return { fa: bonus, ba: bonus };
+  }
+  if (ability?.kind === 'allyRaceBonus' && otherAllies(state, owner, card).some(c => c.race === ability.race)) {
+    return { fa: ability.fa, ba: ability.ba };
+  }
+  return { fa: 0, ba: 0 };
 };
 
 // --- 大将カードの効果 ---
@@ -91,9 +112,13 @@ const getActiveLeaderAbility = (state: GameState, player: PlayerId): LeaderAbili
   isLeaderActive(state, player) ? state.players[player].leader.ability : undefined;
 
 // 大将カードの効果で上がっている HP（owner はそのモンスターの持ち主）
+// 種族の効果（raceHpAura）で上がっている HP も含む
 export const getHpBonus = (state: GameState, owner: PlayerId, card: MonsterCard): number => {
   const ability = getActiveLeaderAbility(state, owner);
-  return ability?.kind === 'raceHpBonus' && card.race === ability.race ? ability.amount : 0;
+  const leaderBonus = ability?.kind === 'raceHpBonus' && card.race === ability.race ? ability.amount : 0;
+  const auraBonus = otherAllies(state, owner, card).reduce((sum, ally) =>
+    (ally.ability?.kind === 'raceHpAura' && ally.ability.race === card.race ? sum + ally.ability.amount : sum), 0);
+  return leaderBonus + auraBonus;
 };
 
 // 召喚のコスト（伏兵：相手の場のモンスターが自分より多いと下がる）
@@ -164,9 +189,10 @@ const setSlot = (
 const afterMoved = (state: GameState, player: PlayerId, to: FieldPosition, fromRow: Row): GameState => {
   const card = getCardAt(state, player, to);
   if (!card || fromRow === to.row) return state;
-  let next = fromRow === 'backRow'
-    ? updateTurnState(state, { movedToFrontIds: [...state.turnState.movedToFrontIds, card.id] })
-    : state;
+  let next = updateTurnState(state, {
+    movedIds: [...state.turnState.movedIds, card.id],
+    movedToFrontIds: fromRow === 'backRow' ? [...state.turnState.movedToFrontIds, card.id] : state.turnState.movedToFrontIds,
+  });
   const ability = getActiveLeaderAbility(next, player);
   if (ability?.kind === 'healOnMove') {
     const healed = { ...card, cardHp: Math.min(card.cardHp + ability.amount, getMaxHp(card)) };
@@ -208,7 +234,22 @@ const damageMonster = (state: GameState, player: PlayerId, position: FieldPositi
   if (newHp + getHpBonus(state, player, card) > 0) {
     return updatePlayer(state, player, p => ({ ...p, field: setSlot(p.field, position, { ...card, cardHp: newHp }) }));
   }
-  return onDestroyed(sendToGraveyard(state, player, position), player, card, position);
+  // 倒されると手札に戻るモンスターは、墓地ではなく手札へ
+  const removed = card.ability?.kind === 'returnOnDeath'
+    ? updatePlayer(state, player, p => ({ ...p, field: setSlot(p.field, position, null), hand: [...p.hand, toOriginalCard(card)] }))
+    : sendToGraveyard(state, player, position);
+  return onDestroyed(removed, player, card, position);
+};
+
+// 相手のモンスターに自動でダメージを与える対象（倒せるもののうちコストが一番高いもの。倒せなければ HP が一番低いもの）
+export const autoDamageTarget = (state: GameState, defender: PlayerId, amount: number, rows?: Row[]): FieldPosition | null => {
+  const candidates = getMonsterPositions(state, defender, rows).map(position => {
+    const card = getCardAt(state, defender, position) as MonsterCard;
+    return { position, card, hp: getEffectiveHp(state, defender, card) };
+  });
+  const killable = candidates.filter(c => c.hp <= amount).sort((a, b) => b.card.cost - a.card.cost);
+  if (killable[0]) return killable[0].position;
+  return candidates.sort((a, b) => a.hp - b.hp)[0]?.position ?? null;
 };
 
 // 場のモンスターを元の能力値に戻して墓地へ送る
@@ -229,6 +270,18 @@ const onDestroyed = (state: GameState, owner: PlayerId, card: MonsterCard, posit
   if (spoilsDraw > 0 && owner !== next.currentPlayer) {
     next = updateTurnState(updatePlayer(next, next.currentPlayer, p => drawCards(p, spoilsDraw)), { spoilsDraw: 0 });
   }
+  // 倒されたときに相手のモンスターにダメージ：持ち主が対象を選ぶ（ほかに選ぶ途中の場面があれば自動で選ぶ）
+  const opponent = getOpponent(owner);
+  if (ability?.kind === 'deathDamage' && countMonsters(next, opponent) > 0) {
+    if (!next.pendingReaction) {
+      next = { ...next, pendingReaction: { player: owner, card, kind: 'damage', amount: ability.amount } };
+    } else {
+      const target = autoDamageTarget(next, opponent, ability.amount);
+      if (target) next = damageMonster(next, opponent, target, ability.amount);
+    }
+  }
+  // 仲間の HP を上げていたモンスターがいなくなったら、HP が 0 以下になった仲間を墓地へ
+  if (ability?.kind === 'raceHpAura') next = removeDefeatedMonsters(next);
   return next;
 };
 
@@ -243,7 +296,11 @@ const removeDefeatedMonsters = (state: GameState): GameState =>
 // 大将カードにダメージを与え、HPが0以下になったら相手の勝利とする
 // 籠城の効果があれば、1回のダメージを減らす
 const damageSpecialCard = (state: GameState, player: PlayerId, amount: number): GameState => {
-  const guard = state.leaderGuards.filter(g => g.player === player).reduce((sum, g) => sum + g.amount, 0);
+  const shield = getMonsterPositions(state, player).reduce((sum, position) => {
+    const ability = getCardAt(state, player, position)?.ability;
+    return ability?.kind === 'leaderShield' ? sum + ability.amount : sum;
+  }, 0);
+  const guard = state.leaderGuards.filter(g => g.player === player).reduce((sum, g) => sum + g.amount, shield);
   const next = updatePlayer(state, player, p => ({ ...p, specialCardHp: p.specialCardHp - Math.max(0, amount - guard) }));
   return next.players[player].specialCardHp <= 0 && !next.winner
     ? { ...next, winner: getOpponent(player) }
@@ -327,9 +384,44 @@ const applyEndOfTurnEffects = (state: GameState): GameState => {
   }, state);
 };
 
+// 対象を選ぶ途中の場面を、自動で片付ける（ダメージは autoDamageTarget、そのほかは選ばずに終える）
+const autoResolveReactions = (state: GameState): GameState => {
+  let next = state;
+  for (let i = 0; i < 20 && next.pendingReaction; i++) {
+    const pending = next.pendingReaction;
+    const cleared: GameState = { ...next, pendingReaction: null };
+    const opponent = getOpponent(pending.player);
+    const target = pending.kind === 'damage' ? autoDamageTarget(cleared, opponent, pending.amount, pending.row ? [pending.row] : undefined) : null;
+    next = target ? damageMonster(cleared, opponent, target, pending.amount) : cleared;
+  }
+  return next;
+};
+
+// ターン終了時の種族の効果（後衛から相手にダメージ、成長）
+const applyEndOfTurnRaceEffects = (state: GameState): GameState => {
+  const player = state.currentPlayer;
+  const opponent = getOpponent(player);
+  return getMonsterPositions(state, player).reduce((next, position) => {
+    const card = getCardAt(next, player, position);
+    const ability = card?.ability;
+    if (!card || !ability) return next;
+    if (ability.kind === 'endTurnDamage' && position.row === 'backRow') {
+      const target = autoDamageTarget(next, opponent, ability.amount);
+      return target ? damageMonster(next, opponent, target, ability.amount) : next;
+    }
+    if (ability.kind === 'grow' && (card.growth ?? 0) < ability.max) {
+      const maxHp = getMaxHp(card) + ability.hp;
+      const grown = { ...card, frontAttack: card.frontAttack + ability.fa, cardHp: card.cardHp + ability.hp, maxHp, growth: (card.growth ?? 0) + 1 };
+      return updatePlayer(next, player, p => ({ ...p, field: setSlot(p.field, position, grown) }));
+    }
+    return next;
+  }, state);
+};
+
 export const endTurn = (state: GameState): GameState => {
   if (isBusy(state)) return state;
-  const ended = applyEndOfTurnEffects(state);
+  // ターン終了時の効果で倒されたモンスターの「倒されたとき」の対象は、自動で選ぶ
+  const ended = autoResolveReactions(applyEndOfTurnRaceEffects(applyEndOfTurnEffects(state)));
   return {
     ...ended,
     // 自分のモンスターにかかっていた「次のターンは移動できない」は、自分のターンが終わると切れる
@@ -359,8 +451,9 @@ export const playCard = (
   player: PlayerId,
   handIndex: number,
   position: FieldPosition,
-  options: { payByDiscard?: boolean } = {}, // 傭兵：エネルギーの代わりに手札を捨てて召喚する
+  options: { payByDiscard?: boolean; payBySacrifice?: boolean } = {}, // 傭兵：手札を捨てて召喚、合体：仲間を墓地に送って召喚
 ): ActionResult => {
+  if (options.payBySacrifice) return fusionSummon(state, player, handIndex, position);
   const turnError = checkTurn(state, player, 'Play', 'freeSummon');
   if (turnError) return failure(turnError);
   const playerState = state.players[player];
@@ -417,10 +510,74 @@ const applySummonEffects = (state: GameState, player: PlayerId, card: MonsterCar
       const count = Math.min(ability.amount, hand.length);
       return count > 0 ? { ...state, pendingDiscard: { player, count } } : state;
     }
+    case 'onSummonTarget': {
+      const side = ability.effect === 'heal' ? player : getOpponent(player);
+      const rows = ability.row ? [ability.row] : ROWS;
+      // 回復はダメージを受けた味方がいるとき、ダメージ・弱体化は相手のモンスターがいるときだけ選ぶ
+      const hasTarget = getMonsterPositions(state, side, rows).some(p => {
+        const target = getCardAt(state, side, p) as MonsterCard;
+        return ability.effect !== 'heal' || target.cardHp < getMaxHp(target);
+      });
+      return hasTarget
+        ? { ...state, pendingReaction: { player, card, kind: ability.effect, amount: ability.amount, row: ability.row } }
+        : state;
+    }
+    case 'onSummonLeaderHeal':
+      return updatePlayer(state, player, p => ({ ...p, specialCardHp: Math.min(p.specialCardHp + ability.amount, p.leader.maxHp) }));
+    case 'energySteal': {
+      const drained = updatePlayer(state, getOpponent(player), p => ({ ...p, currentEnergy: Math.max(0, p.currentEnergy - ability.amount) }));
+      return gainEnergy(drained, player, ability.amount);
+    }
+    case 'energyOnSummon':
+      return gainEnergy(state, player, ability.amount);
+    case 'onSummonDiscard': {
+      const opponent = getOpponent(player);
+      let next = state;
+      for (let i = 0; i < ability.amount && next.players[opponent].hand.length > 0 && !next.pendingReaction; i++) {
+        next = forceDiscard(next, opponent, Math.floor(Math.random() * next.players[opponent].hand.length));
+      }
+      return next;
+    }
+    case 'graveyardSummonOnSummon':
+      return canGraveyardSummon(state, player, ability.maxCost, ability.race)
+        ? { ...state, pendingPick: { player, kind: 'graveyardSummon', source: card.name, maxCost: ability.maxCost, race: ability.race } }
+        : state;
     default:
       return state;
   }
 };
+
+// 合体（fusionSummon）：自分の場の同じ種族のモンスターを墓地に送り、エネルギーを払わずに召喚する。
+// 墓地に送るのは、選んだ位置のモンスター（同じ種族なら）と、コストと HP の低いもの
+const fusionSummon = (state: GameState, player: PlayerId, handIndex: number, position: FieldPosition): ActionResult => {
+  const turnError = checkTurn(state, player, 'Play');
+  if (turnError) return failure(turnError);
+  const card = state.players[player].hand[handIndex];
+  if (!card || !isMonster(card) || card.ability?.kind !== 'fusionSummon') return failure('このモンスターは合体で召喚できません。');
+  const { race, count } = card.ability;
+  const atPosition = getCardAt(state, player, position);
+  if (atPosition && atPosition.race !== race) return failure('そのスロットには既にカードがあります。');
+  const materials = getMonsterPositions(state, player)
+    .filter(p => getCardAt(state, player, p)?.race === race)
+    .sort((a, b) => {
+      const first = (p: FieldPosition) => (p.row === position.row && p.index === position.index ? 0 : 1);
+      const ca = getCardAt(state, player, a) as MonsterCard;
+      const cb = getCardAt(state, player, b) as MonsterCard;
+      return first(a) - first(b) || ca.cost - cb.cost || ca.cardHp - cb.cardHp;
+    })
+    .slice(0, count);
+  if (materials.length < count) return failure(`自分の場に種族「${race}」のモンスターが${count}体必要です。`);
+  const sacrificed = materials.reduce((next, p) => sendToGraveyard(next, player, p), state);
+  if (getCardAt(sacrificed, player, position)) return failure('そのスロットには既にカードがあります。');
+  const placed = updatePlayer(sacrificed, player, p => ({ ...payFromHand(p, handIndex, 0), field: setSlot(p.field, position, card) }));
+  const summoned = updateTurnState(placed, { summonedThisTurnIds: [...placed.turnState.summonedThisTurnIds, card.id] });
+  return success(applySummonEffects(summoned, player, card, position));
+};
+
+// 墓地からコストなしで出せるモンスターがいて、出せる空きがあるか
+const canGraveyardSummon = (state: GameState, player: PlayerId, maxCost: number, race?: string): boolean =>
+  state.players[player].graveyard.some(c => isMonster(c) && c.cost <= maxCost && (!race || c.race === race))
+  && ROWS.some(r => findEmptySlot(state, player, r));
 
 // コストなしで召喚できるモンスターが手札にあり、出せる空きがあるか
 const canFreeSummon = (state: GameState, player: PlayerId, maxCost: number, row?: Row): boolean =>
@@ -534,12 +691,25 @@ export const resolveReaction = (state: GameState, player: PlayerId, position: Fi
   const pending = state.pendingReaction;
   if (pending?.player !== player) return failure('いまは選ぶ場面ではありません。');
   const done = { ...state, pendingReaction: null };
+  if (pending.row && position.row !== pending.row) return failure(`${pending.row === 'frontRow' ? '前衛' : '後衛'}のモンスターを選んでください。`);
   if (pending.kind === 'summon') {
     if (getCardAt(state, player, position)) return failure('空いているスロットを選んでください。');
     return success(updatePlayer(done, player, p => ({ ...p, field: setSlot(p.field, position, pending.card) })));
   }
+  if (pending.kind === 'heal') {
+    const ally = getCardAt(state, player, position);
+    if (!ally) return failure('味方のモンスターを選んでください。');
+    const healed = { ...ally, cardHp: Math.min(ally.cardHp + pending.amount, getMaxHp(ally)) };
+    return success(updatePlayer(done, player, p => ({ ...p, field: setSlot(p.field, position, healed) })));
+  }
   const opponent = getOpponent(player);
-  if (!getCardAt(state, opponent, position)) return failure('相手のモンスターを選んでください。');
+  const target = getCardAt(state, opponent, position);
+  if (!target) return failure('相手のモンスターを選んでください。');
+  if (pending.kind === 'debuff') {
+    // FA・BA を下げる（場を離れると元に戻る）
+    const weakened = { ...target, frontAttack: Math.max(0, target.frontAttack - pending.amount), backAttack: Math.max(0, target.backAttack - pending.amount) };
+    return success(updatePlayer(done, opponent, p => ({ ...p, field: setSlot(p.field, position, weakened) })));
+  }
   return success(damageMonster(done, opponent, position, pending.amount));
 };
 
@@ -549,6 +719,24 @@ export const pickCard = (state: GameState, player: PlayerId, index: number | nul
   const pending = state.pendingPick;
   if (pending?.player !== player) return failure('いまはカードを選ぶ場面ではありません。');
   const done = { ...state, pendingPick: null };
+  if (pending.kind === 'graveyardSummon') {
+    // 墓地のモンスターをコストなしで場に出す（得意な列の空き。なければもう一方の列）。出さないときは index が null
+    if (index === null) return success(done);
+    const card = state.players[player].graveyard[index];
+    if (!card || !isMonster(card) || card.cost > (pending.maxCost ?? 0) || (pending.race && card.race !== pending.race)) {
+      return failure(`墓地のコスト${pending.maxCost}以下の${pending.race ?? ''}モンスターを選んでください。`);
+    }
+    const row: Row = card.backAttack > card.frontAttack ? 'backRow' : 'frontRow';
+    const slot = findEmptySlot(state, player, row) ?? findEmptySlot(state, player, otherRow(row));
+    if (!slot) return failure('場に空きがありません。');
+    const placed = updatePlayer(done, player, p => ({
+      ...p,
+      graveyard: p.graveyard.filter((_, i) => i !== index),
+      field: setSlot(p.field, slot, card),
+    }));
+    const summoned = updateTurnState(placed, { summonedThisTurnIds: [...placed.turnState.summonedThisTurnIds, card.id] });
+    return success(applySummonEffects(summoned, player, card, slot));
+  }
   if (pending.kind === 'graveyard') {
     const card = index === null ? undefined : state.players[player].graveyard[index];
     if (!card || !isMonster(card)) return failure('墓地のモンスターを選んでください。');
@@ -851,22 +1039,35 @@ export const attack = (
   if (!canAttackThisTurn(state)) return failure('先手の1ターン目は攻撃できません。');
   const attacker = getCardAt(state, attackerPlayer, attackerPosition);
   if (!attacker) return failure('攻撃するモンスターがいません。');
-  if (state.turnState.attackedMonsterIds.includes(attacker.id)) {
-    return failure('このモンスターは既に攻撃済みです。');
-  }
+  const attackError = getAttackError(state, attackerPlayer, attackerPosition);
+  if (attackError) return failure(attackError);
 
   const defender = getOpponent(attackerPlayer);
   const frontRowBlocked = hasFrontRowMonsters(state.players[defender]);
   const attackPower = getAttackPower(state, attacker, attackerPosition.row);
+  // 攻撃にエネルギーが要るモンスター（オーク）は先に払う
+  const energyCost = attacker.ability?.kind === 'attackEnergyCost' ? attacker.ability.amount : 0;
+  const paid = energyCost ? updatePlayer(state, attackerPlayer, p => ({ ...p, currentEnergy: p.currentEnergy - energyCost })) : state;
 
   let next: GameState;
   if (target.type === 'monster') {
     const defenderCard = getCardAt(state, defender, target.position);
     if (!defenderCard) return failure('攻撃対象のモンスターがいません。');
-    if (target.position.row === 'backRow' && frontRowBlocked && !canSnipe(attacker, attackerPosition)) {
+    if (target.position.row === 'backRow' && frontRowBlocked && !canSnipe(attacker, attackerPosition) && !canReach(attacker, attackerPosition)) {
       return failure('前衛にモンスターがいるため、後衛を攻撃できません。');
     }
-    next = damageMonster(state, defender, target.position, attackPower);
+    const taunts = getMonsterPositions(state, defender, ['frontRow']).filter(p => getCardAt(state, defender, p)?.ability?.kind === 'taunt');
+    if (taunts.length > 0 && !taunts.some(p => p.row === target.position.row && p.index === target.position.index)) {
+      return failure('仲間を庇うモンスターがいるため、そのモンスターしか攻撃できません。');
+    }
+    const targetHp = getEffectiveHp(state, defender, defenderCard);
+    next = damageMonster(paid, defender, target.position, attackPower);
+    // 吸血：与えたダメージぶん回復
+    const drinker = getCardAt(next, attackerPlayer, attackerPosition);
+    if (attacker.ability?.kind === 'lifesteal' && drinker?.id === attacker.id) {
+      const healed = { ...drinker, cardHp: Math.min(drinker.cardHp + Math.min(attackPower, targetHp), getMaxHp(drinker)) };
+      next = updatePlayer(next, attackerPlayer, p => ({ ...p, field: setSlot(p.field, attackerPosition, healed) }));
+    }
     // 殿：前衛で倒されたら、攻撃したモンスターにダメージを返す
     const { ability } = defenderCard;
     if (ability?.kind === 'rearguard' && target.position.row === 'frontRow' && !getCardAt(next, defender, target.position)) {
@@ -875,7 +1076,7 @@ export const attack = (
   } else {
     if (attackerPosition.row === 'backRow') return failure('後衛のモンスターは大将カードを攻撃できません。');
     if (frontRowBlocked) return failure('前衛にモンスターがいるため、直接攻撃できません。');
-    next = damageSpecialCard(state, defender, attackPower);
+    next = damageSpecialCard(paid, defender, attackPower);
   }
 
   // 槍兵：前衛から攻撃したとき、選んだ相手の後衛のモンスターにもダメージ（選んだものがいなければ HP が一番低いもの）
@@ -896,6 +1097,56 @@ export const attack = (
 export const needsPierceTarget = (state: GameState, player: PlayerId, attackerPosition: FieldPosition): boolean =>
   getCardAt(state, player, attackerPosition)?.ability?.kind === 'pierce' && attackerPosition.row === 'frontRow'
   && getMonsterPositions(state, getOpponent(player), ['backRow']).length >= 2;
+
+// このモンスターがいま攻撃できない理由（攻撃できるなら null）
+export const getAttackError = (state: GameState, player: PlayerId, position: FieldPosition): string | null => {
+  const card = getCardAt(state, player, position);
+  if (!card) return '攻撃するモンスターがいません。';
+  const { ability } = card;
+  const attacks = state.turnState.attackedMonsterIds.filter(id => id === card.id).length;
+  if (attacks >= (ability?.kind === 'doubleAttack' ? 2 : 1)) return 'このモンスターは既に攻撃済みです。';
+  if (ability?.kind === 'noAttackOnSummonTurn' && state.turnState.summonedThisTurnIds.includes(card.id)) {
+    return 'このモンスターは召喚したターンには攻撃できません。';
+  }
+  if (ability?.kind === 'mustMoveToAttack' && !state.turnState.movedIds.includes(card.id)) {
+    return 'このモンスターは、このターンに移動していないと攻撃できません。';
+  }
+  if (ability?.kind === 'attackEnergyCost' && state.players[player].currentEnergy < ability.amount) {
+    return `このモンスターが攻撃するにはエネルギーが${ability.amount}必要です。`;
+  }
+  return null;
+};
+
+// 前衛から相手の後衛を攻撃できるか（恐竜など）
+export const canReach = (attacker: MonsterCard, position: FieldPosition): boolean =>
+  attacker.ability?.kind === 'reach' && position.row === 'frontRow';
+
+// 力を溜められるか（selfBoost：1ターンに1回、エネルギーと HP を払って攻撃力を上げる）
+export const canBoost = (state: GameState, player: PlayerId, position: FieldPosition): boolean => {
+  const card = getCardAt(state, player, position);
+  const ability = card?.ability;
+  return !!card && ability?.kind === 'selfBoost' && !state.turnState.boostedIds.includes(card.id)
+    && state.players[player].currentEnergy >= ability.energy && card.cardHp > ability.hp && !checkTurn(state, player, 'Play');
+};
+
+// 力を溜める：エネルギーと HP を払って、このターン FA・BA を上げる
+export const boostMonster = (state: GameState, player: PlayerId, position: FieldPosition): ActionResult => {
+  const turnError = checkTurn(state, player, 'Play');
+  if (turnError) return failure(turnError);
+  const card = getCardAt(state, player, position);
+  const ability = card?.ability;
+  if (!card || ability?.kind !== 'selfBoost') return failure('力を溜められるモンスターではありません。');
+  if (state.turnState.boostedIds.includes(card.id)) return failure('このモンスターは、このターンもう力を溜めました。');
+  if (state.players[player].currentEnergy < ability.energy) return failure('エネルギーが足りません！');
+  if (card.cardHp <= ability.hp) return failure('HP が足りません。');
+  const paid = updatePlayer(state, player, p => ({
+    ...p,
+    currentEnergy: p.currentEnergy - ability.energy,
+    field: setSlot(p.field, position, { ...card, cardHp: card.cardHp - ability.hp }),
+  }));
+  const buffed = addBuff(addBuff(paid, 'attackBuffs', card.id, ability.fa), 'backAttackBuffs', card.id, ability.ba);
+  return success(updateTurnState(buffed, { boostedIds: [...buffed.turnState.boostedIds, card.id] }));
+};
 
 // 狙撃手：後衛にいれば、相手の前衛にモンスターがいても相手の後衛を攻撃できる
 export const canSnipe = (attacker: MonsterCard, position: FieldPosition): boolean =>

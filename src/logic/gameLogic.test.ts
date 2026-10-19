@@ -1,4 +1,5 @@
-import { Card } from '../types/card';
+import { Card, MonsterCard } from '../types/card';
+import { findBaseCard } from './cards';
 import { GameState } from '../types/gameState';
 import { createInitialGameState } from './initialState';
 import {
@@ -11,6 +12,7 @@ import {
   getEffectiveHp,
   moveMonster,
   nextPhase,
+  boostMonster,
   commandMonster,
   pickCard,
   resolveReaction,
@@ -169,14 +171,14 @@ describe('turn and phase checks', () => {
     let state = withField(emptyState(), 'player1', 'frontRow', [monster('a', { frontAttack: 5 }), null, null]);
     state = withField(state, 'player2', 'frontRow', [{ ...monster('m001-3'), name: 'ゴブリンアタッカー', cardHp: 2 }, null, null]);
     const next = unwrap(attack(inPhase(state, 'Attack'), 'player1', { row: 'frontRow', index: 0 }, { type: 'monster', position: { row: 'frontRow', index: 0 } }));
-    expect(next.players.player2.graveyard[0]).toMatchObject({ id: 'm001-3', cardHp: 6 });
+    expect(next.players.player2.graveyard[0]).toMatchObject({ id: 'm001-3', cardHp: (findBaseCard('m001') as MonsterCard).cardHp });
   });
 });
 
 describe('spell effects', () => {
   it('heals an ally up to its max HP and rejects an undamaged target', () => {
-    const damaged = { ...monster('m001-0'), cardHp: 2 }; // ゴブリンアタッカー（最大HP 6）
-    let state = withField(emptyState(), 'player1', 'frontRow', [damaged, monster('m001-1', { cardHp: 6 }), null]);
+    const damaged = monster('x', { cardHp: 2, maxHp: 6 });
+    let state = withField(emptyState(), 'player1', 'frontRow', [damaged, monster('y', { cardHp: 6, maxHp: 6 }), null]);
     state = withPlayer(state, 'player1', { hand: [healSpell, healSpell] });
     const next = unwrap(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 }));
     expect(next.players.player1.field.frontRow[0]?.cardHp).toBe(5);
@@ -295,7 +297,7 @@ describe('leader ability (マウンテンゴーレム)', () => {
 
   it('heals golems up to their max HP plus the bonus', () => {
     let state = withGolemLeader(emptyState(), 'player1');
-    state = withField(state, 'player1', 'frontRow', [{ ...monster('m002-0', { race: 'ゴーレム' }), cardHp: 12 }, null, null]); // ストーンゴーレム（最大HP 13）
+    state = withField(state, 'player1', 'frontRow', [monster('g', { race: 'ゴーレム', cardHp: 12, maxHp: 13 }), null, null]);
     state = withPlayer(state, 'player1', { hand: [healSpell, healSpell] });
     const next = unwrap(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 }));
     expect(getEffectiveHp(next, 'player1', next.players.player1.field.frontRow[0]!)).toBe(14);
@@ -849,6 +851,173 @@ describe('resource cards: discarding', () => {
     const next = unwrap(castSpell(state, 'player1', 0));
     expect(next.players.player1.hand.map(c => c.id)).toEqual(['d1', 'd2']);
     expect(next.players.player1.graveyard.map(c => c.id)).toEqual(expect.arrayContaining(['a', 'b']));
+  });
+});
+
+describe('race mechanics', () => {
+  const atk = (state: GameState) => inPhase(state, 'Attack');
+  const target = (row: 'frontRow' | 'backRow', index: number) => ({ type: 'monster' as const, position: { row, index } });
+
+  it('packBonus and allyRaceBonus raise attack power with allies of a race', () => {
+    const pack = withAbility('p', { kind: 'packBonus', race: '戦士', amount: 1, max: 2 }, { race: '戦士', frontAttack: 1, backAttack: 0 });
+    let state = withField(emptyState(), 'player1', 'frontRow', [pack, monster('a', { race: '戦士' }), monster('b', { race: '戦士' })]);
+    state = withField(state, 'player1', 'backRow', [monster('c', { race: '戦士' }), null, null]);
+    expect(getAttackPower(state, pack, 'frontRow')).toBe(1 + 2); // 3体いても最大 +2
+    const goblin = withAbility('g', { kind: 'allyRaceBonus', race: 'オーク', fa: 2, ba: 0 }, { frontAttack: 3 });
+    const alone = withField(emptyState(), 'player1', 'frontRow', [goblin, null, null]);
+    expect(getAttackPower(alone, goblin, 'frontRow')).toBe(3);
+    expect(getAttackPower(withField(alone, 'player1', 'backRow', [monster('o', { race: 'オーク' }), null, null]), goblin, 'frontRow')).toBe(5);
+  });
+
+  it('taunt forces attacks onto the taunting monster; leaderShield reduces leader damage', () => {
+    let state = withField(emptyState(), 'player1', 'frontRow', [monster('a', { frontAttack: 3 }), null, null]);
+    state = atk(withField(state, 'player2', 'frontRow', [monster('x'), withAbility('t', { kind: 'taunt' }, { cardHp: 9 }), null]));
+    expect(attack(state, 'player1', { row: 'frontRow', index: 0 }, target('frontRow', 0)).ok).toBe(false);
+    expect(attack(state, 'player1', { row: 'frontRow', index: 0 }, target('frontRow', 1)).ok).toBe(true);
+
+    let shielded = withField(emptyState(), 'player1', 'frontRow', [monster('a', { frontAttack: 5 }), null, null]);
+    shielded = atk(withField(shielded, 'player2', 'backRow', [withAbility('s', { kind: 'leaderShield', amount: 2 }), null, null]));
+    expect(unwrap(attack(shielded, 'player1', { row: 'frontRow', index: 0 }, { type: 'player' })).players.player2.specialCardHp).toBe(20 - 3);
+  });
+
+  it('raceHpAura raises allies\' HP, and allies drop when the aura leaves', () => {
+    const aura = withAbility('au', { kind: 'raceHpAura', race: 'ゴーレム', amount: 4 }, { race: 'ゴーレム', cardHp: 2 });
+    let state = withField(emptyState(), 'player2', 'frontRow', [aura, monster('g', { race: 'ゴーレム', cardHp: 0 }), null]);
+    expect(getEffectiveHp(state, 'player2', state.players.player2.field.frontRow[1]!)).toBe(4);
+    state = withPlayer(state, 'player1', { hand: [fireSpell] });
+    const next = unwrap(castSpell(state, 'player1', 0, { row: 'frontRow', index: 0 }));
+    expect(next.players.player2.field.frontRow).toEqual([null, null, null]); // オーラが消えて HP 0 のゴーレムも倒れる
+  });
+
+  it('grow raises FA and max HP at the end of each own turn, up to the limit', () => {
+    let state = withField(emptyState(), 'player1', 'frontRow', [withAbility('dr', { kind: 'grow', fa: 1, hp: 2, max: 2 }, { frontAttack: 1, cardHp: 4 }), null, null]);
+    for (let i = 0; i < 3; i++) state = inPhase(endTurn(endTurn(state)), 'Play');
+    expect(state.players.player1.field.frontRow[0]).toMatchObject({ frontAttack: 3, cardHp: 8, maxHp: 8, growth: 2 });
+  });
+
+  it('reach lets a front-row monster hit the back row past the front row', () => {
+    let state = withField(emptyState(), 'player1', 'frontRow', [withAbility('r', { kind: 'reach' }, { frontAttack: 3 }), null, null]);
+    state = withField(state, 'player2', 'frontRow', [monster('f'), null, null]);
+    state = atk(withField(state, 'player2', 'backRow', [monster('b', { cardHp: 3 }), null, null]));
+    expect(unwrap(attack(state, 'player1', { row: 'frontRow', index: 0 }, target('backRow', 0))).players.player2.field.backRow[0]).toBeNull();
+  });
+
+  it('onSummonTarget lets the summoner choose a damage, heal or debuff target', () => {
+    const mage = withAbility('mg', { kind: 'onSummonTarget', effect: 'damage', amount: 4, row: 'backRow' });
+    let state = withField(emptyState(), 'player2', 'frontRow', [monster('f', { cardHp: 4 }), null, null]);
+    state = withField(state, 'player2', 'backRow', [monster('b', { cardHp: 4 }), null, null]);
+    state = withPlayer(state, 'player1', { hand: [mage] });
+    const summoned = unwrap(playCard(state, 'player1', 0, { row: 'backRow', index: 0 }));
+    expect(summoned.pendingReaction).toMatchObject({ player: 'player1', kind: 'damage', amount: 4, row: 'backRow' });
+    expect(resolveReaction(summoned, 'player1', { row: 'frontRow', index: 0 }).ok).toBe(false);
+    expect(unwrap(resolveReaction(summoned, 'player1', { row: 'backRow', index: 0 })).players.player2.field.backRow[0]).toBeNull();
+
+    const healer = withAbility('h', { kind: 'onSummonTarget', effect: 'heal', amount: 6 });
+    let heal = withField(emptyState(), 'player1', 'frontRow', [monster('hurt', { cardHp: 2, maxHp: 10 }), null, null]);
+    heal = unwrap(playCard(withPlayer(heal, 'player1', { hand: [healer] }), 'player1', 0, { row: 'backRow', index: 0 }));
+    expect(unwrap(resolveReaction(heal, 'player1', { row: 'frontRow', index: 0 })).players.player1.field.frontRow[0]?.cardHp).toBe(8);
+
+    const fairy = withAbility('fy', { kind: 'onSummonTarget', effect: 'debuff', amount: 2 });
+    let debuff = withField(emptyState(), 'player2', 'frontRow', [monster('e', { frontAttack: 3, backAttack: 1 }), null, null]);
+    debuff = unwrap(playCard(withPlayer(debuff, 'player1', { hand: [fairy] }), 'player1', 0, { row: 'backRow', index: 0 }));
+    expect(unwrap(resolveReaction(debuff, 'player1', { row: 'frontRow', index: 0 })).players.player2.field.frontRow[0]).toMatchObject({ frontAttack: 1, backAttack: 0 });
+  });
+
+  it('summon effects: leader heal, energy steal and gain, opponent discard', () => {
+    const play = (card: MonsterCard, changes = {}) => unwrap(playCard(withPlayer(withPlayer(emptyState(), 'player2', { currentEnergy: 3, hand: [spell] }), 'player1', { hand: [card], currentEnergy: 2, specialCardHp: 10, ...changes }), 'player1', 0, { row: 'backRow', index: 0 }));
+    expect(play(withAbility('f', { kind: 'onSummonLeaderHeal', amount: 4 }, { cost: 1 })).players.player1.specialCardHp).toBe(14);
+    const stolen = play(withAbility('t', { kind: 'energySteal', amount: 1 }, { cost: 1 }));
+    expect([stolen.players.player1.currentEnergy, stolen.players.player2.currentEnergy]).toEqual([2, 2]);
+    expect(play(withAbility('e', { kind: 'energyOnSummon', amount: 1 }, { cost: 1 })).players.player1.currentEnergy).toBe(2);
+    expect(play(withAbility('d', { kind: 'onSummonDiscard', amount: 1 }, { cost: 1 })).players.player2.hand).toHaveLength(0);
+  });
+
+  it('moveBuff and doubleAttack', () => {
+    const tracker = withAbility('tr', { kind: 'moveBuff', fa: 0, ba: 2 }, { frontAttack: 0, backAttack: 3 });
+    const moved = unwrap(moveMonster(withField(emptyState(), 'player1', 'frontRow', [tracker, null, null]), 'player1', { row: 'frontRow', index: 0 }, { row: 'backRow', index: 0 }));
+    expect(getAttackPower(moved, tracker, 'backRow')).toBe(5);
+
+    let state = withField(emptyState(), 'player1', 'frontRow', [withAbility('da', { kind: 'doubleAttack' }, { frontAttack: 2 }), null, null]);
+    state = atk(withField(state, 'player2', 'frontRow', [monster('e', { cardHp: 9 }), null, null]));
+    state = unwrap(attack(state, 'player1', { row: 'frontRow', index: 0 }, target('frontRow', 0)));
+    state = unwrap(attack(state, 'player1', { row: 'frontRow', index: 0 }, target('frontRow', 0)));
+    expect(state.players.player2.field.frontRow[0]?.cardHp).toBe(5);
+    expect(attack(state, 'player1', { row: 'frontRow', index: 0 }, target('frontRow', 0)).ok).toBe(false);
+  });
+
+  it('endTurnDamage hits an enemy from the back row at the end of the turn', () => {
+    let state = withField(emptyState(), 'player1', 'backRow', [withAbility('fm', { kind: 'endTurnDamage', amount: 2 }), null, null]);
+    state = withField(state, 'player2', 'frontRow', [monster('a', { cardHp: 9 }), monster('b', { cardHp: 2, cost: 3 }), null]);
+    expect(endTurn(state).players.player2.field.frontRow[1]).toBeNull(); // 倒せるものを狙う
+  });
+
+  it('selfBoost pays energy or HP to raise attack power once per turn', () => {
+    const goblin = withAbility('gb', { kind: 'selfBoost', energy: 1, hp: 0, fa: 2, ba: 0 }, { frontAttack: 2 });
+    const state = withPlayer(withField(emptyState(), 'player1', 'frontRow', [goblin, null, null]), 'player1', { currentEnergy: 1 });
+    const boosted = unwrap(boostMonster(state, 'player1', { row: 'frontRow', index: 0 }));
+    expect([getAttackPower(boosted, goblin, 'frontRow'), boosted.players.player1.currentEnergy]).toEqual([4, 0]);
+    expect(boostMonster(withPlayer(boosted, 'player1', { currentEnergy: 5 }), 'player1', { row: 'frontRow', index: 0 }).ok).toBe(false);
+    const mad = withAbility('mg', { kind: 'selfBoost', energy: 0, hp: 3, fa: 2, ba: 2 }, { cardHp: 5 });
+    const paidHp = unwrap(boostMonster(withField(emptyState(), 'player1', 'frontRow', [mad, null, null]), 'player1', { row: 'frontRow', index: 0 }));
+    expect(paidHp.players.player1.field.frontRow[0]?.cardHp).toBe(2);
+  });
+
+  it('graveyardSummonOnSummon brings back a cheap monster from the graveyard', () => {
+    const necro = withAbility('nc', { kind: 'graveyardSummonOnSummon', maxCost: 2 }, { cost: 3 });
+    const state = withPlayer(emptyState(), 'player1', { hand: [necro], currentEnergy: 3, graveyard: [monster('big', { cost: 3 }), monster('small', { cost: 2, frontAttack: 3, backAttack: 0 })] });
+    const summoned = unwrap(playCard(state, 'player1', 0, { row: 'backRow', index: 0 }));
+    expect(summoned.pendingPick).toMatchObject({ kind: 'graveyardSummon', maxCost: 2 });
+    expect(pickCard(summoned, 'player1', 0).ok).toBe(false);
+    const revived = unwrap(pickCard(summoned, 'player1', 1));
+    expect(revived.players.player1.field.frontRow[0]?.id).toBe('small');
+    expect(unwrap(pickCard(summoned, 'player1', null)).pendingPick).toBeNull();
+  });
+
+  it('lifesteal, deathDamage and returnOnDeath', () => {
+    let state = withField(emptyState(), 'player1', 'frontRow', [withAbility('v', { kind: 'lifesteal' }, { frontAttack: 4, cardHp: 2, maxHp: 10 }), null, null]);
+    state = atk(withField(state, 'player2', 'frontRow', [monster('e', { cardHp: 9 }), null, null]));
+    expect(unwrap(attack(state, 'player1', { row: 'frontRow', index: 0 }, target('frontRow', 0))).players.player1.field.frontRow[0]?.cardHp).toBe(6);
+
+    let wisp = withField(emptyState(), 'player2', 'frontRow', [withAbility('w', { kind: 'deathDamage', amount: 3 }, { cardHp: 1 }), null, null]);
+    wisp = withField(wisp, 'player1', 'frontRow', [monster('mine', { cardHp: 3 }), null, null]);
+    wisp = withPlayer(wisp, 'player1', { hand: [fireSpell] });
+    const killed = unwrap(castSpell(wisp, 'player1', 0, { row: 'frontRow', index: 0 }));
+    expect(killed.pendingReaction).toMatchObject({ player: 'player2', kind: 'damage', amount: 3 });
+    expect(unwrap(resolveReaction(killed, 'player2', { row: 'frontRow', index: 0 })).players.player1.field.frontRow[0]).toBeNull();
+
+    let soul = withField(emptyState(), 'player2', 'frontRow', [withAbility('s', { kind: 'returnOnDeath' }, { cardHp: 1 }), null, null]);
+    soul = withPlayer(soul, 'player1', { hand: [fireSpell] });
+    const returned = unwrap(castSpell(soul, 'player1', 0, { row: 'frontRow', index: 0 }));
+    expect([returned.players.player2.hand.map(c => c.id), returned.players.player2.graveyard]).toEqual([['s'], []]);
+  });
+
+  it('fusionSummon sends allies of the race to the graveyard to summon for free', () => {
+    const king = withAbility('ks', { kind: 'fusionSummon', race: 'スライム', count: 3 }, { cost: 5, race: 'スライム' });
+    const slime = (id: string, cost = 1) => monster(id, { race: 'スライム', cost });
+    let state = withField(emptyState(), 'player1', 'frontRow', [slime('s1'), slime('s2', 2), null]);
+    state = withPlayer(state, 'player1', { hand: [king], currentEnergy: 0 });
+    expect(playCard(state, 'player1', 0, { row: 'frontRow', index: 2 }, { payBySacrifice: true }).ok).toBe(false); // 2体しかいない
+    state = withField(state, 'player1', 'backRow', [slime('s3'), slime('s4'), null]);
+    const fused = unwrap(playCard(state, 'player1', 0, { row: 'frontRow', index: 1 }, { payBySacrifice: true }));
+    expect(fused.players.player1.field.frontRow[1]?.id).toBe('ks');
+    expect(fused.players.player1.graveyard.map(c => c.id).sort()).toEqual(['s1', 's2', 's3']); // 選んだ位置の s2 と、コストの低いもの
+  });
+
+  it('orc restrictions: summon turn, must move, and energy per attack', () => {
+    const attackFrom = (card: MonsterCard, changes: Partial<GameState['turnState']> = {}, energy = 0) => {
+      let state = withField(emptyState(), 'player1', 'frontRow', [card, null, null]);
+      state = withPlayer(atk(withField(state, 'player2', 'frontRow', [monster('e', { cardHp: 9 }), null, null])), 'player1', { currentEnergy: energy });
+      return attack({ ...state, turnState: { ...state.turnState, ...changes } }, 'player1', { row: 'frontRow', index: 0 }, target('frontRow', 0));
+    };
+    const fresh = withAbility('o1', { kind: 'noAttackOnSummonTurn' });
+    expect(attackFrom(fresh, { summonedThisTurnIds: ['o1'] }).ok).toBe(false);
+    expect(attackFrom(fresh).ok).toBe(true);
+    const mover = withAbility('o2', { kind: 'mustMoveToAttack' });
+    expect(attackFrom(mover).ok).toBe(false);
+    expect(attackFrom(mover, { movedIds: ['o2'] }).ok).toBe(true);
+    const costly = withAbility('o3', { kind: 'attackEnergyCost', amount: 1 });
+    expect(attackFrom(costly).ok).toBe(false);
+    expect(unwrap(attackFrom(costly, {}, 2)).players.player1.currentEnergy).toBe(1);
   });
 });
 

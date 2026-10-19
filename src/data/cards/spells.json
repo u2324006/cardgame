@@ -20,10 +20,30 @@
     }
   },
   {
+    "id": "s002",
+    "name": "回復の呪文",
+    "race": "スペル",
+    "effectText": "味方モンスター1体のHPを6回復する（最大HPまで）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": "heal-spell.svg"
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:04:14.000Z",
+    "cost": 1,
+    "target": "allyMonster",
+    "effect": {
+      "kind": "heal",
+      "amount": 6
+    }
+  },
+  {
     "id": "s003",
     "name": "炎の呪文",
     "race": "スペル",
-    "effectText": "相手のモンスター1体に3ダメージを与える。",
+    "effectText": "相手のモンスター1体に6ダメージを与える。",
     "flavorText": "",
     "illustration": {
       "prompt": "",
@@ -31,12 +51,12 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T05:46:54.000Z",
+    "updatedAt": "2026-10-19T08:04:14.000Z",
     "cost": 1,
     "target": "enemyMonster",
     "effect": {
       "kind": "damage",
-      "amount": 3
+      "amount": 6
     }
   },
   {
@@ -123,7 +143,7 @@
     "id": "cmvdecarqav9w",
     "name": "投擲",
     "race": "スペル",
-    "effectText": "相手の後衛のモンスター1体に3ダメージ",
+    "effectText": "相手の後衛のモンスター1体に6ダメージを与える。",
     "flavorText": "",
     "illustration": {
       "prompt": "",
@@ -131,12 +151,12 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T05:46:54.000Z",
+    "updatedAt": "2026-10-19T08:04:14.000Z",
     "cost": 1,
     "target": "enemyMonster",
     "effect": {
       "kind": "damageBack",
-      "amount": 3
+      "amount": 6
     }
   },
   {
@@ -163,7 +183,7 @@
     "id": "s004",
     "name": "薙ぎ払い",
     "race": "スペル",
-    "effectText": "相手の前衛のモンスターすべてに2ダメージを与える。",
+    "effectText": "相手の前衛のモンスターすべてに4ダメージを与える。",
     "flavorText": "",
     "illustration": {
       "prompt": "",
@@ -171,19 +191,19 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "updatedAt": "2026-10-19T08:04:14.000Z",
     "cost": 3,
     "target": "none",
     "effect": {
       "kind": "damageFrontAll",
-      "amount": 2
+      "amount": 4
     }
   },
   {
     "id": "s005",
     "name": "一斉射撃",
     "race": "スペル",
-    "effectText": "相手の前衛のモンスター1体に、自分の後衛にいるモンスターの数だけダメージを与える。",
+    "effectText": "相手の前衛のモンスター1体に、自分の後衛にいるモンスターの数×2ダメージを与える。",
     "flavorText": "",
     "illustration": {
       "prompt": "",
@@ -191,19 +211,19 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "updatedAt": "2026-10-19T08:04:14.000Z",
     "cost": 2,
     "target": "enemyMonster",
     "effect": {
       "kind": "volley",
-      "amount": 1
+      "amount": 2
     }
   },
   {
     "id": "s006",
     "name": "撤退命令",
     "race": "スペル",
-    "effectText": "自分の前衛のモンスター1体を後衛へ下げ、HPを2回復する（移動の回数を使わない）。",
+    "effectText": "自分の前衛のモンスター1体を後衛へ下げ、HPを4回復する（移動の回数を使わない）。",
     "flavorText": "",
     "illustration": {
       "prompt": "",
@@ -211,12 +231,12 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "updatedAt": "2026-10-19T08:04:14.000Z",
     "cost": 1,
     "target": "allyMonster",
     "effect": {
       "kind": "retreat",
-      "amount": 2
+      "amount": 4
     }
   },
   {
@@ -283,7 +303,7 @@
     "id": "s010",
     "name": "籠城",
     "race": "スペル",
-    "effectText": "次の相手のターン、自分の大将が受けるダメージを1回につき2減らす。",
+    "effectText": "次の相手のターン、自分の大将が受けるダメージを1回につき4減らす。",
     "flavorText": "",
     "illustration": {
       "prompt": "",
@@ -291,12 +311,12 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "updatedAt": "2026-10-19T08:04:14.000Z",
     "cost": 2,
     "target": "allyLeader",
     "effect": {
       "kind": "guardLeader",
-      "amount": 2
+      "amount": 4
     }
   },
   {
@@ -623,7 +643,7 @@
     "id": "s027",
     "name": "火炎瓶",
     "race": "スペル",
-    "effectText": "手札を1枚捨て、相手のモンスター1体に「捨てたカードのコスト＋2」ダメージを与える。",
+    "effectText": "手札を1枚捨て、相手のモンスター1体に「捨てたカードのコスト＋4」ダメージを与える。",
     "flavorText": "",
     "illustration": {
       "prompt": "",
@@ -631,12 +651,12 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "updatedAt": "2026-10-19T08:04:14.000Z",
     "cost": 1,
     "target": "enemyMonster",
     "effect": {
       "kind": "firebomb",
-      "amount": 2
+      "amount": 4
     }
   },
   {

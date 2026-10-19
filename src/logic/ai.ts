@@ -6,7 +6,10 @@ import {
   DISCARD_FOR_ENERGY_COUNT,
   ROWS,
   attack,
+  boostMonster,
   canAttackThisTurn,
+  canBoost,
+  canReach,
   canCommand,
   canSnipe,
   canUseLeaderAbility,
@@ -20,6 +23,7 @@ import {
   getEffectiveHp,
   getHpBonus,
   getMonsterPositions,
+  getAttackError,
   getOpponent,
   getSpellCost,
   getSummonCost,
@@ -57,11 +61,14 @@ const abilityRow = (card: MonsterCard): Row | null => {
     case 'medic':
     case 'commander': return 'backRow';
     case 'energyNextTurnFromBack':
-    case 'drawIfLowEnergy': return 'backRow';
+    case 'drawIfLowEnergy':
+    case 'endTurnDamage': return 'backRow';
     case 'pierce':
     case 'frontGuard':
     case 'rearguard':
-    case 'drawOnFrontDeath': return 'frontRow';
+    case 'drawOnFrontDeath':
+    case 'taunt':
+    case 'reach': return 'frontRow';
     default: return null;
   }
 };
@@ -73,6 +80,17 @@ const preferredRow = (card: MonsterCard): Row =>
 
 // 今いる列より攻撃力が上がる列へ、最も効果の大きいモンスターを1体移動する
 const aiMove = (state: GameState, player: PlayerId): GameState => {
+  // 移動しないと攻撃できないモンスター（オーク）は、移動先でも攻撃できるなら最優先で動かす
+  if (canAttackThisTurn(state)) {
+    for (const { position: from, card } of monstersOnField(state, player)) {
+      if (card.ability?.kind !== 'mustMoveToAttack' || state.turnState.summonedThisTurnIds.includes(card.id) || isMoveLocked(state, player, card.id)) continue;
+      const to = findEmptySlot(state, player, otherRow(from.row));
+      if (to && getAttackPower(state, card, to.row) > 0) {
+        const moved = moveMonster(state, player, from, to);
+        if (moved.ok) return moved.state;
+      }
+    }
+  }
   let best: { from: FieldPosition; to: FieldPosition; gain: number } | null = null;
   for (const { position: from, card } of monstersOnField(state, player)) {
     if (state.turnState.summonedThisTurnIds.includes(card.id) || isMoveLocked(state, player, card.id)) continue;
@@ -85,10 +103,27 @@ const aiMove = (state: GameState, player: PlayerId): GameState => {
   return best ? applyIfOk(state, moveMonster(state, player, best.from, best.to)) : state;
 };
 
+// 合体（巨大スライムなど）：場の同じ種族の弱いモンスターをまとめるほうが強くなるなら、合体して召喚する
+const aiFusion = (state: GameState, player: PlayerId): GameState => {
+  const { hand } = state.players[player];
+  for (let handIndex = 0; handIndex < hand.length; handIndex++) {
+    const card = hand[handIndex];
+    if (!isMonster(card) || card.ability?.kind !== 'fusionSummon') continue;
+    const { race, count } = card.ability;
+    const materials = monstersOnField(state, player).filter(m => m.card.race === race)
+      .sort((a, b) => a.card.cost - b.card.cost || a.card.cardHp - b.card.cardHp).slice(0, count);
+    if (materials.length < count) continue;
+    if (monsterValue(card) <= materials.reduce((sum, m) => sum + monsterValue(m.card), 0) * 0.7) continue;
+    const result = playCard(state, player, handIndex, materials[0].position, { payBySacrifice: true });
+    if (result.ok) return resolveAiPending(result.state, player);
+  }
+  return state;
+};
+
 // 出せるモンスターの中で一番強いものから順に召喚する。
 // 得意な列が埋まっていれば、もう一方の列でも攻撃できる場合はそちらに出す。
 const aiSummon = (state: GameState, player: PlayerId): GameState => {
-  let current = state;
+  let current = aiFusion(state, player);
   for (;;) {
     const snapshot = current;
     const { hand, currentEnergy } = snapshot.players[player];
@@ -125,7 +160,12 @@ const aiSummon = (state: GameState, player: PlayerId): GameState => {
         break;
       }
     }
-    if (!summoned) return current;
+    if (!summoned) {
+      // 出せるモンスターがなくなったら、合体できるか試す（できたら続けて召喚を考える）
+      const fused = aiFusion(current, player);
+      if (fused === current) return current;
+      current = fused;
+    }
   }
 };
 
@@ -436,11 +476,13 @@ const resolveAiFreeSummon = (state: GameState, player: PlayerId): GameState => {
 const resolveAiPick = (state: GameState, player: PlayerId): GameState => {
   const pending = state.pendingPick;
   if (pending?.player !== player) return state;
-  const cards = pending.kind === 'graveyard' ? state.players[player].graveyard : state.players[getOpponent(player)].hand;
+  const cards = pending.kind === 'opponentHand' ? state.players[getOpponent(player)].hand : state.players[player].graveyard;
+  const eligible = (card: Card) => pending.kind !== 'graveyardSummon'
+    || (isMonster(card) && card.cost <= (pending.maxCost ?? 0) && (!pending.race || card.race === pending.race));
   const scored = cards
-    .map((card, index) => ({ index, score: pending.kind === 'graveyard'
-      ? (isMonster(card) ? monsterValue(card) : -1)
-      : (isMonster(card) ? -1 : card.cost) }))
+    .map((card, index) => ({ index, score: !eligible(card) ? -1 : pending.kind === 'opponentHand'
+      ? (isMonster(card) ? -1 : card.cost)
+      : (isMonster(card) ? monsterValue(card) : -1) }))
     .filter(({ score }) => score >= 0)
     .sort((a, b) => b.score - a.score);
   return applyIfOk(state, pickCard(state, player, scored[0]?.index ?? null));
@@ -455,11 +497,24 @@ export const resolveAiReaction = (state: GameState, player: PlayerId): GameState
     const slot = findEmptySlot(state, player, row) ?? findEmptySlot(state, player, otherRow(row));
     return slot ? applyIfOk(state, resolveReaction(state, player, slot)) : state;
   }
+  const rows = pending.row ? [pending.row] : undefined;
+  if (pending.kind === 'heal') {
+    // 一番 HP が減っている味方を回復
+    const target = monstersOnField(state, player, rows)
+      .sort((a, b) => (getMaxHp(b.card) - b.card.cardHp) - (getMaxHp(a.card) - a.card.cardHp))[0];
+    return target ? applyIfOk(state, resolveReaction(state, player, target.position)) : { ...state, pendingReaction: null };
+  }
   const defender = getOpponent(player);
-  const target = monstersOnField(state, defender)
+  if (pending.kind === 'debuff') {
+    // 一番攻撃力の高い相手を弱くする
+    const target = monstersOnField(state, defender, rows)
+      .sort((a, b) => Math.max(b.card.frontAttack, b.card.backAttack) - Math.max(a.card.frontAttack, a.card.backAttack))[0];
+    return target ? applyIfOk(state, resolveReaction(state, player, target.position)) : { ...state, pendingReaction: null };
+  }
+  const target = monstersOnField(state, defender, rows)
     .map(m => ({ ...m, kills: getEffectiveHp(state, defender, m.card) <= pending.amount }))
     .sort((a, b) => Number(b.kills) - Number(a.kills) || monsterValue(b.card) - monsterValue(a.card))[0];
-  return target ? applyIfOk(state, resolveReaction(state, player, target.position)) : state;
+  return target ? applyIfOk(state, resolveReaction(state, player, target.position)) : { ...state, pendingReaction: null };
 };
 
 // 選ぶ途中の場面（捨てる・コストなしのスペルや召喚・カードを選ぶ）がなくなるまで片付ける
@@ -478,7 +533,30 @@ const aiUseLeaderAbility = (state: GameState, player: PlayerId): GameState =>
   canUseLeaderAbility(state, player) ? applyIfOk(state, activateLeaderAbility(state, player)) : state;
 
 // 指揮官で、前衛の一番攻撃力の高い味方の FA を上げる
-const aiCommand = (state: GameState, player: PlayerId): GameState =>
+// 力を溜められるモンスターは、攻撃できるターンなら溜める（HP を払うものは HP に余裕があるときだけ）
+const aiBoost = (state: GameState, player: PlayerId): GameState =>
+  !canAttackThisTurn(state) ? state : monstersOnField(state, player).reduce((current, { position, card }) => {
+    const ability = card.ability;
+    if (ability?.kind !== 'selfBoost' || !canBoost(current, player, position)) return current;
+    const power = getAttackPower(current, card, position.row);
+    const boosted = power + (position.row === 'frontRow' ? ability.fa : ability.ba);
+    if (boosted <= 0 || (ability.hp > 0 && card.cardHp <= ability.hp * 2)) return current;
+    // 溜めると相手を倒せるようになるか、大将を攻撃できるときだけ溜める（エネルギーは召喚にも使いたいので）
+    const defender = getOpponent(player);
+    const enemyFront = monstersOnField(current, defender, ['frontRow']);
+    const canHitLeader = enemyFront.length === 0 && position.row === 'frontRow';
+    const enablesKill = (enemyFront.length > 0 ? enemyFront : monstersOnField(current, defender)).some(({ card: enemy }) => {
+      const hp = getEffectiveHp(current, defender, enemy);
+      return hp > power && hp <= boosted;
+    });
+    if (!canHitLeader && !enablesKill) return current;
+    return applyIfOk(current, boostMonster(current, player, position));
+  }, state);
+
+// 指揮官で、前衛の一番攻撃力の高い味方の FA を上げる（その前に力を溜める）
+const aiCommand = (state: GameState, player: PlayerId): GameState => aiCommandOnly(aiBoost(state, player), player);
+
+const aiCommandOnly = (state: GameState, player: PlayerId): GameState =>
   monstersOnField(state, player, ['backRow']).reduce((current, { position }) => {
     if (!canCommand(current, player, position)) return current;
     const target = monstersOnField(current, player, ['frontRow'])
@@ -521,7 +599,7 @@ const chooseAttack = (state: GameState, player: PlayerId): AttackPlan | null => 
   const defender = getOpponent(player);
   const attackers = monstersOnField(state, player)
     .map(({ position, card }) => ({ position, card, power: getAttackPower(state, card, position.row) }))
-    .filter(({ card, power }) => power > 0 && !state.turnState.attackedMonsterIds.includes(card.id));
+    .filter(({ position, power }) => power > 0 && !getAttackError(state, player, position));
   if (attackers.length === 0) return null;
 
   const frontTargets = monstersOnField(state, defender, ['frontRow']);
@@ -530,10 +608,13 @@ const chooseAttack = (state: GameState, player: PlayerId): AttackPlan | null => 
     if (frontAttacker) return { attacker: frontAttacker.position, target: { type: 'player' } };
   }
   const backTargets = monstersOnField(state, defender, ['backRow']);
-  // 攻撃役ごとに狙える相手：前衛がいれば前衛（狙撃手は後衛も）、前衛が空なら後衛
+  // 仲間を庇うモンスターが前衛にいれば、それしか攻撃できない
+  const taunts = frontTargets.filter(({ card }) => card.ability?.kind === 'taunt');
+  // 攻撃役ごとに狙える相手：前衛がいれば前衛（狙撃手・恐竜は後衛も）、前衛が空なら後衛
   const targetsOf = (attacker: { position: FieldPosition; card: MonsterCard }) => {
+    if (taunts.length > 0) return taunts;
     if (frontTargets.length === 0) return backTargets;
-    return canSnipe(attacker.card, attacker.position) ? [...frontTargets, ...backTargets] : frontTargets;
+    return canSnipe(attacker.card, attacker.position) || canReach(attacker.card, attacker.position) ? [...frontTargets, ...backTargets] : frontTargets;
   };
 
   let bestKill: { plan: AttackPlan; value: number; overkill: number } | null = null;
@@ -565,7 +646,9 @@ export const runAiAttackPhase = (state: GameState, player: PlayerId): GameState 
     if (!plan) break;
     const result = attack(current, player, plan.attacker, plan.target);
     if (!result.ok) break;
-    current = result.state;
+    // 自分のモンスターの「倒されたとき」などで選ぶ場面になったら片付ける（相手が選ぶ場面なら止まる）
+    current = resolveAiPending(result.state, player);
+    if (current.pendingReaction) break;
   }
   return current;
 };

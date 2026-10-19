@@ -66,6 +66,30 @@
 | `discardOnSummon` | 召喚したとき、手札を amount 枚選んで捨てる | `{ "kind": "discardOnSummon", "amount": 1 }` |
 | `damageWhenDiscarded` | 相手の効果で手札から捨てられたとき、持ち主が選んだ相手のモンスター1体に amount ダメージ | `{ "kind": "damageWhenDiscarded", "amount": 2 }` |
 | `summonWhenDiscarded` | 相手の効果で手札から捨てられたとき、空きがあれば持ち主が選んだ空きスロットに出る | `{ "kind": "summonWhenDiscarded" }` |
+| `packBonus` | 自分の場のほかの種族 race のモンスター1体につき FA・BA +amount（最大 max） | `{ "kind": "packBonus", "race": "スライム", "amount": 1, "max": 2 }` |
+| `allyRaceBonus` | 自分の場に種族 race のほかのモンスターがいれば FA +fa・BA +ba | `{ "kind": "allyRaceBonus", "race": "オーク", "fa": 2, "ba": 0 }` |
+| `taunt` | 前衛にいるとき、相手は前衛のモンスターを攻撃するならこのモンスターしか攻撃できない | `{ "kind": "taunt" }` |
+| `leaderShield` | 場にいるあいだ、自分の大将が受けるダメージを1回につき amount 減らす | `{ "kind": "leaderShield", "amount": 2 }` |
+| `raceHpAura` | 場にいるあいだ、ほかの種族 race の自分のモンスターの HP +amount | `{ "kind": "raceHpAura", "race": "ゴーレム", "amount": 4 }` |
+| `grow` | 自分のターン終了時に FA +fa・HP +hp（最大 max 回） | `{ "kind": "grow", "fa": 1, "hp": 2, "max": 3 }` |
+| `reach` | 前衛にいるとき、相手の前衛にモンスターがいても相手の後衛を攻撃できる | `{ "kind": "reach" }` |
+| `onSummonTarget` | 召喚したとき、選んだモンスターに effect（`damage`：相手にダメージ、`heal`：味方を回復、`debuff`：相手の FA・BA を下げる）を amount。row で列を絞れる | `{ "kind": "onSummonTarget", "effect": "damage", "amount": 4 }` |
+| `onSummonLeaderHeal` | 召喚したとき、自分の大将の HP を amount 回復 | `{ "kind": "onSummonLeaderHeal", "amount": 4 }` |
+| `energySteal` | 召喚したとき、相手のエネルギー −amount、自分のエネルギー +amount | `{ "kind": "energySteal", "amount": 1 }` |
+| `energyOnSummon` | 召喚したとき、エネルギー +amount | `{ "kind": "energyOnSummon", "amount": 1 }` |
+| `onSummonDiscard` | 召喚したとき、相手の手札をランダムに amount 枚捨てさせる | `{ "kind": "onSummonDiscard", "amount": 1 }` |
+| `moveBuff` | 移動したターン、FA +fa・BA +ba | `{ "kind": "moveBuff", "fa": 0, "ba": 2 }` |
+| `doubleAttack` | 1ターンに2回攻撃できる | `{ "kind": "doubleAttack" }` |
+| `endTurnDamage` | 後衛にいるとき、自分のターン終了時に相手のモンスター1体（自動）に amount ダメージ | `{ "kind": "endTurnDamage", "amount": 2 }` |
+| `selfBoost` | 1ターンに1回、エネルギー energy と HP hp を払って、このターン FA +fa・BA +ba | `{ "kind": "selfBoost", "energy": 1, "hp": 0, "fa": 2, "ba": 0 }` |
+| `graveyardSummonOnSummon` | 召喚したとき、墓地のコスト maxCost 以下（race があればその種族）のモンスター1体をコストなしで出せる | `{ "kind": "graveyardSummonOnSummon", "maxCost": 2 }` |
+| `lifesteal` | 攻撃でモンスターに与えたダメージぶん HP を回復 | `{ "kind": "lifesteal" }` |
+| `deathDamage` | 倒されたとき、持ち主が選んだ相手のモンスター1体に amount ダメージ | `{ "kind": "deathDamage", "amount": 4 }` |
+| `returnOnDeath` | 倒されたとき、墓地ではなく手札に戻る | `{ "kind": "returnOnDeath" }` |
+| `fusionSummon` | 自分の場の種族 race のモンスターを count 体墓地に送れば、エネルギーを払わずに召喚できる | `{ "kind": "fusionSummon", "race": "スライム", "count": 3 }` |
+| `noAttackOnSummonTurn` | 召喚したターンは攻撃できない | `{ "kind": "noAttackOnSummonTurn" }` |
+| `mustMoveToAttack` | そのターンに移動したときだけ攻撃できる | `{ "kind": "mustMoveToAttack" }` |
+| `attackEnergyCost` | 攻撃するたびにエネルギーを amount 払う | `{ "kind": "attackEnergyCost", "amount": 1 }` |
 
 ### スペルだけ
 

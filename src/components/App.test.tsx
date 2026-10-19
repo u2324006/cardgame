@@ -60,16 +60,16 @@ describe('App navigation', () => {
   it('edits a card in the card editor and uses it in the deck builder', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: /カード作成/ }));
-    fireEvent.click(screen.getByRole('button', { name: /ドラゴン/ }));
-    fireEvent.change(screen.getByLabelText('カード名'), { target: { value: '子ドラゴン' } });
+    fireEvent.click(screen.getByRole('button', { name: /^4\s*ドラゴン(\s|$)/ }));
+    fireEvent.change(screen.getByLabelText('カード名'), { target: { value: '老いたドラゴン' } });
     fireEvent.change(screen.getByLabelText('FA（前衛での攻撃力）'), { target: { value: '3' } });
     fireEvent.click(screen.getByRole('button', { name: '変更を保存する' }));
-    expect(screen.getByText(/「子ドラゴン」を保存しました/)).toBeTruthy();
+    expect(screen.getByText(/「老いたドラゴン」を保存しました/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: /メニュー/ }));
     fireEvent.click(screen.getByRole('button', { name: /デッキ作成/ }));
     fireEvent.click(screen.getByRole('button', { name: '次へ：カードを選ぶ' }));
-    expect(screen.getAllByText('子ドラゴン').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('老いたドラゴン').length).toBeGreaterThan(0);
     resetCardSet();
   });
 });

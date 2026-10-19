@@ -207,17 +207,32 @@ const isLeaderAbility = (effect: unknown): effect is LeaderAbility => {
   }
 };
 
+// モンスターの効果ごとに必要な項目（数値・文字列）
+const MONSTER_ABILITY_FIELDS: Partial<Record<MonsterAbility['kind'], { numbers?: string[]; texts?: string[] }>> = {
+  freeSpellOnSummon: { numbers: ['maxCost'] },
+  freeSummonOnSummon: { numbers: ['maxCost'] },
+  drawIfLowEnergy: { numbers: ['amount', 'threshold'] },
+  packBonus: { numbers: ['amount', 'max'], texts: ['race'] },
+  allyRaceBonus: { numbers: ['fa', 'ba'], texts: ['race'] },
+  raceHpAura: { numbers: ['amount'], texts: ['race'] },
+  grow: { numbers: ['fa', 'hp', 'max'] },
+  onSummonTarget: { numbers: ['amount'], texts: ['effect'] },
+  moveBuff: { numbers: ['fa', 'ba'] },
+  selfBoost: { numbers: ['energy', 'hp', 'fa', 'ba'] },
+  graveyardSummonOnSummon: { numbers: ['maxCost'] },
+  fusionSummon: { numbers: ['count'], texts: ['race'] },
+};
+// 項目を持たない効果
+const NO_FIELD_ABILITIES: MonsterAbility['kind'][] = [
+  'sniper', 'summonWhenDiscarded', 'taunt', 'reach', 'doubleAttack', 'lifesteal', 'returnOnDeath', 'noAttackOnSummonTurn', 'mustMoveToAttack',
+];
+
 const isMonsterAbility = (effect: unknown): effect is MonsterAbility => {
-  const e = effect as MonsterAbility;
+  const e = effect as Record<string, unknown> & { kind: MonsterAbility['kind'] };
   if (!e || !MONSTER_ABILITY_KINDS.includes(e.kind)) return false;
-  switch (e.kind) {
-    case 'freeSpellOnSummon':
-    case 'freeSummonOnSummon': return isNumber(e.maxCost);
-    case 'drawIfLowEnergy': return isNumber(e.amount) && isNumber(e.threshold);
-    case 'sniper':
-    case 'summonWhenDiscarded': return true;
-    default: return isNumber(e.amount);
-  }
+  if (NO_FIELD_ABILITIES.includes(e.kind)) return true;
+  const fields = MONSTER_ABILITY_FIELDS[e.kind] ?? { numbers: ['amount'] };
+  return (fields.numbers ?? []).every(f => isNumber(e[f])) && (fields.texts ?? []).every(f => isText(e[f]));
 };
 
 export const isLeaderRecord = (r: unknown): r is LeaderRecord => {

@@ -42,6 +42,8 @@ export interface TurnState {
   summonDiscount: number; // 次に召喚するモンスターのコストが下がる量（援軍要請）
   spoilsDraw: number; // 戦利品：このターン最初に相手のモンスターを倒したら引く枚数（0 なら効果なし）
   spellEnergyUsed: boolean; // 大魔導師の効果をこのターン使ったか
+  movedIds: string[]; // このターンに移動したモンスター（スペルや効果での移動を含む）
+  boostedIds: string[]; // このターンに力を溜めた（selfBoost）モンスター
 }
 
 // 「カードを引いてその後手札から墓地に置く」効果などで、捨てるカードを選んでいるところ
@@ -67,8 +69,10 @@ export interface PendingFreeSummon {
 // 墓地や相手の手札からカードを選ぶところ（墓荒らし・情報戦）
 export interface PendingPick {
   player: PlayerId;
-  kind: 'graveyard' | 'opponentHand';
+  kind: 'graveyard' | 'opponentHand' | 'graveyardSummon'; // graveyardSummon：墓地のモンスターをコストなしで場に出す
   source: string;
+  maxCost?: number; // graveyardSummon で選べるコストの上限
+  race?: string; // graveyardSummon で選べる種族
 }
 
 // モンスターの効果で、手札のスペルをコストを払わずに使えるところ（使うか、使わないを選ぶ）
@@ -95,8 +99,9 @@ export interface LeaderGuard {
 export interface PendingReaction {
   player: PlayerId; // 捨てられたカードの持ち主（選ぶ人）
   card: MonsterCard;
-  kind: 'damage' | 'summon';
+  kind: 'damage' | 'summon' | 'heal' | 'debuff'; // damage：相手にダメージ、summon：空きスロットに出す、heal：味方を回復、debuff：相手の FA・BA を下げる
   amount: number;
+  row?: Row; // 選べる列（なければどちらでも）
 }
 
 export interface GameState {

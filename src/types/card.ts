@@ -39,12 +39,41 @@ export type MonsterAbility =
   | { kind: 'drawIfLowEnergy'; amount: number; threshold: number } // 後衛にいるとき、ターン終了時にエネルギーが threshold 以下なら amount 枚引く
   | { kind: 'discardOnSummon'; amount: number } // 召喚したとき、手札を amount 枚選んで捨てる
   | { kind: 'damageWhenDiscarded'; amount: number } // 相手の効果で手札から捨てられたとき、相手のモンスター1体に amount ダメージ
-  | { kind: 'summonWhenDiscarded' }; // 相手の効果で手札から捨てられたとき、空きがあれば場に出る
+  | { kind: 'summonWhenDiscarded' } // 相手の効果で手札から捨てられたとき、空きがあれば場に出る
+  // --- 種族の効果 ---
+  | { kind: 'packBonus'; race: string; amount: number; max: number } // 自分の場の同じ種族のほかのモンスター1体につき FA・BA +amount（最大 +max）
+  | { kind: 'allyRaceBonus'; race: string; fa: number; ba: number } // 自分の場に種族 race のほかのモンスターがいれば FA +fa・BA +ba
+  | { kind: 'taunt' } // 前衛にいるとき、相手はこのモンスター以外の自分のモンスターを攻撃できない（仲間を庇う）
+  | { kind: 'leaderShield'; amount: number } // 場にいるあいだ、自分の大将が受けるダメージを1回につき amount 減らす
+  | { kind: 'raceHpAura'; race: string; amount: number } // 場にいるあいだ、種族 race の自分のほかのモンスターの HP +amount
+  | { kind: 'grow'; fa: number; hp: number; max: number } // 自分のターン終了時に FA +fa・最大 HP +hp（max 回まで）
+  | { kind: 'reach' } // 前衛から攻撃するとき、相手の前衛にモンスターがいても相手の後衛を攻撃できる
+  | { kind: 'onSummonTarget'; effect: 'damage' | 'heal' | 'debuff'; amount: number; row?: 'frontRow' | 'backRow' } // 召喚したとき、選んだモンスターに効果（damage：相手にダメージ、heal：味方を回復、debuff：相手の FA・BA を下げる）
+  | { kind: 'onSummonLeaderHeal'; amount: number } // 召喚したとき、自分の大将の HP を amount 回復（最大 HP まで）
+  | { kind: 'energySteal'; amount: number } // 召喚したとき、相手のエネルギーを amount 減らし、自分のエネルギーを amount 増やす
+  | { kind: 'energyOnSummon'; amount: number } // 召喚したとき、エネルギー +amount
+  | { kind: 'onSummonDiscard'; amount: number } // 召喚したとき、相手の手札をランダムに amount 枚捨てさせる
+  | { kind: 'moveBuff'; fa: number; ba: number } // 移動したターン、FA +fa・BA +ba
+  | { kind: 'doubleAttack' } // 1ターンに2回攻撃できる
+  | { kind: 'endTurnDamage'; amount: number } // 後衛にいるとき、自分のターン終了時に相手のモンスター1体に amount ダメージ
+  | { kind: 'selfBoost'; energy: number; hp: number; fa: number; ba: number } // 1ターンに1回、エネルギー energy と自分の HP hp を払って、このターン FA +fa・BA +ba
+  | { kind: 'graveyardSummonOnSummon'; maxCost: number; race?: string } // 召喚したとき、自分の墓地のコスト maxCost 以下のモンスター（race があればその種族）を1体、コストなしで場に出せる
+  | { kind: 'lifesteal' } // モンスターを攻撃したとき、与えたダメージぶん自分の HP を回復（最大 HP まで）
+  | { kind: 'deathDamage'; amount: number } // 倒されたとき、相手のモンスター1体に amount ダメージ
+  | { kind: 'returnOnDeath' } // 倒されたとき、墓地ではなく手札に戻る
+  | { kind: 'fusionSummon'; race: string; count: number } // 自分の場の種族 race のモンスター count 体を墓地に送れば、エネルギーを払わずに召喚できる
+  | { kind: 'noAttackOnSummonTurn' } // 召喚したターンは攻撃できない
+  | { kind: 'mustMoveToAttack' } // 移動したターンしか攻撃できない
+  | { kind: 'attackEnergyCost'; amount: number }; // 攻撃するたびにエネルギーを amount 払う（足りなければ攻撃できない）
 
 export const MONSTER_ABILITY_KINDS: MonsterAbility['kind'][] = [
   'freeSpellOnSummon', 'sniper', 'pierce', 'frontGuard', 'medic', 'commander', 'charge', 'rearguard', 'ambush',
   'freeSummonOnSummon', 'discardSummon', 'spellDiscountOnSummon', 'energyNextTurnFromBack', 'drawOnSummon',
   'drawOnFrontDeath', 'drawIfLowEnergy', 'discardOnSummon', 'damageWhenDiscarded', 'summonWhenDiscarded',
+  'packBonus', 'allyRaceBonus', 'taunt', 'leaderShield', 'raceHpAura', 'grow', 'reach', 'onSummonTarget',
+  'onSummonLeaderHeal', 'energySteal', 'energyOnSummon', 'onSummonDiscard', 'moveBuff', 'doubleAttack', 'endTurnDamage',
+  'selfBoost', 'graveyardSummonOnSummon', 'lifesteal', 'deathDamage', 'returnOnDeath', 'fusionSummon',
+  'noAttackOnSummonTurn', 'mustMoveToAttack', 'attackEnergyCost',
 ];
 
 export interface MonsterCard extends BaseCard {
@@ -53,7 +82,8 @@ export interface MonsterCard extends BaseCard {
   frontAttack: number; // FA: 前衛にいるときの攻撃力
   backAttack: number; // BA: 後衛にいるときの攻撃力
   cardHp: number;
-  maxHp?: number; // 最大HP（カード一覧にないカード用。なければ一覧の元のカードの HP）
+  maxHp?: number; // 最大HP（成長したときや、カード一覧にないカード用。なければ一覧の元のカードの HP）
+  growth?: number; // 成長した回数（grow の効果）
 }
 
 // スペルの効果
