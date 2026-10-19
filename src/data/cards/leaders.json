@@ -3,7 +3,7 @@
     "id": "l001",
     "name": "大将",
     "race": "",
-    "effectText": "このカードのHPが10以下になったときに一度だけ使える自分のエネルギーを3つ増やす",
+    "effectText": "このカードのHPが半分以下になったときに一度だけ使える。自分のエネルギーを3つ増やす。",
     "flavorText": "",
     "illustration": {
       "prompt": "",
@@ -11,11 +11,11 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-19T07:10:48.000Z",
+    "updatedAt": "2026-10-19T07:17:46.000Z",
     "maxHp": 42,
     "effect": {
       "kind": "rallyEnergy",
-      "hpThreshold": 10,
+      "hpRatio": 0.5,
       "amount": 3
     }
   },
@@ -23,7 +23,7 @@
     "id": "lmvcf1jj9pvni",
     "name": "マウンテンゴーレム",
     "race": "ゴーレム",
-    "effectText": "種族がゴーレムの自分モンスターのHPを+1する",
+    "effectText": "種族がゴーレムの自分モンスターのHPを+3する",
     "flavorText": "",
     "illustration": {
       "prompt": "",
@@ -31,19 +31,19 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-19T07:10:48.000Z",
+    "updatedAt": "2026-10-19T07:17:46.000Z",
     "maxHp": 45,
     "effect": {
       "kind": "raceHpBonus",
       "race": "ゴーレム",
-      "amount": 1
+      "amount": 3
     }
   },
   {
     "id": "l002",
     "name": "軍師",
     "race": "",
-    "effectText": "自分のモンスターが移動したとき、そのモンスターのHPを1回復する。",
+    "effectText": "自分のモンスターが移動したとき、そのモンスターのHPを2回復する。",
     "flavorText": "",
     "illustration": {
       "prompt": "",
@@ -51,11 +51,11 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-19T07:10:48.000Z",
+    "updatedAt": "2026-10-19T07:17:46.000Z",
     "maxHp": 45,
     "effect": {
       "kind": "healOnMove",
-      "amount": 1
+      "amount": 2
     }
   },
   {

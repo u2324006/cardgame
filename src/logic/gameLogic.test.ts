@@ -402,7 +402,14 @@ describe('見習い魔導士 (free spell on summon)', () => {
   });
 });
 
-describe('leader ability (大将: energy once when HP <= 10)', () => {
+describe('leader ability (大将: energy once when HP is half or less)', () => {
+  it('uses the ratio of the max HP when hpRatio is set', () => {
+    let state = withLeaderAbility(emptyState(), 'player1', { kind: 'rallyEnergy', hpRatio: 0.5, amount: 3 }); // 最大 HP 20
+    state = withPlayer(state, 'player1', { specialCardHp: 11, currentEnergy: 0 });
+    expect(activateLeaderAbility(state, 'player1')).toEqual({ ok: false, error: '大将の HP が10以下のときに使えます。' });
+    expect(unwrap(activateLeaderAbility(withPlayer(state, 'player1', { specialCardHp: 10 }), 'player1')).players.player1.currentEnergy).toBe(3);
+  });
+
   it('can be used once, only at 10 HP or less, and not while disabled', () => {
     let state = withPlayer(withRallyLeader(emptyState(), 'player1'), 'player1', { currentEnergy: 2 });
     expect(activateLeaderAbility(state, 'player1').ok).toBe(false); // HP 20

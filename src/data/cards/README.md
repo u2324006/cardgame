@@ -127,7 +127,7 @@
 | kind | 内容 | 例 |
 |---|---|---|
 | `raceHpBonus` | 種族が race の自分のモンスターの HP を amount 上げる（大将ゾーンにあるあいだずっと） | `{ "kind": "raceHpBonus", "race": "ゴーレム", "amount": 1 }` |
-| `rallyEnergy` | 大将の HP が hpThreshold 以下のとき1回だけ使え、エネルギーを amount 増やす | `{ "kind": "rallyEnergy", "hpThreshold": 10, "amount": 3 }` |
+| `rallyEnergy` | 大将の HP が条件以下のとき1回だけ使え、エネルギーを amount 増やす。条件は hpRatio（最大 HP に対する割合）か hpThreshold（HP の値） | `{ "kind": "rallyEnergy", "hpRatio": 0.5, "amount": 3 }` |
 | `healOnMove` | 自分のモンスターが移動したとき、そのモンスターの HP を amount 回復 | `{ "kind": "healOnMove", "amount": 1 }` |
 | `backRowBaBonus` | 自分の後衛のモンスターの BA を amount 上げる。hpRatio があれば、大将の HP が最大 HP × hpRatio 以下のときだけ | `{ "kind": "backRowBaBonus", "amount": 1, "hpRatio": 0.5 }` |
 | `extraDrawWhenBehind` | ターン開始時、自分のモンスターが相手より margin 体以上少なければ amount 枚多く引く | `{ "kind": "extraDrawWhenBehind", "margin": 2, "amount": 1 }` |

@@ -116,8 +116,12 @@ export const canUseLeaderAbility = (state: GameState, player: PlayerId): boolean
   const { leader, specialCardHp, leaderAbilityUsed } = state.players[player];
   const ability = leader.ability;
   return ability?.kind === 'rallyEnergy' && !leaderAbilityUsed && isLeaderActive(state, player)
-    && specialCardHp <= ability.hpThreshold && !checkTurn(state, player, 'Play');
+    && specialCardHp <= rallyThreshold(leader.maxHp, ability) && !checkTurn(state, player, 'Play');
 };
+
+// 1回だけ使える大将の効果を使える HP（割合で決まっていれば最大 HP から計算する）
+const rallyThreshold = (maxHp: number, ability: { hpThreshold?: number; hpRatio?: number }): number =>
+  ability.hpRatio !== undefined ? Math.floor(maxHp * ability.hpRatio) : ability.hpThreshold ?? 0;
 
 // 移動できなくなっているモンスターか（強制移動の効果）
 export const isMoveLocked = (state: GameState, player: PlayerId, cardId: string): boolean =>
@@ -444,7 +448,7 @@ export const activateLeaderAbility = (state: GameState, player: PlayerId): Actio
   if (!canUseLeaderAbility(state, player)) {
     if (state.players[player].leaderAbilityUsed) return failure('大将の効果はもう使いました。');
     if (!isLeaderActive(state, player)) return failure('このターンは大将の効果がなくなっています。');
-    return failure(`大将の HP が${ability.hpThreshold}以下のときに使えます。`);
+    return failure(`大将の HP が${rallyThreshold(state.players[player].leader.maxHp, ability)}以下のときに使えます。`);
   }
   return success(updatePlayer(state, player, p => ({
     ...p,

@@ -187,7 +187,7 @@ export const isImplementedEffect = (effect: SpellEffect): effect is Exclude<Spel
 // 大将カードの効果
 export type LeaderAbility =
   | { kind: 'raceHpBonus'; race: string; amount: number } // ずっと：種族が race の自分のモンスターの HP を amount 上げる
-  | { kind: 'rallyEnergy'; hpThreshold: number; amount: number } // 1回だけ：大将の HP が hpThreshold 以下のとき、使うとエネルギーを amount 増やす
+  | { kind: 'rallyEnergy'; amount: number; hpThreshold?: number; hpRatio?: number } // 1回だけ：大将の HP が条件以下のとき、使うとエネルギーを amount 増やす（hpRatio：最大 HP に対する割合、hpThreshold：HP の値）
   | { kind: 'healOnMove'; amount: number } // ずっと：自分のモンスターが移動したとき、そのモンスターの HP を amount 回復
   | { kind: 'backRowBaBonus'; amount: number; hpRatio?: number } // ずっと：自分の後衛のモンスターの BA を amount 上げる（hpRatio があれば、大将の HP が最大 HP × hpRatio 以下のときだけ）
   | { kind: 'extraDrawWhenBehind'; margin: number; amount: number } // ずっと：ターン開始時、自分の場のモンスターが相手より margin 体以上少なければ amount 枚多く引く

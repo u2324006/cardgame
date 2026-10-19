@@ -1,7 +1,7 @@
 # Card Game
 
 AI と対戦するターン制カードゲームです（React + TypeScript / Create React App）。
-このファイルはプログラム全体の説明です。ゲームのルールは [RULES.md](RULES.md) を見てください。
+このファイルはプログラム全体の説明です。ゲームのルールは [RULES.md](RULES.md)、カードの強さの基準は [BALANCE.md](BALANCE.md) を見てください。
 
 ## 起動のしかた
 

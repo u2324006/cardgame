@@ -106,13 +106,13 @@ describe('card records (JSON for AI)', () => {
     expect(find('cmvcf6svl19jp')).toMatchObject({ name: '後衛支援', effect: { kind: 'buffBa', amount: 1 } });
     expect([find('m003')?.race, find('m011')?.race]).toEqual(['恐竜', '戦士']);
     const golem = BUILTIN_CARD_SET.leaders.find(l => l.id === 'lmvcf1jj9pvni');
-    expect(golem).toMatchObject({ maxHp: 45, ability: { kind: 'raceHpBonus', race: 'ゴーレム', amount: 1 } });
+    expect(golem).toMatchObject({ maxHp: 45, ability: { kind: 'raceHpBonus', race: 'ゴーレム', amount: 3 } });
   });
 
   it('round-trips a leader effect', () => {
     const golem = BUILTIN_CARD_SET.leaders.find(l => l.id === 'lmvcf1jj9pvni')!;
     const record = toLeaderRecord(golem);
-    expect(record.effect).toEqual({ kind: 'raceHpBonus', race: 'ゴーレム', amount: 1 });
+    expect(record.effect).toEqual({ kind: 'raceHpBonus', race: 'ゴーレム', amount: 3 });
     expect(isLeaderRecord({ ...record, effect: { kind: 'raceHpBonus', race: 'ゴーレム' } })).toBe(false);
     expect(fromLeaderRecord(record).ability).toEqual(record.effect);
   });
@@ -124,7 +124,7 @@ describe('card records (JSON for AI)', () => {
     expect(find('cmvdecarqav9w')).toMatchObject({ effect: { kind: 'damageBack', amount: 3 } });
     expect(find('cmvdedg1ew8k5')).toMatchObject({ effect: { kind: 'forceMove' } });
     const leader = BUILTIN_CARD_SET.leaders.find(l => l.id === 'l001');
-    expect(leader).toMatchObject({ ability: { kind: 'rallyEnergy', hpThreshold: 10, amount: 3 } });
+    expect(leader).toMatchObject({ ability: { kind: 'rallyEnergy', hpRatio: 0.5, amount: 3 } });
     const record = toMonsterRecord(find('cmvde9cnvtqso') as MonsterCard);
     expect(record.effect).toEqual({ kind: 'freeSpellOnSummon', maxCost: 1 });
     expect(isMonsterRecord({ ...record, effect: { kind: 'freeSpellOnSummon' } })).toBe(false);
