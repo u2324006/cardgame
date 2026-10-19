@@ -461,7 +461,8 @@ const drawCards = (playerState: PlayerState, count: number): PlayerState => ({
 });
 
 // 対象を選ばないスペルを使う（カードを引いて捨てる など）。cost は払うエネルギー（コストなしで使うときは 0）
-const LIFE_TO_ENERGY_COST = 3; // 生命変換で減る大将の HP
+const LIFE_TO_ENERGY_COST = 5; // 生命変換で減る大将の HP
+export const DISCARD_FOR_ENERGY_COUNT = 2; // 魔力結晶で捨てる手札の枚数
 
 const gainEnergy = (state: GameState, player: PlayerId, amount: number): GameState =>
   updatePlayer(state, player, p => ({ ...p, currentEnergy: Math.min(p.currentEnergy + amount, p.maxEnergy) }));
@@ -479,7 +480,7 @@ const untargetedPrecondition = (state: GameState, player: PlayerId, spell: Spell
     case 'freeSummon':
       return canFreeSummon(state, player, effect.amount, 'frontRow') ? null : `手札にコスト${effect.amount}以下のモンスターがいないか、前衛に空きがありません。`;
     case 'discardForEnergy':
-      return otherCards >= effect.amount ? null : `捨てる手札が${effect.amount}枚必要です。`;
+      return otherCards >= DISCARD_FOR_ENERGY_COUNT ? null : `捨てる手札が${DISCARD_FOR_ENERGY_COUNT}枚必要です。`;
     case 'discardDraw':
       return otherCards >= 1 ? null : '捨てる手札がないので使えません。';
     case 'raiseMaxEnergy':
@@ -611,7 +612,7 @@ const castUntargetedSpell = (state: GameState, player: PlayerId, handIndex: numb
     case 'delayedEnergy':
       return success(updatePlayer(paid, player, p => ({ ...p, delayedEnergy: [...p.delayedEnergy, { amount: effect.amount }] })));
     case 'discardForEnergy':
-      return success({ ...gainEnergy(paid, player, effect.amount), pendingDiscard: { player, count: effect.amount } });
+      return success({ ...gainEnergy(paid, player, effect.amount), pendingDiscard: { player, count: DISCARD_FOR_ENERGY_COUNT } });
     case 'raiseMaxEnergy':
       return success(updatePlayer(paid, player, p => ({ ...p, maxEnergy: Math.min(p.maxEnergy + effect.amount, RULES.maxEnergyLimit) })));
     case 'drainEnergy': {

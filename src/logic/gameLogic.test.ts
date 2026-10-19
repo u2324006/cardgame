@@ -683,10 +683,11 @@ describe('resource cards: energy', () => {
     expect(nextTurn.players.player1.delayedEnergy).toEqual([]);
   });
 
-  it('魔力結晶 gives 2 energy for 2 discards, 蓄魔の壺 raises the max up to 12', () => {
-    let state = withPlayer(emptyState(), 'player1', { hand: [spellOf('crystal', { kind: 'discardForEnergy', amount: 2 }, 0), monster('a'), monster('b')], currentEnergy: 1 });
+  it('魔力結晶 gives 1 energy for 2 discards, 蓄魔の壺 raises the max up to 12', () => {
+    let state = withPlayer(emptyState(), 'player1', { hand: [spellOf('crystal', { kind: 'discardForEnergy', amount: 1 }, 0), monster('a'), monster('b')], currentEnergy: 1 });
+    expect(castSpell(withPlayer(state, 'player1', { hand: state.players.player1.hand.slice(0, 2) }), 'player1', 0).ok).toBe(false); // 捨てる手札が1枚しかない
     const cast = unwrap(castSpell(state, 'player1', 0));
-    expect(cast.players.player1.currentEnergy).toBe(3);
+    expect(cast.players.player1.currentEnergy).toBe(2);
     expect(cast.pendingDiscard?.count).toBe(2);
     const pot = spellOf('pot', { kind: 'raiseMaxEnergy', amount: 1 }, 0);
     state = withPlayer(emptyState(), 'player1', { hand: [pot, pot, pot], maxEnergy: 11 });
@@ -701,8 +702,8 @@ describe('resource cards: energy', () => {
     let next = unwrap(castSpell(state, 'player1', 0));
     expect([next.players.player1.currentEnergy, next.players.player2.currentEnergy]).toEqual([1, 1]);
     next = unwrap(castSpell(next, 'player1', 0));
-    expect([next.players.player1.currentEnergy, next.players.player1.specialCardHp]).toEqual([3, 17]);
-    expect(castSpell(withPlayer(state, 'player1', { specialCardHp: 3 }), 'player1', 1).ok).toBe(false);
+    expect([next.players.player1.currentEnergy, next.players.player1.specialCardHp]).toEqual([3, 15]);
+    expect(castSpell(withPlayer(state, 'player1', { specialCardHp: 5 }), 'player1', 1).ok).toBe(false);
 
     let offer = withField(emptyState(), 'player1', 'frontRow', [monster('m011-0', { cost: 3 }), null, null]);
     offer = withPlayer(offer, 'player1', { hand: [spellOf('offer', { kind: 'sacrificeForEnergy', amount: 1 }, 1)], currentEnergy: 1 });

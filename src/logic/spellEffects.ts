@@ -26,10 +26,10 @@ export const describeEffect = (effect: SpellEffect): string => {
     case 'summonDiscount': return `自分の場のモンスターが相手より少ないとき、このターン次に召喚するモンスターのコストを${effect.amount}下げる。`;
     case 'sacrificeSummon': return `自分のモンスター1体を墓地に置き、手札のコスト${effect.amount}以下のモンスター1体をコストを払わずに召喚する。`;
     case 'delayedEnergy': return `次の自分のターン開始時、エネルギーを${effect.amount}増やす。`;
-    case 'discardForEnergy': return `手札を${effect.amount}枚捨て、エネルギーを${effect.amount}増やす。`;
+    case 'discardForEnergy': return `手札を2枚捨て、エネルギーを${effect.amount}増やす。`;
     case 'raiseMaxEnergy': return `エネルギーの上限を${effect.amount}上げる（最大12）。`;
     case 'drainEnergy': return `相手のエネルギーを${effect.amount}減らし、自分のエネルギーを1増やす。`;
-    case 'lifeToEnergy': return `自分の大将のHPを3減らし、エネルギーを${effect.amount}増やす。`;
+    case 'lifeToEnergy': return `自分の大将のHPを5減らし、エネルギーを${effect.amount}増やす。`;
     case 'sacrificeForEnergy': return '自分のモンスター1体を墓地に置き、そのコストぶんエネルギーを増やす。';
     case 'draw': return `カードを${effect.amount}枚引く。`;
     case 'supplyLine': return '自分の後衛のモンスターを好きな数だけ墓地に送り、その数だけカードを引く。';
@@ -68,10 +68,10 @@ export const summarizeEffect = (effect: SpellEffect): string => {
     case 'summonDiscount': return `次の召喚 -${effect.amount}`;
     case 'sacrificeSummon': return '生贄で無料召喚';
     case 'delayedEnergy': return `次のターン +${effect.amount}`;
-    case 'discardForEnergy': return `${effect.amount}枚捨てて +${effect.amount}`;
+    case 'discardForEnergy': return `2枚捨てて +${effect.amount}`;
     case 'raiseMaxEnergy': return `上限 +${effect.amount}`;
     case 'drainEnergy': return `相手 -${effect.amount} / 自分 +1`;
-    case 'lifeToEnergy': return `HP -3 / +${effect.amount}`;
+    case 'lifeToEnergy': return `HP -5 / +${effect.amount}`;
     case 'sacrificeForEnergy': return 'コストぶん +';
     case 'draw': return `${effect.amount}枚引く`;
     case 'supplyLine': return '後衛を送って引く';

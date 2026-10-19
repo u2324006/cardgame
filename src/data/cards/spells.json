@@ -403,7 +403,7 @@
     "id": "s016",
     "name": "魔力結晶",
     "race": "スペル",
-    "effectText": "手札を2枚捨て、エネルギーを2増やす。",
+    "effectText": "手札を2枚捨て、エネルギーを1増やす。",
     "flavorText": "",
     "illustration": {
       "prompt": "",
@@ -411,12 +411,12 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "updatedAt": "2026-10-19T07:00:54.000Z",
     "cost": 0,
     "target": "none",
     "effect": {
       "kind": "discardForEnergy",
-      "amount": 2
+      "amount": 1
     }
   },
   {
@@ -463,7 +463,7 @@
     "id": "s019",
     "name": "生命変換",
     "race": "スペル",
-    "effectText": "自分の大将のHPを3減らし、エネルギーを2増やす。",
+    "effectText": "自分の大将のHPを5減らし、エネルギーを2増やす。",
     "flavorText": "",
     "illustration": {
       "prompt": "",
@@ -471,7 +471,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "updatedAt": "2026-10-19T07:00:54.000Z",
     "cost": 0,
     "target": "none",
     "effect": {

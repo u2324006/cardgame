@@ -79,10 +79,10 @@ export type SpellEffect =
   | { kind: 'summonDiscount'; amount: number } // 自分のモンスターが相手より少ないとき、このターン次に召喚するモンスターのコストを amount 下げる（対象なし）
   | { kind: 'sacrificeSummon'; amount: number } // 自分のモンスター1体を墓地に置き、手札のコスト amount 以下のモンスターをコストなしで召喚する
   | { kind: 'delayedEnergy'; amount: number } // 次の自分のターン開始時、エネルギー +amount（対象なし）
-  | { kind: 'discardForEnergy'; amount: number } // 手札を amount 枚捨て、エネルギー +amount（対象なし）
+  | { kind: 'discardForEnergy'; amount: number } // 手札を2枚捨て、エネルギー +amount（対象なし）
   | { kind: 'raiseMaxEnergy'; amount: number } // エネルギーの上限を amount 上げる（最大 RULES.maxEnergyLimit。対象なし）
   | { kind: 'drainEnergy'; amount: number } // 相手のエネルギーを amount 減らし、自分のエネルギーを1増やす（対象なし）
-  | { kind: 'lifeToEnergy'; amount: number } // 自分の大将の HP を3減らし、エネルギー +amount（対象なし）
+  | { kind: 'lifeToEnergy'; amount: number } // 自分の大将の HP を5減らし、エネルギー +amount（対象なし）
   | { kind: 'sacrificeForEnergy'; amount: number } // 自分のモンスター1体を墓地に置き、そのコストぶんエネルギーを得る（amount は使わない）
   | { kind: 'draw'; amount: number } // カードを amount 枚引く（対象なし）
   | { kind: 'supplyLine'; amount: number } // 自分の後衛のモンスターを好きな数だけ墓地に送り、その数だけ引く（amount は使わない）

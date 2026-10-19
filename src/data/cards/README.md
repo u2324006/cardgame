@@ -100,10 +100,10 @@
 | `summonDiscount` | 劣勢のとき、このターン次に召喚するモンスターのコスト −amount | なし |
 | `sacrificeSummon` | 自分のモンスターを墓地に置き、手札のコスト amount 以下のモンスターをコストなしで召喚 | 自分のモンスター |
 | `delayedEnergy` | 次の自分のターン開始時にエネルギー +amount | なし |
-| `discardForEnergy` | 手札を amount 枚捨て、エネルギー +amount | なし |
+| `discardForEnergy` | 手札を2枚捨て、エネルギー +amount | なし |
 | `raiseMaxEnergy` | エネルギーの上限 +amount（最大 12） | なし |
 | `drainEnergy` | 相手のエネルギー −amount、自分 +1 | なし |
-| `lifeToEnergy` | 自分の大将の HP −3、エネルギー +amount | なし |
+| `lifeToEnergy` | 自分の大将の HP −5、エネルギー +amount | なし |
 | `sacrificeForEnergy` | 自分のモンスターを墓地に置き、そのコストぶんエネルギー（amount は 1） | 自分のモンスター |
 | `draw` | amount 枚引く | なし |
 | `supplyLine` | 自分の後衛のモンスターを好きな数だけ墓地に送り、その数だけ引く（amount は 1） | 自分の後衛のモンスター（複数） |

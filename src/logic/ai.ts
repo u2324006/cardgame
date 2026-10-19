@@ -3,6 +3,7 @@ import { getMaxHp } from './cards';
 import { AttackTarget, FieldPosition, GameState, PlayerId, Row } from '../types/gameState';
 import {
   ActionResult,
+  DISCARD_FOR_ENERGY_COUNT,
   ROWS,
   attack,
   canAttackThisTurn,
@@ -325,7 +326,7 @@ const shouldCastResourceSpell = (state: GameState, player: PlayerId, spell: Spel
     case 'summonDiscount':
       return unlocks(effect.amount);
     case 'discardForEnergy':
-      return others.length >= effect.amount + 1 && unlocks(effect.amount);
+      return others.length >= DISCARD_FOR_ENERGY_COUNT + 1 && unlocks(effect.amount);
     case 'lifeToEnergy':
       return !isLeaderLow(state, player, 0.6) && unlocks(effect.amount);
     case 'delayedEnergy':
