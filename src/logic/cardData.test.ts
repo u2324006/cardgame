@@ -66,7 +66,7 @@ describe('card records (JSON for AI)', () => {
   it('describes built-in cards without notes sensibly', () => {
     const fire = BUILTIN_CARD_SET.cards.find(c => c.id === 's003') as SpellCard;
     expect(toSpellRecord(fire)).toMatchObject({ effectText: '相手のモンスター1体に3ダメージを与える。', target: 'enemyMonster', effect: { kind: 'damage', amount: 3 }, implementation: '実装済み' });
-    expect(toLeaderRecord(BUILTIN_LEADER_CARDS[0])).toMatchObject({ maxHp: 20, implementation: '効果なし' });
+    expect(toLeaderRecord(BUILTIN_LEADER_CARDS[0])).toMatchObject({ maxHp: 42, implementation: '効果なし' });
   });
 
   it('keeps uploaded images as data URLs and built-in images as file names', () => {
@@ -106,7 +106,7 @@ describe('card records (JSON for AI)', () => {
     expect(find('cmvcf6svl19jp')).toMatchObject({ name: '後衛支援', effect: { kind: 'buffBa', amount: 1 } });
     expect([find('m003')?.race, find('m011')?.race]).toEqual(['恐竜', '戦士']);
     const golem = BUILTIN_CARD_SET.leaders.find(l => l.id === 'lmvcf1jj9pvni');
-    expect(golem).toMatchObject({ maxHp: 22, ability: { kind: 'raceHpBonus', race: 'ゴーレム', amount: 1 } });
+    expect(golem).toMatchObject({ maxHp: 45, ability: { kind: 'raceHpBonus', race: 'ゴーレム', amount: 1 } });
   });
 
   it('round-trips a leader effect', () => {

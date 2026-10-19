@@ -101,7 +101,7 @@ export const BUILTIN_LEADER_CARDS: LeaderCard[] = [
     name: '大将',
     image: cardImage('leader.svg'),
     description: '大将固有の効果は未設定です。',
-    maxHp: 20,
+    maxHp: 42,
   },
 ];
 

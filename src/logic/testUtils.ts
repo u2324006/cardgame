@@ -89,8 +89,11 @@ export const withGolemLeader = (state: GameState, player: PlayerId): GameState =
 // 両プレイヤーの手札・フィールドを空にした、テスト用の状態を作る（先手1ターン目の制限がかからないよう3ターン目）
 export const emptyState = (): GameState => {
   const base = createInitialGameState();
+  // 大将はカードのデータに左右されないよう、HP 20・効果なしに固定する
   const clear = (player: PlayerId) => ({
     ...base.players[player],
+    leader: { id: 'ltest', name: '大将', description: '', maxHp: 20 },
+    specialCardHp: 20,
     hand: [],
     currentEnergy: 5,
     field: { frontRow: [null, null, null], backRow: [null, null, null] },

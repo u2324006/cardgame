@@ -114,7 +114,7 @@
   {
     "id": "m013",
     "name": "狙撃手",
-    "race": "兵士",
+    "race": "戦士",
     "effectText": "後衛にいるとき、相手の前衛にモンスターがいても相手の後衛を攻撃できる。",
     "flavorText": "",
     "illustration": {
@@ -123,7 +123,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "updatedAt": "2026-10-19T07:10:48.000Z",
     "cost": 2,
     "frontAttack": 0,
     "backAttack": 3,
@@ -135,7 +135,7 @@
   {
     "id": "m014",
     "name": "槍兵",
-    "race": "兵士",
+    "race": "戦士",
     "effectText": "前衛から攻撃したとき、相手の後衛のモンスター1体を選び、1ダメージを与える。",
     "flavorText": "",
     "illustration": {
@@ -144,7 +144,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "updatedAt": "2026-10-19T07:10:48.000Z",
     "cost": 2,
     "frontAttack": 3,
     "backAttack": 0,
@@ -157,7 +157,7 @@
   {
     "id": "m015",
     "name": "盾兵",
-    "race": "兵士",
+    "race": "戦士",
     "effectText": "前衛にいるとき、受けるダメージを1減らす。",
     "flavorText": "",
     "illustration": {
@@ -166,7 +166,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "updatedAt": "2026-10-19T07:10:48.000Z",
     "cost": 2,
     "frontAttack": 1,
     "backAttack": 0,
@@ -179,7 +179,7 @@
   {
     "id": "m016",
     "name": "衛生兵",
-    "race": "兵士",
+    "race": "戦士",
     "effectText": "後衛にいるとき、自分のターン終了時に、同じ位置の前衛の味方のHPを2回復する。",
     "flavorText": "",
     "illustration": {
@@ -188,7 +188,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "updatedAt": "2026-10-19T07:10:48.000Z",
     "cost": 2,
     "frontAttack": 0,
     "backAttack": 1,
@@ -201,7 +201,7 @@
   {
     "id": "m017",
     "name": "指揮官",
-    "race": "兵士",
+    "race": "戦士",
     "effectText": "後衛にいるとき、1ターンに1回、前衛の味方1体を選び、そのターンの間FAを1上げる。",
     "flavorText": "",
     "illustration": {
@@ -210,7 +210,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "updatedAt": "2026-10-19T07:10:48.000Z",
     "cost": 3,
     "frontAttack": 1,
     "backAttack": 2,
@@ -223,7 +223,7 @@
   {
     "id": "m018",
     "name": "突撃兵",
-    "race": "兵士",
+    "race": "戦士",
     "effectText": "後衛から前衛へ移動したターン、FAが2上がる。",
     "flavorText": "",
     "illustration": {
@@ -232,7 +232,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "updatedAt": "2026-10-19T07:10:48.000Z",
     "cost": 1,
     "frontAttack": 2,
     "backAttack": 1,
@@ -245,7 +245,7 @@
   {
     "id": "m019",
     "name": "殿",
-    "race": "兵士",
+    "race": "戦士",
     "effectText": "前衛で攻撃されて倒されたとき、攻撃したモンスターに3ダメージを与える。",
     "flavorText": "",
     "illustration": {
@@ -254,7 +254,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "updatedAt": "2026-10-19T07:10:48.000Z",
     "cost": 2,
     "frontAttack": 2,
     "backAttack": 0,
@@ -267,7 +267,7 @@
   {
     "id": "m020",
     "name": "伏兵",
-    "race": "兵士",
+    "race": "戦士",
     "effectText": "相手の場のモンスターが自分より多いとき、コストが1下がる。",
     "flavorText": "",
     "illustration": {
@@ -276,7 +276,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "updatedAt": "2026-10-19T07:10:48.000Z",
     "cost": 2,
     "frontAttack": 3,
     "backAttack": 2,
@@ -311,7 +311,7 @@
   {
     "id": "m022",
     "name": "傭兵",
-    "race": "兵士",
+    "race": "戦士",
     "effectText": "手札を2枚捨てれば、エネルギーを払わずに召喚できる。",
     "flavorText": "",
     "illustration": {
@@ -320,7 +320,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "updatedAt": "2026-10-19T07:10:48.000Z",
     "cost": 4,
     "frontAttack": 3,
     "backAttack": 1,
@@ -333,7 +333,7 @@
   {
     "id": "m023",
     "name": "伝令官",
-    "race": "兵士",
+    "race": "戦士",
     "effectText": "召喚したとき、このターン次に使うスペルのコストを1下げる。",
     "flavorText": "",
     "illustration": {
@@ -342,7 +342,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "updatedAt": "2026-10-19T07:10:48.000Z",
     "cost": 1,
     "frontAttack": 1,
     "backAttack": 1,
@@ -377,7 +377,7 @@
   {
     "id": "m025",
     "name": "斥候",
-    "race": "兵士",
+    "race": "戦士",
     "effectText": "召喚したとき、カードを1枚引く。",
     "flavorText": "",
     "illustration": {
@@ -386,7 +386,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "updatedAt": "2026-10-19T07:10:48.000Z",
     "cost": 1,
     "frontAttack": 1,
     "backAttack": 1,
@@ -399,7 +399,7 @@
   {
     "id": "m026",
     "name": "伝令兵",
-    "race": "兵士",
+    "race": "戦士",
     "effectText": "前衛で倒されたとき、カードを1枚引く。",
     "flavorText": "",
     "illustration": {
@@ -408,7 +408,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "updatedAt": "2026-10-19T07:10:48.000Z",
     "cost": 2,
     "frontAttack": 2,
     "backAttack": 1,
@@ -444,7 +444,7 @@
   {
     "id": "m028",
     "name": "狂戦士",
-    "race": "兵士",
+    "race": "戦士",
     "effectText": "召喚したとき、手札を1枚選んで捨てる。",
     "flavorText": "",
     "illustration": {
@@ -453,7 +453,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "updatedAt": "2026-10-19T07:10:48.000Z",
     "cost": 1,
     "frontAttack": 4,
     "backAttack": 0,
