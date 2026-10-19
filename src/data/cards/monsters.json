@@ -20,7 +20,7 @@
   {
     "id": "m004",
     "name": "ハンター",
-    "race": "戦士",
+    "race": "ハンター",
     "effectText": "",
     "flavorText": "後衛から獲物を狙い撃つ。前衛では攻撃できない。",
     "illustration": {
@@ -29,7 +29,7 @@
     },
     "implementation": "効果なし",
     "memo": "",
-    "updatedAt": "2026-10-17T13:28:00.000Z",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
     "cost": 1,
     "frontAttack": 0,
     "backAttack": 4,
@@ -40,23 +40,23 @@
     "name": "戦士",
     "race": "戦士",
     "effectText": "",
-    "flavorText": "前衛で力を発揮する。後衛では攻撃できない。",
+    "flavorText": "前衛で力を発揮する。",
     "illustration": {
       "prompt": "",
       "image": "warrior.svg"
     },
     "implementation": "効果なし",
-    "memo": "",
-    "updatedAt": "2026-10-17T13:28:00.000Z",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
     "cost": 2,
-    "frontAttack": 5,
+    "frontAttack": 4,
     "backAttack": 0,
-    "hp": 7
+    "hp": 10
   },
   {
     "id": "m006",
     "name": "魔術師",
-    "race": "戦士",
+    "race": "魔法使い",
     "effectText": "",
     "flavorText": "後衛から強力な魔術を放つ。前衛では攻撃できない。",
     "illustration": {
@@ -65,7 +65,7 @@
     },
     "implementation": "効果なし",
     "memo": "",
-    "updatedAt": "2026-10-17T13:28:00.000Z",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
     "cost": 2,
     "frontAttack": 0,
     "backAttack": 5,
@@ -82,12 +82,12 @@
       "image": "knight.svg"
     },
     "implementation": "効果なし",
-    "memo": "",
-    "updatedAt": "2026-10-17T13:28:00.000Z",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
     "cost": 3,
-    "frontAttack": 5,
-    "backAttack": 2,
-    "hp": 14
+    "frontAttack": 3,
+    "backAttack": 0,
+    "hp": 24
   },
   {
     "id": "cmvde9cnvtqso",
@@ -114,7 +114,7 @@
   {
     "id": "m013",
     "name": "狙撃手",
-    "race": "戦士",
+    "race": "兵士",
     "effectText": "後衛にいるとき、相手の前衛にモンスターがいても相手の後衛を攻撃できる。",
     "flavorText": "",
     "illustration": {
@@ -123,7 +123,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
     "cost": 2,
     "frontAttack": 0,
     "backAttack": 3,
@@ -135,7 +135,7 @@
   {
     "id": "m014",
     "name": "槍兵",
-    "race": "戦士",
+    "race": "兵士",
     "effectText": "前衛から攻撃したとき、相手の後衛のモンスター1体を選び、1ダメージを与える。",
     "flavorText": "",
     "illustration": {
@@ -144,7 +144,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T06:25:35.000Z",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
     "cost": 2,
     "frontAttack": 3,
     "backAttack": 0,
@@ -157,7 +157,7 @@
   {
     "id": "m015",
     "name": "盾兵",
-    "race": "戦士",
+    "race": "兵士",
     "effectText": "前衛にいるとき、受けるダメージを1減らす。",
     "flavorText": "",
     "illustration": {
@@ -166,7 +166,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
     "cost": 2,
     "frontAttack": 1,
     "backAttack": 0,
@@ -179,7 +179,7 @@
   {
     "id": "m016",
     "name": "衛生兵",
-    "race": "戦士",
+    "race": "兵士",
     "effectText": "後衛にいるとき、自分のターン終了時に、同じ位置の前衛の味方のHPを2回復する。",
     "flavorText": "",
     "illustration": {
@@ -188,7 +188,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
     "cost": 2,
     "frontAttack": 0,
     "backAttack": 1,
@@ -201,7 +201,7 @@
   {
     "id": "m017",
     "name": "指揮官",
-    "race": "戦士",
+    "race": "兵士",
     "effectText": "後衛にいるとき、1ターンに1回、前衛の味方1体を選び、そのターンの間FAを1上げる。",
     "flavorText": "",
     "illustration": {
@@ -210,7 +210,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
     "cost": 3,
     "frontAttack": 1,
     "backAttack": 2,
@@ -223,7 +223,7 @@
   {
     "id": "m018",
     "name": "突撃兵",
-    "race": "戦士",
+    "race": "兵士",
     "effectText": "後衛から前衛へ移動したターン、FAが2上がる。",
     "flavorText": "",
     "illustration": {
@@ -232,7 +232,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
     "cost": 1,
     "frontAttack": 2,
     "backAttack": 1,
@@ -245,7 +245,7 @@
   {
     "id": "m019",
     "name": "殿",
-    "race": "戦士",
+    "race": "兵士",
     "effectText": "前衛で攻撃されて倒されたとき、攻撃したモンスターに3ダメージを与える。",
     "flavorText": "",
     "illustration": {
@@ -254,7 +254,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
     "cost": 2,
     "frontAttack": 2,
     "backAttack": 0,
@@ -267,7 +267,7 @@
   {
     "id": "m020",
     "name": "伏兵",
-    "race": "戦士",
+    "race": "兵士",
     "effectText": "相手の場のモンスターが自分より多いとき、コストが1下がる。",
     "flavorText": "",
     "illustration": {
@@ -276,7 +276,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
     "cost": 2,
     "frontAttack": 3,
     "backAttack": 2,
@@ -311,7 +311,7 @@
   {
     "id": "m022",
     "name": "傭兵",
-    "race": "戦士",
+    "race": "兵士",
     "effectText": "手札を2枚捨てれば、エネルギーを払わずに召喚できる。",
     "flavorText": "",
     "illustration": {
@@ -320,7 +320,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
     "cost": 4,
     "frontAttack": 3,
     "backAttack": 1,
@@ -333,7 +333,7 @@
   {
     "id": "m023",
     "name": "伝令官",
-    "race": "戦士",
+    "race": "兵士",
     "effectText": "召喚したとき、このターン次に使うスペルのコストを1下げる。",
     "flavorText": "",
     "illustration": {
@@ -342,7 +342,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
     "cost": 1,
     "frontAttack": 1,
     "backAttack": 1,
@@ -377,7 +377,7 @@
   {
     "id": "m025",
     "name": "斥候",
-    "race": "戦士",
+    "race": "兵士",
     "effectText": "召喚したとき、カードを1枚引く。",
     "flavorText": "",
     "illustration": {
@@ -386,7 +386,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
     "cost": 1,
     "frontAttack": 1,
     "backAttack": 1,
@@ -399,7 +399,7 @@
   {
     "id": "m026",
     "name": "伝令兵",
-    "race": "戦士",
+    "race": "兵士",
     "effectText": "前衛で倒されたとき、カードを1枚引く。",
     "flavorText": "",
     "illustration": {
@@ -408,7 +408,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
     "cost": 2,
     "frontAttack": 2,
     "backAttack": 1,
@@ -444,7 +444,7 @@
   {
     "id": "m028",
     "name": "狂戦士",
-    "race": "戦士",
+    "race": "兵士",
     "effectText": "召喚したとき、手札を1枚選んで捨てる。",
     "flavorText": "",
     "illustration": {
@@ -453,7 +453,7 @@
     },
     "implementation": "実装済み",
     "memo": "",
-    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
     "cost": 1,
     "frontAttack": 4,
     "backAttack": 0,
@@ -505,5 +505,617 @@
     "effect": {
       "kind": "summonWhenDiscarded"
     }
+  },
+  {
+    "id": "w01",
+    "name": "新兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "盾を構えて前線に立つ、入隊したばかりの兵。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 0,
+    "hp": 12
+  },
+  {
+    "id": "w02",
+    "name": "見張り",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "後方から敵の動きを知らせる。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 1,
+    "frontAttack": 0,
+    "backAttack": 1,
+    "hp": 10
+  },
+  {
+    "id": "w03",
+    "name": "剣士見習い",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "剣の腕を磨くため戦場に出た若者。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 1,
+    "frontAttack": 2,
+    "backAttack": 0,
+    "hp": 8
+  },
+  {
+    "id": "w04",
+    "name": "旅の剣士",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "どこでも戦える身軽な剣士。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 1,
+    "hp": 8
+  },
+  {
+    "id": "w05",
+    "name": "投石兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "後衛から石を投げて援護する。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 1,
+    "frontAttack": 0,
+    "backAttack": 2,
+    "hp": 6
+  },
+  {
+    "id": "w06",
+    "name": "斬り込み隊",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "守りを捨てて敵陣に斬り込む。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 1,
+    "frontAttack": 3,
+    "backAttack": 0,
+    "hp": 4
+  },
+  {
+    "id": "w07",
+    "name": "軽装兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "軽い装備で素早く動く。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 1,
+    "frontAttack": 2,
+    "backAttack": 1,
+    "hp": 4
+  },
+  {
+    "id": "w08",
+    "name": "弓兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "後衛から矢を放つ。打たれ弱い。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 1,
+    "frontAttack": 0,
+    "backAttack": 3,
+    "hp": 2
+  },
+  {
+    "id": "w09",
+    "name": "短弓兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "短い弓で前にも後ろにも対応する。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 2,
+    "hp": 2
+  },
+  {
+    "id": "w10",
+    "name": "重装兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "分厚い鎧で攻撃に耐える。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 2,
+    "frontAttack": 2,
+    "backAttack": 0,
+    "hp": 18
+  },
+  {
+    "id": "w11",
+    "name": "砦の弓兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "砦の上から粘り強く矢を射る。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 2,
+    "hp": 16
+  },
+  {
+    "id": "w12",
+    "name": "歩兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "軍の中心となる兵。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 2,
+    "frontAttack": 3,
+    "backAttack": 0,
+    "hp": 14
+  },
+  {
+    "id": "w13",
+    "name": "斧兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "重い斧を振るう。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 2,
+    "frontAttack": 2,
+    "backAttack": 1,
+    "hp": 14
+  },
+  {
+    "id": "w14",
+    "name": "弩兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "弩で狙いを定める。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 2,
+    "frontAttack": 1,
+    "backAttack": 2,
+    "hp": 12
+  },
+  {
+    "id": "w15",
+    "name": "遊撃兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "前にも後ろにも回れる。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 2,
+    "frontAttack": 2,
+    "backAttack": 2,
+    "hp": 10
+  },
+  {
+    "id": "w16",
+    "name": "長弓兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "長い弓で遠くの敵を射抜く。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 4,
+    "hp": 8
+  },
+  {
+    "id": "w17",
+    "name": "剣闘士",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "闘技場で鍛えた攻撃一辺倒の剣士。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 2,
+    "frontAttack": 5,
+    "backAttack": 0,
+    "hp": 6
+  },
+  {
+    "id": "w18",
+    "name": "精鋭弓兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "必中の矢を放つが、近づかれると脆い。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 5,
+    "hp": 4
+  },
+  {
+    "id": "w19",
+    "name": "大剣使い",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "身の丈ほどの大剣を振るう。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 3,
+    "frontAttack": 4,
+    "backAttack": 0,
+    "hp": 20
+  },
+  {
+    "id": "w20",
+    "name": "射手長",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "弓兵をまとめる熟練の射手。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 3,
+    "frontAttack": 0,
+    "backAttack": 4,
+    "hp": 18
+  },
+  {
+    "id": "w21",
+    "name": "騎兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "馬で敵陣を駆け抜ける。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 3,
+    "frontAttack": 5,
+    "backAttack": 0,
+    "hp": 16
+  },
+  {
+    "id": "w22",
+    "name": "近衛兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "王を守る精鋭。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 3,
+    "frontAttack": 3,
+    "backAttack": 2,
+    "hp": 16
+  },
+  {
+    "id": "w23",
+    "name": "魔弓兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "魔力を帯びた矢を放つ。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 3,
+    "frontAttack": 0,
+    "backAttack": 5,
+    "hp": 14
+  },
+  {
+    "id": "w24",
+    "name": "剛剣士",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "一撃の重さで敵を圧倒する。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 3,
+    "frontAttack": 6,
+    "backAttack": 0,
+    "hp": 12
+  },
+  {
+    "id": "w25",
+    "name": "歴戦の兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "数々の戦いを生き抜いた古強者。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 3,
+    "frontAttack": 3,
+    "backAttack": 3,
+    "hp": 12
+  },
+  {
+    "id": "w26",
+    "name": "決死隊",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "命を賭けて突撃する。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 3,
+    "frontAttack": 7,
+    "backAttack": 0,
+    "hp": 8
+  },
+  {
+    "id": "w27",
+    "name": "城壁兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "城壁のように動かない。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 4,
+    "frontAttack": 4,
+    "backAttack": 0,
+    "hp": 30
+  },
+  {
+    "id": "w28",
+    "name": "重騎士",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "全身を鋼で固めた騎士。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 4,
+    "frontAttack": 6,
+    "backAttack": 0,
+    "hp": 22
+  },
+  {
+    "id": "w29",
+    "name": "百人隊長",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "百人の兵を率いる隊長。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 4,
+    "frontAttack": 3,
+    "backAttack": 3,
+    "hp": 22
+  },
+  {
+    "id": "w30",
+    "name": "大弓隊",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "大弓を並べて一斉に射る。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 4,
+    "frontAttack": 0,
+    "backAttack": 6,
+    "hp": 20
+  },
+  {
+    "id": "w31",
+    "name": "剣聖",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "剣を極めた達人。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 4,
+    "frontAttack": 8,
+    "backAttack": 0,
+    "hp": 14
+  },
+  {
+    "id": "w32",
+    "name": "英雄",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "どこにいても戦局を変える。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 4,
+    "frontAttack": 4,
+    "backAttack": 4,
+    "hp": 14
+  },
+  {
+    "id": "w33",
+    "name": "攻城弩兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "城門を砕く巨大な弩を操る。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 4,
+    "frontAttack": 0,
+    "backAttack": 8,
+    "hp": 12
+  },
+  {
+    "id": "w34",
+    "name": "捨て身の勇者",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "すべてを攻撃に注ぎ込む。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 4,
+    "frontAttack": 10,
+    "backAttack": 0,
+    "hp": 6
   }
 ]

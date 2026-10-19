@@ -85,8 +85,8 @@ describe('card editor', () => {
   });
 
   it('flags a monster much stronger than others of the same cost', () => {
-    // 比べる相手はコスト3の騎士とドラゴンだけにする（指揮官・召喚士は効果持ちで能力値が低い）
-    const set = { ...BUILTIN_CARD_SET, cards: BUILTIN_CARD_SET.cards.filter(c => !['m017', 'm021'].includes(c.id)) };
+    // 比べる相手は、ドラゴンと同じ能力値のコスト3のカード1枚だけにする
+    const set = { ...BUILTIN_CARD_SET, cards: [dragon, { ...dragon, id: 'peer' }] };
     expect(getBalance(dragon, set).label).toBe('標準');
     const overpowered = { ...dragon, frontAttack: 12 };
     expect(getBalance(overpowered, set).label).toBe('強め');
