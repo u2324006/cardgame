@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+  <defs>
+    <radialGradient id="bg" cx="0.5" cy="0.55" r="0.7">
+      <stop offset="0" stop-color="#6B47B0"/>
+      <stop offset="1" stop-color="#1C1233"/>
+    </radialGradient>
+  </defs>
+  <rect width="160" height="120" fill="url(#bg)"/>
+  <!-- 魔法陣 -->
+  <circle cx="80" cy="62" r="44" fill="none" stroke="#D4AF6A" stroke-width="1.5" opacity="0.8"/>
+  <circle cx="80" cy="62" r="36" fill="none" stroke="#D4AF6A" stroke-width="1" opacity="0.6"/>
+  <path d="M80 26 L111 80 L49 80 Z M80 98 L49 44 L111 44 Z" fill="none" stroke="#D4AF6A" stroke-width="1" opacity="0.6"/>
+  <!-- 剣 -->
+  <path d="M77 30 L83 30 L83 82 L77 82 Z" fill="#E6F4FF"/>
+  <path d="M77 30 L80 20 L83 30 Z" fill="#E6F4FF"/>
+  <rect x="70" y="80" width="20" height="4" rx="1" fill="#D4AF6A"/>
+  <rect x="78" y="84" width="4" height="10" fill="#8A6239"/>
+  <!-- 上向きの矢印（攻撃力アップ） -->
+  <path d="M120 60 L132 46 L144 60 L137 60 L137 74 L127 74 L127 60 Z" fill="#F2C14E"/>
+  <!-- きらめき -->
+  <path d="M38 34 L40 40 L46 42 L40 44 L38 50 L36 44 L30 42 L36 40 Z" fill="#F3E3B8"/>
+  <path d="M120 92 L121.5 96 L125.5 97.5 L121.5 99 L120 103 L118.5 99 L114.5 97.5 L118.5 96 Z" fill="#F3E3B8"/>
+</svg>

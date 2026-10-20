@@ -1,42 +1,74 @@
 import React from 'react';
-import { Card as CardType } from '../types/card';
+import { Card as CardType, isMonster } from '../types/card';
+import { Row } from '../types/gameState';
+import { getMaxHp } from '../logic/cards';
 import '../styles/Card.css';
 
-interface CardProps {
-  card: CardType;
-  onClick: () => void;
-  isSelected: boolean;
+export interface HoverHandlers {
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }
 
-const Card: React.FC<CardProps> = ({ card, onClick, isSelected }) => {
+interface CardProps extends HoverHandlers {
+  card: CardType;
+  onClick?: () => void;
+  isSelected?: boolean;
+  row?: Row; // 場にいる列。使われない方の攻撃力（前衛なら BA）を薄く表示する
+  size?: 'normal' | 'large'; // large はカード情報欄用で、説明文も表示する
+  usedLabel?: string; // 行動済みのとき（例: '攻撃済み'）。カードを薄く表示してラベルを出す
+  markLabel?: string; // 選んだ印（例: '墓地へ'）。カードに赤い枠とラベルを出す
+  hpBonus?: number; // 大将カードの効果などで上がっている HP（表示する HP に足す）
+  displayCost?: number; // 今のコスト（伏兵などで下がっているとき）
+}
+
+// 裏向きのカード（相手の手札など）
+export const CardBack: React.FC = () => (
+  <div className="card-back">
+    <div className="card-back-inner" />
+  </div>
+);
+
+// カードの絵。未設定なら種族名を表示する
+export const CardArt: React.FC<{ image?: string; label?: string; children?: React.ReactNode }> = ({ image, label, children }) => (
+  <div className="card-art">
+    {image ? <img src={image} alt="" /> : <span className="card-art-label">{label}</span>}
+    {children}
+  </div>
+);
+
+const Card: React.FC<CardProps> = ({ card, onClick, isSelected = false, row, size = 'normal', usedLabel, markLabel, hpBonus = 0, displayCost, onMouseEnter, onMouseLeave }) => {
+  const monster = isMonster(card) ? card : null;
+  const spell = isMonster(card) ? null : card;
+  const classes = ['card', card.type.toLowerCase(), size, isSelected && 'selected', usedLabel && 'used', markLabel && 'marked'].filter(Boolean).join(' ');
   return (
-    <div className={`card ${card.type.toLowerCase()} ${isSelected ? 'selected' : ''}`} onClick={onClick}>
-      {/* Top section: HP, Race, Cost */}
-      <div className="card-top-section">
-        <div className="card-hp">HP: {card.cardHp}</div>
-        <div className="card-race">{card.race}</div>
-        <div className="card-cost-circle">
-          <div className="card-cost-value">{card.cost}</div>
-        </div>
+    <div className={classes} onClick={onClick} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+      {usedLabel && <div className="card-used-label">{usedLabel}</div>}
+      {markLabel && <div className="card-used-label mark">{markLabel}</div>}
+      <div className="card-header">
+        <div className={`card-cost ${displayCost !== undefined && displayCost < card.cost ? 'reduced' : ''}`}>{displayCost ?? card.cost}</div>
+        <div className="card-name">{card.name}</div>
       </div>
 
-      {/* Image/Art Area */}
-      <div className="card-image-area">
-        {/* Placeholder for image */}
-      </div>
+      <CardArt image={card.image} label={card.race}>
+        {monster && (
+          <div
+            className={`card-hp ${monster.cardHp < getMaxHp(monster) ? 'damaged' : ''} ${hpBonus > 0 ? 'boosted' : ''}`}
+            title={hpBonus > 0 ? `大将の効果で HP +${hpBonus}` : undefined}
+          >
+            HP {monster.cardHp + hpBonus}
+          </div>
+        )}
+      </CardArt>
 
-      {/* Description Area */}
-      <div className="card-description-area">
-        {card.description}
-      </div>
+      {size === 'large' && <div className="card-description">{card.description}</div>}
 
-      {/* Bottom section: FA/BA */}
-      {card.type === 'Monster' && (
-        <div className="card-stats-bottom">
-          <span>FA: {card.frontAttack}</span>
-          <span>BA: {card.backAttack}</span>
+      {monster && (
+        <div className="card-stats">
+          <span className={`card-stat fa ${row === 'backRow' ? 'inactive' : ''}`}>FA {monster.frontAttack}</span>
+          <span className={`card-stat ba ${row === 'frontRow' ? 'inactive' : ''}`}>BA {monster.backAttack}</span>
         </div>
       )}
+      {spell && size === 'normal' && <div className="card-summary">{spell.summary ?? 'スペル'}</div>}
     </div>
   );
 };

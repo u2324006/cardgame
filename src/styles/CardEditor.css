@@ -1,0 +1,734 @@
+/* --- カード作成画面 --- */
+
+.editor-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.header-button {
+  height: 40px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+/* 左：カード一覧 */
+.editor-list {
+  width: 260px;
+  flex: none;
+  position: sticky;
+  top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.editor-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.new-card-button {
+  height: 36px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.filter-tab.small {
+  height: 30px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.editor-list-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.editor-list-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.editor-list-item:hover {
+  background: #232838;
+}
+
+.editor-list-item.selected {
+  border-color: var(--gold);
+  background: var(--warning-bg);
+}
+
+.editor-list-item .card-cost.leader {
+  background: var(--leader-header);
+  color: var(--gold-text);
+  font-size: 9px;
+}
+
+.editor-list-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.editor-list-name.spell {
+  color: #C9B6F2;
+}
+
+.editor-tag {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.editor-tag.new {
+  background: #1F3A2A;
+  color: #9FD8A8;
+}
+
+.editor-tag.modified {
+  background: #1D2C45;
+  color: #9CC2F2;
+}
+
+.editor-tag.strong {
+  background: #4A1E14;
+  color: #F0A58A;
+}
+
+.editor-tag.weak {
+  background: #2A2E3A;
+  color: var(--text-muted);
+}
+
+.editor-tag.pending {
+  background: #3A2A10;
+  color: #F2C14E;
+}
+
+.editor-tag.done {
+  background: #1F3A2A;
+  color: #9FD8A8;
+}
+
+.editor-tag.neutral {
+  background: #2A2E3A;
+  color: var(--text);
+}
+
+/* 中央：白紙のカード */
+.editor-canvas {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.edit-card {
+  width: 300px;
+  height: 420px;
+  border: 3px solid var(--gold-frame);
+  border-radius: 14px;
+  background: var(--parchment);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.edit-card.spell {
+  border-color: var(--spell-frame);
+}
+
+.edit-card.leader {
+  outline: 1px solid var(--gold-dark);
+  outline-offset: 3px;
+}
+
+.edit-card input,
+.edit-card textarea,
+.edit-card select {
+  font-family: var(--font-body);
+  color: inherit;
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed rgba(42, 33, 24, 0.35);
+  border-radius: 0;
+  outline: none;
+}
+
+.edit-card input:focus,
+.edit-card textarea:focus,
+.edit-card select:focus {
+  border-bottom-color: var(--gold);
+  background: rgba(212, 175, 106, 0.18);
+}
+
+.edit-card input::placeholder,
+.edit-card textarea::placeholder {
+  color: rgba(42, 33, 24, 0.45);
+}
+
+.edit-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: var(--ink);
+  color: var(--gold-text);
+}
+
+.edit-card.spell .edit-header {
+  background: var(--spell-header);
+}
+
+.edit-card.leader .edit-header {
+  background: var(--leader-header);
+}
+
+.edit-card .edit-header input {
+  border-bottom-color: rgba(243, 227, 184, 0.35);
+}
+
+.edit-card .edit-header input::placeholder {
+  color: rgba(243, 227, 184, 0.5);
+}
+
+.edit-cost-circle {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-card .edit-cost {
+  width: 30px;
+  border-bottom: none;
+  color: var(--ink);
+  font: 700 20px/1 var(--font-body);
+  text-align: center;
+}
+
+.edit-name {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 2px;
+  font: 800 19px/1.2 var(--font-display) !important;
+}
+
+/* 数値入力の上下ボタンを消す */
+.edit-number {
+  -moz-appearance: textfield;
+}
+
+.edit-number::-webkit-outer-spin-button,
+.edit-number::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.edit-art-area {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: var(--parchment-art);
+}
+
+.edit-card.spell .edit-art-area {
+  background: var(--spell-art);
+}
+
+.edit-card.leader .edit-art-area {
+  background: var(--leader-art);
+}
+
+.edit-art {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.edit-art-placeholder {
+  padding: 8px 14px;
+  border: 1px dashed rgba(42, 33, 24, 0.4);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.edit-art:hover .edit-art-placeholder {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.edit-hp {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--hp);
+  color: #FFFFFF;
+  font: 700 14px/1.4 var(--font-body);
+}
+
+.edit-card .edit-hp input {
+  width: 32px;
+  border-bottom-color: rgba(255, 255, 255, 0.5);
+  font: 700 15px/1.2 var(--font-body);
+  text-align: center;
+}
+
+.edit-card.leader .edit-hp {
+  top: auto;
+  bottom: 10px;
+}
+
+.edit-card .edit-race {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  width: 120px;
+  padding: 3px 6px;
+  border: 1px solid var(--gold-frame);
+  border-radius: 6px;
+  /* 絵や背景の色に関係なく読めるよう、濃い色の札にする */
+  background: rgba(42, 33, 24, 0.88);
+  color: var(--gold-text);
+  font-size: 12px;
+  text-align: center;
+}
+
+.edit-card .edit-race::placeholder {
+  color: rgba(243, 227, 184, 0.6);
+}
+
+/* 入力中も背景を保ち、枠を光らせて入力中だと分かるようにする */
+.edit-card .edit-race:focus {
+  border-color: var(--selected);
+  background: var(--ink);
+  box-shadow: 0 0 0 2px rgba(245, 210, 122, 0.45);
+}
+
+.edit-texts {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--gold-frame);
+}
+
+.edit-card .edit-texts textarea {
+  margin: 0;
+  padding: 6px 12px;
+  resize: none;
+  line-height: 1.5;
+}
+
+.edit-effect-text {
+  height: 64px;
+  font-size: 13px;
+}
+
+.edit-effect-text[readonly] {
+  color: var(--spell-text);
+}
+
+.edit-flavor-text {
+  height: 40px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--ink-muted) !important;
+}
+
+.edit-card.leader .edit-effect-text {
+  height: 84px;
+}
+
+.edit-stats {
+  display: flex;
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+
+.edit-stat {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 0;
+  border-radius: 6px;
+  color: #FFFFFF;
+  font: 700 14px/1.2 var(--font-body);
+}
+
+.edit-stat.fa {
+  background: var(--fa);
+}
+
+.edit-stat.ba {
+  background: var(--ba);
+}
+
+.edit-card .edit-stat input {
+  width: 34px;
+  border-bottom-color: rgba(255, 255, 255, 0.5);
+  font: 700 16px/1.2 var(--font-body);
+  text-align: center;
+}
+
+.edit-effect {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+
+.edit-effect select {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 2px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--spell-text);
+}
+
+.edit-effect .edit-effect-target {
+  flex: none;
+  width: 110px;
+}
+
+.edit-effect .edit-effect-amount {
+  width: 44px;
+  padding: 4px;
+  font: 700 16px/1.2 var(--font-body);
+  text-align: center;
+  color: var(--spell-text);
+}
+
+/* 右：設定 */
+.editor-side {
+  width: 280px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.editor-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.editor-section-title {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.segmented {
+  display: flex;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.segmented button {
+  flex: 1;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.segmented button + button {
+  border-left: 1px solid var(--panel-border);
+}
+
+.segmented button.active {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+.segmented button:disabled:not(.active) {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.balance-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.balance-detail {
+  font-size: 13px;
+}
+
+.balance-bar {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.balance-fill {
+  height: 100%;
+  background: var(--gold);
+}
+
+/* 平均（100%）の位置 */
+.balance-mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  background: var(--text);
+}
+
+.editor-preview {
+  display: flex;
+  justify-content: center;
+  padding: 6px 0;
+}
+
+.editor-preview .card,
+.editor-preview .leader-card {
+  cursor: default;
+}
+
+.editor-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.editor-actions .secondary-button {
+  height: 40px;
+  font-size: 14px;
+}
+
+.text-button.danger {
+  align-self: center;
+  color: #F0A58A;
+}
+
+.editor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.editor-field textarea {
+  height: 72px;
+  padding: 8px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.5 var(--font-body);
+  resize: vertical;
+}
+
+.editor-field textarea.short {
+  height: 48px;
+}
+
+.editor-field textarea:focus {
+  outline: none;
+  border-color: var(--gold-frame);
+}
+
+.implementation-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.scope-toggle {
+  align-self: flex-start;
+}
+
+.scope-toggle button {
+  padding: 0 14px;
+}
+
+.transfer-file {
+  margin-left: 8px;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+}
+
+/* --- イラスト選択・書き出しのダイアログ --- */
+
+.dialog.image-picker,
+.dialog.transfer-dialog {
+  width: min(640px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+}
+
+.image-choice {
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg);
+  cursor: pointer;
+}
+
+.image-choice img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.image-choice:hover {
+  border-color: var(--gold-frame);
+}
+
+.image-choice.selected {
+  border-color: var(--selected);
+}
+
+.image-picker-actions,
+.transfer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.image-picker-actions .text-button,
+.transfer-actions .text-button {
+  align-self: center;
+}
+
+.file-button {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+.file-button input {
+  display: none;
+}
+
+.transfer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.transfer-section label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.transfer-section textarea {
+  height: 140px;
+  padding: 10px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font: 12px/1.5 ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  resize: vertical;
+}
+
+.transfer-actions .primary-button,
+.transfer-actions .secondary-button {
+  height: 40px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+/* --- 狭い画面 --- */
+
+@media (max-width: 1000px) {
+  .editor-layout {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .editor-list,
+  .editor-side {
+    width: 100%;
+    position: static;
+  }
+
+  .editor-list-items {
+    max-height: 240px;
+  }
+}

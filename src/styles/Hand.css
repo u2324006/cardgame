@@ -1,10 +1,27 @@
 .hand-container {
   display: flex;
   justify-content: center;
-  align-items: center;
-  padding: 10px;
   gap: 10px;
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 10px;
-  
+  padding: 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  background: var(--panel);
+}
+
+.hand-container .card:hover {
+  transform: translateY(-4px);
+}
+
+/* 相手の手札：上端だけ見せる */
+.hand-container.face-down {
+  height: 50px;
+  padding: 0;
+  gap: 8px;
+  overflow: hidden;
+  border: none;
+  background: transparent;
+}
+
+.hand-container.face-down .card-back {
+  margin-top: -22px;
 }

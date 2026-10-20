@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8E3A2A"/>
+      <stop offset="1" stop-color="#1F0B0B"/>
+    </linearGradient>
+  </defs>
+  <rect width="160" height="120" fill="url(#sky)"/>
+  <!-- 旗 -->
+  <path d="M24 16 L24 100" stroke="#6B5530" stroke-width="3"/>
+  <path d="M25 18 L50 22 L44 32 L50 42 L25 38 Z" fill="#D4AF6A"/>
+  <path d="M136 16 L136 100" stroke="#6B5530" stroke-width="3"/>
+  <path d="M135 18 L110 22 L116 32 L110 42 L135 38 Z" fill="#D4AF6A"/>
+  <path d="M0 104 L160 100 L160 120 L0 120 Z" fill="#170707"/>
+  <!-- マント -->
+  <path d="M62 50 L46 112 L114 112 L98 50 Z" fill="#8E2525"/>
+  <path d="M62 50 L56 112 M98 50 L104 112" stroke="#5A1E1E" stroke-width="2"/>
+  <!-- 鎧 -->
+  <path d="M66 50 L94 50 L92 104 L68 104 Z" fill="#9AA0AE"/>
+  <path d="M68 70 L92 70" stroke="#D4AF6A" stroke-width="2"/>
+  <circle cx="80" cy="60" r="3" fill="#D4AF6A"/>
+  <!-- 顔 -->
+  <circle cx="80" cy="40" r="10" fill="#E7C9A5"/>
+  <path d="M72 44 Q80 54 88 44 Q86 50 80 51 Q74 50 72 44 Z" fill="#5B4A33"/>
+  <!-- 王冠 -->
+  <path d="M68 32 L68 20 L74 26 L80 16 L86 26 L92 20 L92 32 Z" fill="#F2C14E" stroke="#8A6A2A" stroke-width="1"/>
+  <circle cx="80" cy="27" r="2" fill="#8E2525"/>
+</svg>

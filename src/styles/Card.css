@@ -1,80 +1,407 @@
+/* --- モンスター・スペルカード --- */
+
 .card {
-  width: 120px; /* Based on card.png visual */
-  height: 170px; /* Based on card.png visual */
-  border: 2px solid black; /* Stronger border */
-  border-radius: 0px; /* Sharp corners */
+  position: relative;
+  width: 88px;
+  height: 122px;
+  border: 2px solid var(--gold-frame);
+  border-radius: 8px;
+  background: var(--parchment);
+  color: var(--ink);
   display: flex;
   flex-direction: column;
-  background-color: #f0f0f0;
-  color: #333;
-  font-family: 'Arial', sans-serif;
-  box-sizing: border-box; /* Include padding and border in width/height */
-  position: relative; /* For absolute positioning of cost circle */
+  overflow: hidden;
+  cursor: pointer;
+  flex: none;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .card.selected {
-  border: 2px solid blue; /* Example selected border */
+  box-shadow: 0 0 0 3px var(--selected), 0 0 16px 4px rgba(245, 210, 122, 0.55);
 }
 
-.card-top-section {
+/* 捨てるカードとして選んだ手札 */
+.card.marked {
+  box-shadow: 0 0 0 3px var(--hp-damaged), 0 0 14px 3px rgba(194, 65, 12, 0.6);
+}
+
+.card-used-label.mark {
+  background: var(--hp-damaged);
+}
+
+/* 行動済み（攻撃済み・移動済み）のモンスター */
+.card.used {
+  cursor: default;
+}
+
+.card.used > :not(.card-used-label) {
+  filter: grayscale(0.7) brightness(0.5);
+}
+
+.card-used-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(18, 20, 28, 0.85);
+  color: #FFFFFF;
+  font: 700 10px/1.4 var(--font-body);
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.card-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 5px;
-  border-bottom: 1px solid black;
-  position: relative; /* For absolute positioning of cost circle */
+  gap: 4px;
+  min-height: 25px;
+  padding: 3px 4px;
+  background: var(--ink);
+  color: var(--gold-text);
+}
+
+.card.spell {
+  border-color: var(--spell-frame);
+}
+
+.card.spell .card-header {
+  background: var(--spell-header);
+}
+
+.card-cost {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--ink);
+  font: 700 11px/17px var(--font-body);
+  text-align: center;
+}
+
+.card-name {
+  font: 800 9px/1.15 var(--font-display);
+  /* 長い名前は2行まで折り返す */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.card-art {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+  background: var(--parchment-art);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 3px;
+  overflow: hidden;
+}
+
+.card.spell .card-art {
+  background: var(--spell-art);
+}
+
+.card-art img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-art-label {
+  font-size: 9px;
+  color: var(--ink-muted);
 }
 
 .card-hp {
-  font-size: 0.8em;
-  font-weight: bold;
-  border: 1px solid black;
-  padding: 2px 5px;
-}
-
-.card-race {
-  font-size: 0.7em;
-  border: 1px solid black;
-  padding: 2px 5px;
-}
-
-.card-cost-circle {
   position: absolute;
-  top: -10px; /* Adjust to place outside top-right corner */
-  right: -10px; /* Adjust to place outside top-right corner */
+  top: 4px;
+  right: 4px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--hp);
+  color: #FFFFFF;
+  font: 700 10px/1.5 var(--font-body);
+}
+
+.card-hp.damaged {
+  background: var(--hp-damaged);
+}
+
+/* 大将の効果で HP が上がっている */
+.card-hp.boosted {
+  box-shadow: 0 0 0 2px #7FE0A8;
+}
+
+.card-stats {
+  display: flex;
+  gap: 3px;
+  padding: 4px;
+}
+
+.card-stat {
+  flex: 1;
+  border-radius: 4px;
+  color: #FFFFFF;
+  font: 700 10px/1.5 var(--font-body);
+  text-align: center;
+}
+
+.card-stat.fa {
+  background: var(--fa);
+}
+
+.card-stat.ba {
+  background: var(--ba);
+}
+
+/* 今の列では使われない攻撃力 */
+.card-stat.inactive {
+  opacity: 0.3;
+}
+
+.card-summary {
+  padding: 4px;
+  font: 700 10px/1.5 var(--font-body);
+  text-align: center;
+  color: var(--spell-text);
+}
+
+.card-description {
+  padding: 4px 6px;
+  border-top: 1px solid var(--gold-frame);
+  font-size: 9px;
+  line-height: 1.45;
+  overflow: hidden;
+}
+
+/* カード情報欄の大きいカード */
+.card.large {
+  width: 196px;
+  height: 272px;
+  border-width: 3px;
+  border-radius: 12px;
+  cursor: default;
+}
+
+.card.large .card-header {
+  gap: 8px;
+  padding: 8px;
+}
+
+.card.large .card-cost {
   width: 30px;
   height: 30px;
-  border-radius: 50%;
-  background-color: white;
-  border: 2px solid black;
+  font-size: 17px;
+  line-height: 30px;
+}
+
+.card.large .card-name {
+  font-size: 16px;
+}
+
+.card.large .card-art-label {
+  font-size: 12px;
+}
+
+.card.large .card-hp {
+  top: 8px;
+  right: 8px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.card.large .card-description {
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.card.large .card-stats {
+  gap: 6px;
+  padding: 0 10px 10px;
+}
+
+.card.large .card-stat {
+  padding: 3px 0;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+/* --- 裏向きのカード --- */
+
+.card-back {
+  width: 52px;
+  height: 72px;
+  border: 2px solid var(--gold-frame);
+  border-radius: 6px;
+  background: var(--ink);
+  padding: 5px;
+  flex: none;
+}
+
+.card-back-inner {
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--gold-dark);
+  border-radius: 3px;
+}
+
+/* --- 大将カード --- */
+
+.leader-card {
+  width: 118px;
+  height: 160px;
+  margin: 3px;
+  border: 3px solid var(--gold-frame);
+  outline: 1px solid var(--gold-dark);
+  outline-offset: 2px;
+  border-radius: 10px;
+  background: var(--parchment);
+  color: var(--ink);
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  overflow: hidden;
+  flex: none;
+}
+
+.leader-card {
+  position: relative;
+}
+
+.leader-card.disabled .card-art,
+.leader-card.disabled .card-description {
+  filter: grayscale(0.8) brightness(0.7);
+}
+
+.leader-disabled-label {
+  top: 42%;
+}
+
+.leader-card.targetable {
+  cursor: pointer;
+  box-shadow: 0 0 0 3px var(--hp-damaged), 0 0 14px 3px rgba(194, 65, 12, 0.6);
+}
+
+.leader-header {
+  display: flex;
   align-items: center;
-  font-size: 1em;
-  font-weight: bold;
+  gap: 5px;
+  padding: 4px 6px;
+  background: var(--leader-header);
+  color: var(--gold-text);
 }
 
-.card-image-area {
-  flex-grow: 1; /* Takes up remaining vertical space */
-  border-bottom: 1px solid black;
-  background-color: lightgray; /* Placeholder for image */
+.leader-badge {
+  flex: none;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--gold);
+  color: var(--ink);
+  font: 700 9px/1.6 var(--font-body);
 }
 
-.card-description-area {
-  font-size: 0.75em;
-  padding: 5px;
-  border-bottom: 1px solid black;
-  min-height: 40px; /* Adjust as needed */
+.leader-card .card-name {
+  font-size: 11px;
 }
 
-.card-stats-bottom {
-  display: flex;
-  justify-content: flex-end; /* Align to bottom right */
-  font-size: 0.8em;
-  font-weight: bold;
-  padding: 5px;
+.leader-card .card-art {
+  background: var(--leader-art);
+  align-items: center;
+  padding-bottom: 0;
 }
 
-.card-stats-bottom span:first-child {
-  margin-right: 10px; /* Space between FA and BA */
+.leader-card .card-art-label {
+  font-size: 10px;
+}
+
+.leader-hp {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--hp);
+  color: #FFFFFF;
+  font: 700 12px/1.5 var(--font-body);
+}
+
+.leader-hp.damaged {
+  background: var(--hp-damaged);
+}
+
+.leader-hp-max {
+  font-size: 9px;
+}
+
+.leader-card .card-description {
+  height: 40px;
+  flex: none;
+}
+
+.leader-card.large {
+  width: 196px;
+  height: 272px;
+  margin: 0;
+  border-radius: 12px;
+}
+
+.leader-card.large .leader-header {
+  gap: 8px;
+  padding: 8px;
+}
+
+.leader-card.large .leader-badge {
+  font-size: 12px;
+  padding: 1px 7px;
+}
+
+.leader-card.large .card-name {
+  font-size: 18px;
+}
+
+.leader-card.large .leader-hp {
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 8px;
+  font-size: 16px;
+}
+
+.leader-card.large .leader-hp-max {
+  font-size: 12px;
+}
+
+.leader-card.large .card-description {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* 伏兵などでコストが下がっている */
+.card-cost.reduced {
+  background: #7FE0A8;
+  color: #12301f;
+}
+
+/* 籠城などで大将にかかっている効果 */
+.leader-guard-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(30, 60, 110, 0.9);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
 }

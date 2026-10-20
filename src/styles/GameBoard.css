@@ -1,172 +1,309 @@
 .game-board {
+  min-width: 1180px;
+  min-height: 100vh;
   display: flex;
-  justify-content: space-between;
-  padding: 20px;
-  height: 100vh;
-  background-color: var(--board-bg-color);
   gap: 20px;
+  padding: 20px;
+  background: var(--bg);
 }
 
+/* --- 左：カード情報とメッセージ --- */
+
+.info-panel {
+  width: 236px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.panel-title {
+  margin: 0;
+  font: 800 15px/1 var(--font-display);
+  letter-spacing: 0.12em;
+  color: var(--gold);
+}
+
+.card-info {
+  min-height: 340px;
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  background: var(--panel);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.card-preview-empty,
+.card-preview-note {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.card-preview-note {
+  align-self: stretch;
+}
+
+.cast-button {
+  width: 100%;
+}
+
+.discard-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--hp-damaged);
+  border-radius: 10px;
+  background: #2A1A12;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.discard-panel p {
+  margin: 0;
+}
+
+.discard-panel .primary-button {
+  height: 40px;
+  font-size: 14px;
+}
+
+.message-area {
+  min-height: 4em;
+}
+
+.message {
+  border: 1px solid var(--warning-border);
+  border-radius: 10px;
+  background: var(--warning-bg);
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--warning-text);
+  animation: message-in 0.2s ease-out;
+}
+
+@keyframes message-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- 中央：盤面 --- */
+
 .main-area {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 10px; /* Changed from 0px to 10px */
-    width: 65%;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .player-area {
   display: flex;
   flex-direction: column;
+  gap: 10px;
+}
+
+.field-and-side {
+  display: flex;
+  gap: 18px;
   align-items: center;
-  gap: 15px;
+  justify-content: center;
 }
-
-.field-and-deck {
-    display: flex;
-    width: 100%;
-    justify-content: center;
-    position: relative;
-}
-
-
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
+  align-items: center;
 }
 
-.card-slot {
-  width: 100px;
-  height: 140px;
-  background-color: var(--card-slot-bg-color);
-  border: 2px solid var(--card-border-color);
-  border-radius: 8px;
+.row-label {
+  width: 22px;
+  writing-mode: vertical-rl;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--text-faint);
 }
 
-.deck-graveyard {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.opponent-area .deck-graveyard {
-    flex-direction: column-reverse;
-}
-
-.deck, .graveyard {
-    width: 100px;
-    height: 140px;
-    border: 2px solid var(--card-border-color);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--card-slot-bg-color);
-}
-
-.special-card-hp {
-    width: 100px;
-    height: 100px;
-    background-color: orange;
-    border: 2px solid var(--card-border-color);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.opponent-area .special-card-hp {
-    position: absolute;
-    top: 0;
-    left: 0;
-}
-
-.self-area .special-card-hp {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-}
-
-.opponent-area .deck-graveyard {
-    position: absolute;
-    top: 0;
-    left: 120px; /* Adjust based on special-card-hp width + gap */
-}
-
-.self-area .deck-graveyard {
-    position: absolute;
-    bottom: 0;
-    right: 120px; /* Adjust based on special-card-hp width + gap */
-}
-
-.opponent-area .energy-zone {
-    position: absolute;
-    top: 145px; /* Aligned with top of deck */
-    left: 16px; /* Next to special-card-hp, no overlap */
-}
-
-.self-area .energy-zone {
-    position: absolute;
-    bottom: 145px; /* Aligned with bottom of deck */
-    right: 16px; /* Next to special-card-hp, no overlap */
-}
-
-.info-panel {
-  width: 20%;
+.side-panel {
+  width: 150px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
+  gap: 8px;
 }
 
-.card-info {
-  width: 100%;
-  height: 60%;
-  background-color: var(--card-info-bg-color);
-  border: 2px solid var(--card-border-color);
-  border-radius: 8px;
+.side-label {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: var(--text-faint);
+}
+
+.piles {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.front-line {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 12px;
+  padding: 0 40px;
+  font: 600 11px/1 var(--font-display);
+  letter-spacing: 0.3em;
+  color: var(--gold-frame);
 }
 
-.draw-button {
-    padding: 15px 25px;
-    font-size: 1.2em;
+.front-line::before,
+.front-line::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #4A4130;
 }
+
+/* --- 右：ターンと操作 --- */
 
 .control-panel {
-  width: 15%;
+  width: 188px;
+  flex: none;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 15px;
+  gap: 16px;
 }
 
 .turn-info {
+  font: 800 28px/1 var(--font-display);
+  color: var(--gold-text);
+}
+
+.current-player {
+  align-self: flex-start;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.current-player.self {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+.current-player.opponent {
+  border: 1px solid var(--hp);
+  background: #2A1517;
+  color: #E7B4B4;
+}
+
+.phase-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.phase-steps li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  color: var(--text-faint);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.phase-steps li.active {
+  border-color: var(--gold);
+  background: var(--warning-bg);
+  color: var(--gold-text);
+}
+
+.phase-steps li.skipped {
+  flex-wrap: wrap;
+  row-gap: 2px;
+  opacity: 0.55;
+}
+
+.phase-step-note {
+  flex-basis: 100%;
+  padding-left: 32px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.phase-step-no {
+  width: 22px;
+  height: 22px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: 20px;
   text-align: center;
-  font-size: 1.2em;
-  margin-bottom: 10px;
 }
 
-.phase-button, .turn-button {
-  padding: 10px;
-  border-radius: 5px;
-  border: 1px solid var(--card-border-color);
-  background-color: var(--turn-button-bg-color);
-  color: var(--text-color);
+/* --- 勝敗 --- */
+
+.game-over-message {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  font: 800 48px/1.2 var(--font-display);
+  color: var(--gold-text);
+}
+
+.game-over-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 220px;
+}
+
+
+/* 狭い画面では盤面だけを横スクロールさせる */
+.battle-viewport {
+  overflow-x: auto;
+}
+
+/* 墓地や相手の手札から選ぶダイアログ */
+.dialog.pick-dialog {
+  max-width: min(760px, 92vw);
+}
+
+.pick-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-height: 60vh;
+  overflow-y: auto;
+  margin: 12px 0;
+}
+
+.pick-card.pickable .card {
   cursor: pointer;
-  transition: background-color 0.3s;
+  box-shadow: 0 0 0 2px var(--gold, #d8b25a);
 }
 
-.phase-button:hover, .turn-button:hover {
-  background-color: var(--turn-button-hover-bg-color);
+.pick-card.unpickable {
+  opacity: 0.4;
 }

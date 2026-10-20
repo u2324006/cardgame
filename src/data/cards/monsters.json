@@ -1,0 +1,3260 @@
+[
+  {
+    "id": "m003",
+    "name": "プテ",
+    "race": "恐竜",
+    "effectText": "前衛から攻撃するとき、相手の前衛にモンスターがいても相手の後衛を攻撃できる。",
+    "flavorText": "空から後衛を狙う。",
+    "illustration": {
+      "prompt": "",
+      "image": "pute.svg"
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:11:03.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 0,
+    "hp": 4,
+    "effect": {
+      "kind": "reach"
+    }
+  },
+  {
+    "id": "m004",
+    "name": "ハンター",
+    "race": "ハンター",
+    "effectText": "移動したターン、BAが1上がる。",
+    "flavorText": "後衛から獲物を狙い撃つ。",
+    "illustration": {
+      "prompt": "",
+      "image": "hunter.svg"
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 1,
+    "frontAttack": 0,
+    "backAttack": 2,
+    "hp": 2,
+    "effect": {
+      "kind": "moveBuff",
+      "fa": 0,
+      "ba": 1
+    }
+  },
+  {
+    "id": "m005",
+    "name": "戦士",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "前衛で力を発揮する。",
+    "illustration": {
+      "prompt": "",
+      "image": "warrior.svg"
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 2,
+    "frontAttack": 4,
+    "backAttack": 0,
+    "hp": 10
+  },
+  {
+    "id": "m006",
+    "name": "魔術師",
+    "race": "魔法使い",
+    "effectText": "",
+    "flavorText": "後衛から強力な魔術を放つ。",
+    "illustration": {
+      "prompt": "",
+      "image": "mage.svg"
+    },
+    "implementation": "効果なし",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 4,
+    "hp": 8
+  },
+  {
+    "id": "m011",
+    "name": "騎士",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "重い鎧で前線を守り抜く。",
+    "illustration": {
+      "prompt": "",
+      "image": "knight.svg"
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 3,
+    "frontAttack": 3,
+    "backAttack": 0,
+    "hp": 24
+  },
+  {
+    "id": "cmvde9cnvtqso",
+    "name": "見習い魔導士",
+    "race": "魔導士",
+    "effectText": "召喚したとき、手札からコスト1のスペルをコストを払わずに使用できる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:13:19.000Z",
+    "cost": 1,
+    "frontAttack": 0,
+    "backAttack": 1,
+    "hp": 5,
+    "effect": {
+      "kind": "freeSpellOnSummon",
+      "maxCost": 1
+    }
+  },
+  {
+    "id": "m013",
+    "name": "狙撃手",
+    "race": "戦士",
+    "effectText": "後衛にいるとき、相手の前衛にモンスターがいても相手の後衛を攻撃できる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 3,
+    "hp": 7,
+    "effect": {
+      "kind": "sniper"
+    }
+  },
+  {
+    "id": "m014",
+    "name": "槍兵",
+    "race": "戦士",
+    "effectText": "前衛から攻撃したとき、相手の後衛のモンスター1体を選び、2ダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 3,
+    "backAttack": 0,
+    "hp": 10,
+    "effect": {
+      "kind": "pierce",
+      "amount": 2
+    }
+  },
+  {
+    "id": "m015",
+    "name": "盾兵",
+    "race": "戦士",
+    "effectText": "前衛にいるとき、受けるダメージを2減らす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:08:05.000Z",
+    "cost": 2,
+    "frontAttack": 1,
+    "backAttack": 0,
+    "hp": 10,
+    "effect": {
+      "kind": "frontGuard",
+      "amount": 2
+    }
+  },
+  {
+    "id": "m016",
+    "name": "衛生兵",
+    "race": "戦士",
+    "effectText": "後衛にいるとき、自分のターン終了時に、同じ位置の前衛の味方のHPを4回復する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 1,
+    "hp": 12,
+    "effect": {
+      "kind": "medic",
+      "amount": 4
+    }
+  },
+  {
+    "id": "m017",
+    "name": "指揮官",
+    "race": "戦士",
+    "effectText": "後衛にいるとき、1ターンに1回、前衛の味方1体を選び、そのターンの間FAを1上げる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 3,
+    "frontAttack": 1,
+    "backAttack": 2,
+    "hp": 14,
+    "effect": {
+      "kind": "commander",
+      "amount": 1
+    }
+  },
+  {
+    "id": "m018",
+    "name": "突撃兵",
+    "race": "戦士",
+    "effectText": "後衛から前衛へ移動したターン、FAが2上がる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 1,
+    "frontAttack": 2,
+    "backAttack": 0,
+    "hp": 4,
+    "effect": {
+      "kind": "charge",
+      "amount": 2
+    }
+  },
+  {
+    "id": "m019",
+    "name": "殿",
+    "race": "戦士",
+    "effectText": "前衛で攻撃されて倒されたとき、攻撃したモンスターに6ダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 2,
+    "backAttack": 0,
+    "hp": 13,
+    "effect": {
+      "kind": "rearguard",
+      "amount": 6
+    }
+  },
+  {
+    "id": "m020",
+    "name": "伏兵",
+    "race": "戦士",
+    "effectText": "相手の場のモンスターが自分より多いとき、コストが1下がる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 3,
+    "backAttack": 2,
+    "hp": 2,
+    "effect": {
+      "kind": "ambush",
+      "amount": 1
+    }
+  },
+  {
+    "id": "m021",
+    "name": "召喚士",
+    "race": "魔導士",
+    "effectText": "召喚したとき、手札のコスト2以下のモンスター1体をコストを払わずに召喚できる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:13:19.000Z",
+    "cost": 3,
+    "frontAttack": 1,
+    "backAttack": 2,
+    "hp": 14,
+    "effect": {
+      "kind": "freeSummonOnSummon",
+      "maxCost": 2
+    }
+  },
+  {
+    "id": "m022",
+    "name": "傭兵",
+    "race": "戦士",
+    "effectText": "手札を2枚捨てれば、エネルギーを払わずに召喚できる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 4,
+    "frontAttack": 3,
+    "backAttack": 1,
+    "hp": 24,
+    "effect": {
+      "kind": "discardSummon",
+      "amount": 2
+    }
+  },
+  {
+    "id": "m023",
+    "name": "伝令官",
+    "race": "戦士",
+    "effectText": "召喚したとき、このターン次に使うスペルのコストを1下げる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 1,
+    "hp": 2,
+    "effect": {
+      "kind": "spellDiscountOnSummon",
+      "amount": 1
+    }
+  },
+  {
+    "id": "m024",
+    "name": "祈祷師",
+    "race": "魔導士",
+    "effectText": "後衛に召喚したとき、次の自分のターン開始時にエネルギーを1増やす（そのとき場に残っていれば）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:13:19.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 1,
+    "hp": 15,
+    "effect": {
+      "kind": "energyNextTurnFromBack",
+      "amount": 1
+    }
+  },
+  {
+    "id": "m025",
+    "name": "斥候",
+    "race": "戦士",
+    "effectText": "召喚したとき、カードを1枚引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 0,
+    "hp": 4,
+    "effect": {
+      "kind": "drawOnSummon",
+      "amount": 1
+    }
+  },
+  {
+    "id": "m026",
+    "name": "伝令兵",
+    "race": "戦士",
+    "effectText": "前衛で倒されたとき、カードを1枚引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 2,
+    "backAttack": 1,
+    "hp": 9,
+    "effect": {
+      "kind": "drawOnFrontDeath",
+      "amount": 1
+    }
+  },
+  {
+    "id": "m027",
+    "name": "研究者",
+    "race": "魔導士",
+    "effectText": "後衛にいるとき、自分のターン終了時にエネルギーが1以下ならカードを1枚引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:13:19.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 2,
+    "hp": 13,
+    "effect": {
+      "kind": "drawIfLowEnergy",
+      "amount": 1,
+      "threshold": 1
+    }
+  },
+  {
+    "id": "m028",
+    "name": "狂戦士",
+    "race": "戦士",
+    "effectText": "召喚したとき、手札を1枚選んで捨てる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 1,
+    "frontAttack": 4,
+    "backAttack": 0,
+    "hp": 8,
+    "effect": {
+      "kind": "discardOnSummon",
+      "amount": 1
+    }
+  },
+  {
+    "id": "m029",
+    "name": "怨霊",
+    "race": "ゴースト",
+    "effectText": "相手の効果で手札から捨てられたとき、相手のモンスター1体を選び、4ダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 1,
+    "backAttack": 2,
+    "hp": 9,
+    "effect": {
+      "kind": "damageWhenDiscarded",
+      "amount": 4
+    }
+  },
+  {
+    "id": "m030",
+    "name": "幻影兵",
+    "race": "ゴースト",
+    "effectText": "相手の効果で手札から捨てられたとき、空きがあれば、選んだ空きスロットに出る。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 1,
+    "backAttack": 3,
+    "hp": 5,
+    "effect": {
+      "kind": "summonWhenDiscarded"
+    }
+  },
+  {
+    "id": "w01",
+    "name": "新兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "盾を構えて前線に立つ、入隊したばかりの兵。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 0,
+    "hp": 12
+  },
+  {
+    "id": "w02",
+    "name": "見張り",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "後方から敵の動きを知らせる。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 1,
+    "frontAttack": 0,
+    "backAttack": 1,
+    "hp": 10
+  },
+  {
+    "id": "w03",
+    "name": "剣士見習い",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "剣の腕を磨くため戦場に出た若者。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 1,
+    "frontAttack": 2,
+    "backAttack": 0,
+    "hp": 8
+  },
+  {
+    "id": "w04",
+    "name": "旅の剣士",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "どこでも戦える身軽な剣士。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 1,
+    "hp": 8
+  },
+  {
+    "id": "w05",
+    "name": "投石兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "後衛から石を投げて援護する。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 1,
+    "frontAttack": 0,
+    "backAttack": 2,
+    "hp": 6
+  },
+  {
+    "id": "w06",
+    "name": "斬り込み隊",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "守りを捨てて敵陣に斬り込む。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 1,
+    "frontAttack": 3,
+    "backAttack": 0,
+    "hp": 4
+  },
+  {
+    "id": "w07",
+    "name": "軽装兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "軽い装備で素早く動く。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 1,
+    "frontAttack": 2,
+    "backAttack": 1,
+    "hp": 4
+  },
+  {
+    "id": "w08",
+    "name": "弓兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "後衛から矢を放つ。打たれ弱い。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 1,
+    "frontAttack": 0,
+    "backAttack": 3,
+    "hp": 2
+  },
+  {
+    "id": "w09",
+    "name": "短弓兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "短い弓で前にも後ろにも対応する。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 2,
+    "hp": 2
+  },
+  {
+    "id": "w10",
+    "name": "重装兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "分厚い鎧で攻撃に耐える。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 2,
+    "frontAttack": 2,
+    "backAttack": 0,
+    "hp": 18
+  },
+  {
+    "id": "w11",
+    "name": "砦の弓兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "砦の上から粘り強く矢を射る。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 2,
+    "hp": 16
+  },
+  {
+    "id": "w12",
+    "name": "歩兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "軍の中心となる兵。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 2,
+    "frontAttack": 3,
+    "backAttack": 0,
+    "hp": 14
+  },
+  {
+    "id": "w13",
+    "name": "斧兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "重い斧を振るう。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 2,
+    "frontAttack": 2,
+    "backAttack": 1,
+    "hp": 14
+  },
+  {
+    "id": "w14",
+    "name": "弩兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "弩で狙いを定める。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 2,
+    "frontAttack": 1,
+    "backAttack": 2,
+    "hp": 12
+  },
+  {
+    "id": "w15",
+    "name": "遊撃兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "前にも後ろにも回れる。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 2,
+    "frontAttack": 2,
+    "backAttack": 2,
+    "hp": 10
+  },
+  {
+    "id": "w16",
+    "name": "長弓兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "長い弓で遠くの敵を射抜く。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 4,
+    "hp": 8
+  },
+  {
+    "id": "w17",
+    "name": "剣闘士",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "闘技場で鍛えた攻撃一辺倒の剣士。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 2,
+    "frontAttack": 5,
+    "backAttack": 0,
+    "hp": 6
+  },
+  {
+    "id": "w18",
+    "name": "精鋭弓兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "必中の矢を放つが、近づかれると脆い。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 5,
+    "hp": 4
+  },
+  {
+    "id": "w19",
+    "name": "大剣使い",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "身の丈ほどの大剣を振るう。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 3,
+    "frontAttack": 4,
+    "backAttack": 0,
+    "hp": 20
+  },
+  {
+    "id": "w20",
+    "name": "射手長",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "弓兵をまとめる熟練の射手。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 3,
+    "frontAttack": 0,
+    "backAttack": 4,
+    "hp": 18
+  },
+  {
+    "id": "w21",
+    "name": "騎兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "馬で敵陣を駆け抜ける。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 3,
+    "frontAttack": 5,
+    "backAttack": 0,
+    "hp": 16
+  },
+  {
+    "id": "w22",
+    "name": "近衛兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "王を守る精鋭。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 3,
+    "frontAttack": 3,
+    "backAttack": 2,
+    "hp": 16
+  },
+  {
+    "id": "w23",
+    "name": "魔弓兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "魔力を帯びた矢を放つ。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 3,
+    "frontAttack": 0,
+    "backAttack": 5,
+    "hp": 14
+  },
+  {
+    "id": "w24",
+    "name": "剛剣士",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "一撃の重さで敵を圧倒する。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 3,
+    "frontAttack": 6,
+    "backAttack": 0,
+    "hp": 12
+  },
+  {
+    "id": "w25",
+    "name": "歴戦の兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "数々の戦いを生き抜いた古強者。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 3,
+    "frontAttack": 3,
+    "backAttack": 3,
+    "hp": 12
+  },
+  {
+    "id": "w26",
+    "name": "決死隊",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "命を賭けて突撃する。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 3,
+    "frontAttack": 7,
+    "backAttack": 0,
+    "hp": 8
+  },
+  {
+    "id": "w27",
+    "name": "城壁兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "城壁のように動かない。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 4,
+    "frontAttack": 4,
+    "backAttack": 0,
+    "hp": 30
+  },
+  {
+    "id": "w28",
+    "name": "重騎士",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "全身を鋼で固めた騎士。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 4,
+    "frontAttack": 6,
+    "backAttack": 0,
+    "hp": 22
+  },
+  {
+    "id": "w29",
+    "name": "百人隊長",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "百人の兵を率いる隊長。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 4,
+    "frontAttack": 3,
+    "backAttack": 3,
+    "hp": 22
+  },
+  {
+    "id": "w30",
+    "name": "大弓隊",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "大弓を並べて一斉に射る。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 4,
+    "frontAttack": 0,
+    "backAttack": 6,
+    "hp": 20
+  },
+  {
+    "id": "w31",
+    "name": "剣聖",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "剣を極めた達人。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 4,
+    "frontAttack": 8,
+    "backAttack": 0,
+    "hp": 14
+  },
+  {
+    "id": "w32",
+    "name": "英雄",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "どこにいても戦局を変える。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 4,
+    "frontAttack": 4,
+    "backAttack": 4,
+    "hp": 14
+  },
+  {
+    "id": "w33",
+    "name": "攻城弩兵",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "城門を砕く巨大な弩を操る。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 4,
+    "frontAttack": 0,
+    "backAttack": 8,
+    "hp": 12
+  },
+  {
+    "id": "w34",
+    "name": "捨て身の勇者",
+    "race": "戦士",
+    "effectText": "",
+    "flavorText": "すべてを攻撃に注ぎ込む。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "基準カード",
+    "updatedAt": "2026-10-19T07:06:47.000Z",
+    "cost": 4,
+    "frontAttack": 10,
+    "backAttack": 0,
+    "hp": 6
+  },
+  {
+    "id": "wx01",
+    "name": "盾の騎士",
+    "race": "戦士",
+    "effectText": "前衛にいるとき、相手はこのモンスター以外の自分のモンスターを攻撃できない。",
+    "flavorText": "仲間の前に立ちはだかる。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 1,
+    "backAttack": 0,
+    "hp": 16,
+    "effect": {
+      "kind": "taunt"
+    }
+  },
+  {
+    "id": "wx02",
+    "name": "大将の近衛",
+    "race": "戦士",
+    "effectText": "場にいるあいだ、自分の大将が受けるダメージを1回につき2減らす。",
+    "flavorText": "大将の盾となる精鋭。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:08:05.000Z",
+    "cost": 3,
+    "frontAttack": 2,
+    "backAttack": 1,
+    "hp": 12,
+    "effect": {
+      "kind": "leaderShield",
+      "amount": 2
+    }
+  },
+  {
+    "id": "wx03",
+    "name": "戦友",
+    "race": "戦士",
+    "effectText": "自分の場のほかの戦士1体につき、FA・BAが1上がる（最大2）。",
+    "flavorText": "仲間がいれば強くなる。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 0,
+    "hp": 4,
+    "effect": {
+      "kind": "packBonus",
+      "race": "戦士",
+      "amount": 1,
+      "max": 2
+    }
+  },
+  {
+    "id": "wx04",
+    "name": "軍団長",
+    "race": "戦士",
+    "effectText": "自分の場のほかの戦士1体につき、FA・BAが1上がる（最大3）。",
+    "flavorText": "大軍を率いる将。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 3,
+    "frontAttack": 2,
+    "backAttack": 2,
+    "hp": 10,
+    "effect": {
+      "kind": "packBonus",
+      "race": "戦士",
+      "amount": 1,
+      "max": 3
+    }
+  },
+  {
+    "id": "wx05",
+    "name": "守護騎士",
+    "race": "戦士",
+    "effectText": "前衛にいるとき、相手はこのモンスター以外の自分のモンスターを攻撃できない。",
+    "flavorText": "最後まで仲間を守り抜く。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 4,
+    "frontAttack": 3,
+    "backAttack": 1,
+    "hp": 24,
+    "effect": {
+      "kind": "taunt"
+    }
+  },
+  {
+    "id": "m002",
+    "name": "ストーンゴーレム",
+    "race": "ゴーレム",
+    "effectText": "前衛にいるとき、受けるダメージを1減らす。",
+    "flavorText": "岩の体で攻撃を受け止める。",
+    "illustration": {
+      "prompt": "",
+      "image": "stone-golem.svg"
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:11:03.000Z",
+    "cost": 2,
+    "frontAttack": 1,
+    "backAttack": 0,
+    "hp": 14,
+    "effect": {
+      "kind": "frontGuard",
+      "amount": 1
+    }
+  },
+  {
+    "id": "m007",
+    "name": "バラン",
+    "race": "ゴーレム",
+    "effectText": "場にいるあいだ、自分のほかのゴーレムのHPを4上げる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": "baran.svg"
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:11:03.000Z",
+    "cost": 2,
+    "frontAttack": 1,
+    "backAttack": 1,
+    "hp": 8,
+    "effect": {
+      "kind": "raceHpAura",
+      "race": "ゴーレム",
+      "amount": 4
+    }
+  },
+  {
+    "id": "g01",
+    "name": "小石ゴーレム",
+    "race": "ゴーレム",
+    "effectText": "",
+    "flavorText": "小さいが崩れにくい。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 0,
+    "hp": 12
+  },
+  {
+    "id": "g02",
+    "name": "岩壁ゴーレム",
+    "race": "ゴーレム",
+    "effectText": "自分のターン終了時、最大HPが2上がる（3回まで）。",
+    "flavorText": "攻撃はしないが、壁として立ちふさがる。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:13:19.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 0,
+    "hp": 8,
+    "effect": {
+      "kind": "grow",
+      "fa": 0,
+      "hp": 2,
+      "max": 3
+    }
+  },
+  {
+    "id": "g03",
+    "name": "苔むしたゴーレム",
+    "race": "ゴーレム",
+    "effectText": "自分のターン終了時、最大HPが4上がる（3回まで）。",
+    "flavorText": "長い年月で体が大きくなる。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 1,
+    "backAttack": 0,
+    "hp": 16,
+    "effect": {
+      "kind": "grow",
+      "fa": 0,
+      "hp": 4,
+      "max": 3
+    }
+  },
+  {
+    "id": "g04",
+    "name": "鉄ゴーレム",
+    "race": "ゴーレム",
+    "effectText": "前衛にいるとき、受けるダメージを1減らす。",
+    "flavorText": "鋼の体。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:11:03.000Z",
+    "cost": 3,
+    "frontAttack": 2,
+    "backAttack": 0,
+    "hp": 20,
+    "effect": {
+      "kind": "frontGuard",
+      "amount": 1
+    }
+  },
+  {
+    "id": "g05",
+    "name": "守りの巨像",
+    "race": "ゴーレム",
+    "effectText": "場にいるあいだ、自分のほかのゴーレムのHPを4上げる。",
+    "flavorText": "仲間の体を岩で覆う。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:11:03.000Z",
+    "cost": 3,
+    "frontAttack": 2,
+    "backAttack": 1,
+    "hp": 14,
+    "effect": {
+      "kind": "raceHpAura",
+      "race": "ゴーレム",
+      "amount": 4
+    }
+  },
+  {
+    "id": "g06",
+    "name": "大地の巨人",
+    "race": "ゴーレム",
+    "effectText": "前衛にいるとき、受けるダメージを2減らす。",
+    "flavorText": "大地そのものが動き出したよう。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:11:03.000Z",
+    "cost": 4,
+    "frontAttack": 3,
+    "backAttack": 0,
+    "hp": 18,
+    "effect": {
+      "kind": "frontGuard",
+      "amount": 2
+    }
+  },
+  {
+    "id": "g07",
+    "name": "城塞ゴーレム",
+    "race": "ゴーレム",
+    "effectText": "",
+    "flavorText": "城のように揺るがない。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 4,
+    "frontAttack": 4,
+    "backAttack": 0,
+    "hp": 30
+  },
+  {
+    "id": "d01",
+    "name": "小型ラプトル",
+    "race": "恐竜",
+    "effectText": "",
+    "flavorText": "素早く噛みつく。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 1,
+    "frontAttack": 3,
+    "backAttack": 0,
+    "hp": 4
+  },
+  {
+    "id": "d02",
+    "name": "ラプトル",
+    "race": "恐竜",
+    "effectText": "前衛から攻撃するとき、相手の前衛にモンスターがいても相手の後衛を攻撃できる。",
+    "flavorText": "群れで後ろに回り込む。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:11:03.000Z",
+    "cost": 2,
+    "frontAttack": 4,
+    "backAttack": 0,
+    "hp": 2,
+    "effect": {
+      "kind": "reach"
+    }
+  },
+  {
+    "id": "d03",
+    "name": "トリケラトプス",
+    "race": "恐竜",
+    "effectText": "前衛から攻撃したとき、相手の後衛のモンスター1体を選び、2ダメージを与える。",
+    "flavorText": "三本の角で突き進む。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 3,
+    "backAttack": 0,
+    "hp": 10,
+    "effect": {
+      "kind": "pierce",
+      "amount": 2
+    }
+  },
+  {
+    "id": "d04",
+    "name": "ディロフォサウルス",
+    "race": "恐竜",
+    "effectText": "召喚したとき、相手の後衛のモンスター1体を選び、4ダメージを与える。",
+    "flavorText": "毒を吐きかける。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 2,
+    "backAttack": 1,
+    "hp": 8,
+    "effect": {
+      "kind": "onSummonTarget",
+      "effect": "damage",
+      "amount": 4,
+      "row": "backRow"
+    }
+  },
+  {
+    "id": "d05",
+    "name": "ステゴサウルス",
+    "race": "恐竜",
+    "effectText": "前衛から攻撃したとき、相手の後衛のモンスター1体を選び、2ダメージを与える。",
+    "flavorText": "尾のとげで薙ぎ払う。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 3,
+    "frontAttack": 4,
+    "backAttack": 0,
+    "hp": 16,
+    "effect": {
+      "kind": "pierce",
+      "amount": 2
+    }
+  },
+  {
+    "id": "d06",
+    "name": "アロサウルス",
+    "race": "恐竜",
+    "effectText": "前衛から攻撃するとき、相手の前衛にモンスターがいても相手の後衛を攻撃できる。",
+    "flavorText": "獲物を見逃さない。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:11:03.000Z",
+    "cost": 3,
+    "frontAttack": 5,
+    "backAttack": 0,
+    "hp": 8,
+    "effect": {
+      "kind": "reach"
+    }
+  },
+  {
+    "id": "d07",
+    "name": "ティラノサウルス",
+    "race": "恐竜",
+    "effectText": "前衛から攻撃したとき、相手の後衛のモンスター1体を選び、3ダメージを与える。",
+    "flavorText": "恐竜の王。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 4,
+    "frontAttack": 7,
+    "backAttack": 0,
+    "hp": 12,
+    "effect": {
+      "kind": "pierce",
+      "amount": 3
+    }
+  },
+  {
+    "id": "d08",
+    "name": "スピノサウルス",
+    "race": "恐竜",
+    "effectText": "召喚したとき、相手の後衛のモンスター1体を選び、6ダメージを与える。",
+    "flavorText": "背びれを揺らして襲いかかる。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 4,
+    "frontAttack": 6,
+    "backAttack": 1,
+    "hp": 8,
+    "effect": {
+      "kind": "onSummonTarget",
+      "effect": "damage",
+      "amount": 6,
+      "row": "backRow"
+    }
+  },
+  {
+    "id": "d09",
+    "name": "ブラキオサウルス",
+    "race": "恐竜",
+    "effectText": "前衛から攻撃するとき、相手の前衛にモンスターがいても相手の後衛を攻撃できる。",
+    "flavorText": "長い首で後ろまで届く。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:11:03.000Z",
+    "cost": 5,
+    "frontAttack": 6,
+    "backAttack": 0,
+    "hp": 24,
+    "effect": {
+      "kind": "reach"
+    }
+  },
+  {
+    "id": "h01",
+    "name": "見習い狩人",
+    "race": "ハンター",
+    "effectText": "",
+    "flavorText": "狩りを覚えたばかり。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 1,
+    "hp": 8
+  },
+  {
+    "id": "h02",
+    "name": "罠師",
+    "race": "ハンター",
+    "effectText": "召喚したとき、相手のエネルギーを1減らし、自分のエネルギーを1増やす。",
+    "flavorText": "罠で相手の動きを封じる。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 1,
+    "hp": 10,
+    "effect": {
+      "kind": "energySteal",
+      "amount": 1
+    }
+  },
+  {
+    "id": "h03",
+    "name": "盗賊",
+    "race": "ハンター",
+    "effectText": "召喚したとき、相手の手札をランダムに1枚捨てさせる。",
+    "flavorText": "相手の荷物をかすめ取る。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 1,
+    "backAttack": 2,
+    "hp": 4,
+    "effect": {
+      "kind": "onSummonDiscard",
+      "amount": 1
+    }
+  },
+  {
+    "id": "h04",
+    "name": "追跡者",
+    "race": "ハンター",
+    "effectText": "移動したターン、BAが2上がる。",
+    "flavorText": "動きながら狙いを定める。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 3,
+    "hp": 8,
+    "effect": {
+      "kind": "moveBuff",
+      "fa": 0,
+      "ba": 2
+    }
+  },
+  {
+    "id": "h05",
+    "name": "二連射の射手",
+    "race": "ハンター",
+    "effectText": "1ターンに2回攻撃できる。",
+    "flavorText": "矢を素早く二本つがえる。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 2,
+    "hp": 8,
+    "effect": {
+      "kind": "doubleAttack"
+    }
+  },
+  {
+    "id": "h06",
+    "name": "熟練ハンター",
+    "race": "ハンター",
+    "effectText": "1ターンに2回攻撃できる。",
+    "flavorText": "一度に二頭を仕留める。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 3,
+    "frontAttack": 1,
+    "backAttack": 3,
+    "hp": 6,
+    "effect": {
+      "kind": "doubleAttack"
+    }
+  },
+  {
+    "id": "h07",
+    "name": "獣使い",
+    "race": "ハンター",
+    "effectText": "召喚したとき、相手のエネルギーを1減らし、自分のエネルギーを1増やす。",
+    "flavorText": "獣をけしかけて相手を乱す。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 3,
+    "frontAttack": 1,
+    "backAttack": 4,
+    "hp": 4,
+    "effect": {
+      "kind": "energySteal",
+      "amount": 1
+    }
+  },
+  {
+    "id": "h08",
+    "name": "狩猟長",
+    "race": "ハンター",
+    "effectText": "召喚したとき、相手の手札をランダムに1枚捨てさせる。",
+    "flavorText": "狩りを指揮する長。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 4,
+    "frontAttack": 2,
+    "backAttack": 5,
+    "hp": 8,
+    "effect": {
+      "kind": "onSummonDiscard",
+      "amount": 1
+    }
+  },
+  {
+    "id": "mg01",
+    "name": "見習い魔法使い",
+    "race": "魔法使い",
+    "effectText": "召喚したとき、相手のモンスター1体を選び、2ダメージを与える。",
+    "flavorText": "小さな火の玉を放つ。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 1,
+    "frontAttack": 0,
+    "backAttack": 2,
+    "hp": 3,
+    "effect": {
+      "kind": "onSummonTarget",
+      "effect": "damage",
+      "amount": 2
+    }
+  },
+  {
+    "id": "mg02",
+    "name": "賢者の弟子",
+    "race": "魔法使い",
+    "effectText": "後衛にいるとき、自分のターン終了時に、同じ位置の前衛の味方のHPを2回復する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 1,
+    "frontAttack": 0,
+    "backAttack": 1,
+    "hp": 6,
+    "effect": {
+      "kind": "medic",
+      "amount": 2
+    }
+  },
+  {
+    "id": "mg03",
+    "name": "火の魔法使い",
+    "race": "魔法使い",
+    "effectText": "後衛にいるとき、自分のターン終了時に相手のモンスター1体に2ダメージを与える。",
+    "flavorText": "炎を絶やさない。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:13:19.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 3,
+    "hp": 4,
+    "effect": {
+      "kind": "endTurnDamage",
+      "amount": 2
+    }
+  },
+  {
+    "id": "mg04",
+    "name": "癒し手",
+    "race": "魔法使い",
+    "effectText": "召喚したとき、自分のモンスター1体を選び、HPを6回復する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 2,
+    "hp": 9,
+    "effect": {
+      "kind": "onSummonTarget",
+      "effect": "heal",
+      "amount": 6
+    }
+  },
+  {
+    "id": "mg05",
+    "name": "雷の魔法使い",
+    "race": "魔法使い",
+    "effectText": "召喚したとき、相手のモンスター1体を選び、6ダメージを与える。",
+    "flavorText": "雷を落とす。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 3,
+    "frontAttack": 0,
+    "backAttack": 4,
+    "hp": 8,
+    "effect": {
+      "kind": "onSummonTarget",
+      "effect": "damage",
+      "amount": 6
+    }
+  },
+  {
+    "id": "mg06",
+    "name": "白魔道士",
+    "race": "魔法使い",
+    "effectText": "後衛にいるとき、自分のターン終了時に、同じ位置の前衛の味方のHPを4回復する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 3,
+    "frontAttack": 0,
+    "backAttack": 3,
+    "hp": 14,
+    "effect": {
+      "kind": "medic",
+      "amount": 4
+    }
+  },
+  {
+    "id": "mg07",
+    "name": "炎術師",
+    "race": "魔法使い",
+    "effectText": "後衛にいるとき、自分のターン終了時に相手のモンスター1体に3ダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:13:19.000Z",
+    "cost": 3,
+    "frontAttack": 1,
+    "backAttack": 4,
+    "hp": 2,
+    "effect": {
+      "kind": "endTurnDamage",
+      "amount": 3
+    }
+  },
+  {
+    "id": "mg08",
+    "name": "大魔法使い",
+    "race": "魔法使い",
+    "effectText": "後衛にいるとき、自分のターン終了時に相手のモンスター1体に4ダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:13:19.000Z",
+    "cost": 4,
+    "frontAttack": 0,
+    "backAttack": 6,
+    "hp": 4,
+    "effect": {
+      "kind": "endTurnDamage",
+      "amount": 4
+    }
+  },
+  {
+    "id": "ms01",
+    "name": "魔力の使い",
+    "race": "魔導士",
+    "effectText": "召喚したとき、エネルギーを1増やす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:13:19.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 0,
+    "hp": 6,
+    "effect": {
+      "kind": "energyOnSummon",
+      "amount": 1
+    }
+  },
+  {
+    "id": "ms02",
+    "name": "魔力剣士",
+    "race": "魔導士",
+    "effectText": "1ターンに1回、エネルギーを1払うと、このターンFA・BAが2上がる。",
+    "flavorText": "剣に魔力を込める。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:13:19.000Z",
+    "cost": 2,
+    "frontAttack": 2,
+    "backAttack": 0,
+    "hp": 16,
+    "effect": {
+      "kind": "selfBoost",
+      "energy": 1,
+      "hp": 0,
+      "fa": 2,
+      "ba": 2
+    }
+  },
+  {
+    "id": "ms03",
+    "name": "死霊術師",
+    "race": "魔導士",
+    "effectText": "召喚したとき、自分の墓地のコスト2以下のモンスター1体を、コストを払わずに場に出せる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:13:19.000Z",
+    "cost": 3,
+    "frontAttack": 0,
+    "backAttack": 2,
+    "hp": 18,
+    "effect": {
+      "kind": "graveyardSummonOnSummon",
+      "maxCost": 2
+    }
+  },
+  {
+    "id": "ms04",
+    "name": "魔導騎士",
+    "race": "魔導士",
+    "effectText": "1ターンに1回、エネルギーを1払うと、このターンFA・BAが3上がる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:13:19.000Z",
+    "cost": 3,
+    "frontAttack": 3,
+    "backAttack": 0,
+    "hp": 22,
+    "effect": {
+      "kind": "selfBoost",
+      "energy": 1,
+      "hp": 0,
+      "fa": 3,
+      "ba": 3
+    }
+  },
+  {
+    "id": "ms05",
+    "name": "大魔導士",
+    "race": "魔導士",
+    "effectText": "召喚したとき、自分の墓地のコスト3以下のモンスター1体を、コストを払わずに場に出せる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:13:19.000Z",
+    "cost": 4,
+    "frontAttack": 1,
+    "backAttack": 3,
+    "hp": 18,
+    "effect": {
+      "kind": "graveyardSummonOnSummon",
+      "maxCost": 3
+    }
+  },
+  {
+    "id": "gh01",
+    "name": "鬼火",
+    "race": "ゴースト",
+    "effectText": "倒されたとき、相手のモンスター1体を選び、3ダメージを与える。",
+    "flavorText": "消えるときに燃え上がる。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 1,
+    "frontAttack": 0,
+    "backAttack": 1,
+    "hp": 5,
+    "effect": {
+      "kind": "deathDamage",
+      "amount": 3
+    }
+  },
+  {
+    "id": "gh02",
+    "name": "さまよう魂",
+    "race": "ゴースト",
+    "effectText": "倒されたとき、墓地ではなく手札に戻る。",
+    "flavorText": "何度でも戻ってくる。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 1,
+    "frontAttack": 0,
+    "backAttack": 1,
+    "hp": 2,
+    "effect": {
+      "kind": "returnOnDeath"
+    }
+  },
+  {
+    "id": "gh03",
+    "name": "吸血鬼",
+    "race": "ゴースト",
+    "effectText": "モンスターを攻撃したとき、与えたダメージぶん自分のHPを回復する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 1,
+    "backAttack": 2,
+    "hp": 6,
+    "effect": {
+      "kind": "lifesteal"
+    }
+  },
+  {
+    "id": "gh04",
+    "name": "墓守",
+    "race": "ゴースト",
+    "effectText": "召喚したとき、自分の墓地のコスト1以下のゴースト1体を、コストを払わずに場に出せる。",
+    "flavorText": "眠れる魂を呼び起こす。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 2,
+    "hp": 8,
+    "effect": {
+      "kind": "graveyardSummonOnSummon",
+      "maxCost": 1,
+      "race": "ゴースト"
+    }
+  },
+  {
+    "id": "gh05",
+    "name": "亡霊騎士",
+    "race": "ゴースト",
+    "effectText": "倒されたとき、相手のモンスター1体を選び、4ダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 3,
+    "frontAttack": 2,
+    "backAttack": 3,
+    "hp": 8,
+    "effect": {
+      "kind": "deathDamage",
+      "amount": 4
+    }
+  },
+  {
+    "id": "gh06",
+    "name": "吸魂鬼",
+    "race": "ゴースト",
+    "effectText": "モンスターを攻撃したとき、与えたダメージぶん自分のHPを回復する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 3,
+    "frontAttack": 1,
+    "backAttack": 4,
+    "hp": 8,
+    "effect": {
+      "kind": "lifesteal"
+    }
+  },
+  {
+    "id": "gh07",
+    "name": "死神",
+    "race": "ゴースト",
+    "effectText": "倒されたとき、相手のモンスター1体を選び、6ダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 4,
+    "frontAttack": 2,
+    "backAttack": 5,
+    "hp": 7,
+    "effect": {
+      "kind": "deathDamage",
+      "amount": 6
+    }
+  },
+  {
+    "id": "m001",
+    "name": "ゴブリンアタッカー",
+    "race": "ゴブリン",
+    "effectText": "",
+    "flavorText": "前衛でも後衛でも戦える、身軽なゴブリン。",
+    "illustration": {
+      "prompt": "",
+      "image": "goblin.svg"
+    },
+    "implementation": "効果なし",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 1,
+    "frontAttack": 2,
+    "backAttack": 1,
+    "hp": 4
+  },
+  {
+    "id": "gb01",
+    "name": "ゴブリン",
+    "race": "ゴブリン",
+    "effectText": "1ターンに1回、エネルギーを1払うと、このターンFAが2上がる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:12:38.000Z",
+    "cost": 1,
+    "frontAttack": 2,
+    "backAttack": 0,
+    "hp": 8,
+    "effect": {
+      "kind": "selfBoost",
+      "energy": 1,
+      "hp": 0,
+      "fa": 2,
+      "ba": 0
+    }
+  },
+  {
+    "id": "gb02",
+    "name": "狂ゴブリン",
+    "race": "ゴブリン",
+    "effectText": "1ターンに1回、自分のHPを3払うと、このターンFA・BAが2上がる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:11:03.000Z",
+    "cost": 1,
+    "frontAttack": 2,
+    "backAttack": 0,
+    "hp": 8,
+    "effect": {
+      "kind": "selfBoost",
+      "energy": 0,
+      "hp": 3,
+      "fa": 2,
+      "ba": 2
+    }
+  },
+  {
+    "id": "gb03",
+    "name": "ゴブリン戦士",
+    "race": "ゴブリン",
+    "effectText": "自分の場にオークがいれば、FAが2上がる。",
+    "flavorText": "オークの後ろで強気になる。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:11:03.000Z",
+    "cost": 2,
+    "frontAttack": 3,
+    "backAttack": 1,
+    "hp": 8,
+    "effect": {
+      "kind": "allyRaceBonus",
+      "race": "オーク",
+      "fa": 2,
+      "ba": 0
+    }
+  },
+  {
+    "id": "gb04",
+    "name": "ゴブリンの群れ",
+    "race": "ゴブリン",
+    "effectText": "自分の場のほかのゴブリン1体につき、FA・BAが1上がる（最大2）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:12:38.000Z",
+    "cost": 2,
+    "frontAttack": 3,
+    "backAttack": 0,
+    "hp": 11,
+    "effect": {
+      "kind": "packBonus",
+      "race": "ゴブリン",
+      "amount": 1,
+      "max": 2
+    }
+  },
+  {
+    "id": "gb05",
+    "name": "ゴブリン呪術師",
+    "race": "ゴブリン",
+    "effectText": "1ターンに1回、エネルギーを1払うと、このターンFA・BAが2上がる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:11:03.000Z",
+    "cost": 2,
+    "frontAttack": 2,
+    "backAttack": 2,
+    "hp": 10,
+    "effect": {
+      "kind": "selfBoost",
+      "energy": 1,
+      "hp": 0,
+      "fa": 2,
+      "ba": 2
+    }
+  },
+  {
+    "id": "gb06",
+    "name": "ゴブリンライダー",
+    "race": "ゴブリン",
+    "effectText": "自分の場にオークがいれば、FAが2上がる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:12:38.000Z",
+    "cost": 3,
+    "frontAttack": 5,
+    "backAttack": 1,
+    "hp": 10,
+    "effect": {
+      "kind": "allyRaceBonus",
+      "race": "オーク",
+      "fa": 2,
+      "ba": 0
+    }
+  },
+  {
+    "id": "gb07",
+    "name": "ゴブリン隊長",
+    "race": "ゴブリン",
+    "effectText": "自分の場のほかのゴブリン1体につき、FA・BAが1上がる（最大3）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:12:38.000Z",
+    "cost": 3,
+    "frontAttack": 4,
+    "backAttack": 1,
+    "hp": 12,
+    "effect": {
+      "kind": "packBonus",
+      "race": "ゴブリン",
+      "amount": 1,
+      "max": 3
+    }
+  },
+  {
+    "id": "gb08",
+    "name": "ゴブリンキング",
+    "race": "ゴブリン",
+    "effectText": "1ターンに1回、エネルギーを2払うと、このターンFA・BAが4上がる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:12:38.000Z",
+    "cost": 4,
+    "frontAttack": 6,
+    "backAttack": 2,
+    "hp": 14,
+    "effect": {
+      "kind": "selfBoost",
+      "energy": 2,
+      "hp": 0,
+      "fa": 4,
+      "ba": 4
+    }
+  },
+  {
+    "id": "m008",
+    "name": "スライム",
+    "race": "スライム",
+    "effectText": "自分の場のほかのスライム1体につき、FA・BAが1上がる（最大2）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": "slime.svg"
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:13:19.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 0,
+    "hp": 7,
+    "effect": {
+      "kind": "packBonus",
+      "race": "スライム",
+      "amount": 1,
+      "max": 2
+    }
+  },
+  {
+    "id": "sl01",
+    "name": "青スライム",
+    "race": "スライム",
+    "effectText": "自分の場のほかのスライム1体につき、FA・BAが1上がる（最大2）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:13:19.000Z",
+    "cost": 1,
+    "frontAttack": 0,
+    "backAttack": 1,
+    "hp": 5,
+    "effect": {
+      "kind": "packBonus",
+      "race": "スライム",
+      "amount": 1,
+      "max": 2
+    }
+  },
+  {
+    "id": "sl02",
+    "name": "赤スライム",
+    "race": "スライム",
+    "effectText": "",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 1,
+    "hp": 8
+  },
+  {
+    "id": "sl03",
+    "name": "毒スライム",
+    "race": "スライム",
+    "effectText": "倒されたとき、相手のモンスター1体を選び、2ダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 0,
+    "hp": 9,
+    "effect": {
+      "kind": "deathDamage",
+      "amount": 2
+    }
+  },
+  {
+    "id": "sl04",
+    "name": "分裂スライム",
+    "race": "スライム",
+    "effectText": "倒されたとき、墓地ではなく手札に戻る。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:13:19.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 0,
+    "hp": 7,
+    "effect": {
+      "kind": "returnOnDeath"
+    }
+  },
+  {
+    "id": "sl05",
+    "name": "スライムの群れ",
+    "race": "スライム",
+    "effectText": "自分の場のほかのスライム1体につき、FA・BAが1上がる（最大3）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:13:19.000Z",
+    "cost": 2,
+    "frontAttack": 1,
+    "backAttack": 1,
+    "hp": 12,
+    "effect": {
+      "kind": "packBonus",
+      "race": "スライム",
+      "amount": 1,
+      "max": 3
+    }
+  },
+  {
+    "id": "sl06",
+    "name": "癒しスライム",
+    "race": "スライム",
+    "effectText": "後衛にいるとき、自分のターン終了時に、同じ位置の前衛の味方のHPを4回復する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 1,
+    "hp": 12,
+    "effect": {
+      "kind": "medic",
+      "amount": 4
+    }
+  },
+  {
+    "id": "sl07",
+    "name": "スライムナイト",
+    "race": "スライム",
+    "effectText": "自分の場のほかのスライム1体につき、FA・BAが1上がる（最大3）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:13:19.000Z",
+    "cost": 3,
+    "frontAttack": 2,
+    "backAttack": 1,
+    "hp": 18,
+    "effect": {
+      "kind": "packBonus",
+      "race": "スライム",
+      "amount": 1,
+      "max": 3
+    }
+  },
+  {
+    "id": "sl08",
+    "name": "キングスライム",
+    "race": "スライム",
+    "effectText": "自分の場のスライム3体を墓地に送れば、エネルギーを払わずに召喚できる。",
+    "flavorText": "スライムが集まって巨大になった。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 5,
+    "frontAttack": 5,
+    "backAttack": 3,
+    "hp": 24,
+    "effect": {
+      "kind": "fusionSummon",
+      "race": "スライム",
+      "count": 3
+    }
+  },
+  {
+    "id": "m009",
+    "name": "妖精",
+    "race": "妖精",
+    "effectText": "召喚したとき、自分のモンスター1体を選び、HPを4回復する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": "fairy.svg"
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 1,
+    "frontAttack": 0,
+    "backAttack": 1,
+    "hp": 5,
+    "effect": {
+      "kind": "onSummonTarget",
+      "effect": "heal",
+      "amount": 4
+    }
+  },
+  {
+    "id": "fy01",
+    "name": "花の妖精",
+    "race": "妖精",
+    "effectText": "召喚したとき、自分の大将のHPを4回復する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 1,
+    "frontAttack": 0,
+    "backAttack": 1,
+    "hp": 6,
+    "effect": {
+      "kind": "onSummonLeaderHeal",
+      "amount": 4
+    }
+  },
+  {
+    "id": "fy02",
+    "name": "いたずら妖精",
+    "race": "妖精",
+    "effectText": "召喚したとき、相手のモンスター1体を選び、FA・BAを1下げる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:09:15.000Z",
+    "cost": 1,
+    "frontAttack": 0,
+    "backAttack": 1,
+    "hp": 4,
+    "effect": {
+      "kind": "onSummonTarget",
+      "effect": "debuff",
+      "amount": 1
+    }
+  },
+  {
+    "id": "fy03",
+    "name": "森の妖精",
+    "race": "妖精",
+    "effectText": "後衛にいるとき、自分のターン終了時に、同じ位置の前衛の味方のHPを4回復する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 2,
+    "hp": 8,
+    "effect": {
+      "kind": "medic",
+      "amount": 4
+    }
+  },
+  {
+    "id": "fy04",
+    "name": "光の妖精",
+    "race": "妖精",
+    "effectText": "召喚したとき、自分の大将のHPを8回復する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 2,
+    "hp": 8,
+    "effect": {
+      "kind": "onSummonLeaderHeal",
+      "amount": 8
+    }
+  },
+  {
+    "id": "fy05",
+    "name": "眠りの妖精",
+    "race": "妖精",
+    "effectText": "召喚したとき、相手のモンスター1体を選び、FA・BAを2下げる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:09:15.000Z",
+    "cost": 2,
+    "frontAttack": 0,
+    "backAttack": 2,
+    "hp": 4,
+    "effect": {
+      "kind": "onSummonTarget",
+      "effect": "debuff",
+      "amount": 2
+    }
+  },
+  {
+    "id": "fy06",
+    "name": "泉の精",
+    "race": "妖精",
+    "effectText": "召喚したとき、自分のモンスター1体を選び、HPを10回復する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 3,
+    "frontAttack": 1,
+    "backAttack": 2,
+    "hp": 10,
+    "effect": {
+      "kind": "onSummonTarget",
+      "effect": "heal",
+      "amount": 10
+    }
+  },
+  {
+    "id": "fy07",
+    "name": "妖精の女王",
+    "race": "妖精",
+    "effectText": "召喚したとき、自分の大将のHPを10回復する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 3,
+    "frontAttack": 0,
+    "backAttack": 3,
+    "hp": 12,
+    "effect": {
+      "kind": "onSummonLeaderHeal",
+      "amount": 10
+    }
+  },
+  {
+    "id": "fy08",
+    "name": "妖精王",
+    "race": "妖精",
+    "effectText": "召喚したとき、相手のモンスター1体を選び、FA・BAを3下げる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:09:15.000Z",
+    "cost": 4,
+    "frontAttack": 0,
+    "backAttack": 4,
+    "hp": 10,
+    "effect": {
+      "kind": "onSummonTarget",
+      "effect": "debuff",
+      "amount": 3
+    }
+  },
+  {
+    "id": "m010",
+    "name": "オーク兵",
+    "race": "オーク",
+    "effectText": "召喚したターンは攻撃できない。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": "orc.svg"
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:12:38.000Z",
+    "cost": 2,
+    "frontAttack": 4,
+    "backAttack": 1,
+    "hp": 14,
+    "effect": {
+      "kind": "noAttackOnSummonTurn"
+    }
+  },
+  {
+    "id": "oc01",
+    "name": "見張りオーク",
+    "race": "オーク",
+    "effectText": "召喚したターンは攻撃できない。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:12:38.000Z",
+    "cost": 1,
+    "frontAttack": 2,
+    "backAttack": 1,
+    "hp": 12,
+    "effect": {
+      "kind": "noAttackOnSummonTurn"
+    }
+  },
+  {
+    "id": "oc02",
+    "name": "オーク",
+    "race": "オーク",
+    "effectText": "このターンに移動していないと攻撃できない。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:11:03.000Z",
+    "cost": 2,
+    "frontAttack": 3,
+    "backAttack": 3,
+    "hp": 22,
+    "effect": {
+      "kind": "mustMoveToAttack"
+    }
+  },
+  {
+    "id": "oc03",
+    "name": "ゴブリン使いのオーク",
+    "race": "オーク",
+    "effectText": "自分の場にゴブリンがいれば、FAが2上がる。",
+    "flavorText": "ゴブリンを手下にする。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:11:03.000Z",
+    "cost": 3,
+    "frontAttack": 4,
+    "backAttack": 2,
+    "hp": 10,
+    "effect": {
+      "kind": "allyRaceBonus",
+      "race": "ゴブリン",
+      "fa": 2,
+      "ba": 0
+    }
+  },
+  {
+    "id": "oc04",
+    "name": "オーク戦士",
+    "race": "オーク",
+    "effectText": "召喚したターンは攻撃できない。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:12:38.000Z",
+    "cost": 3,
+    "frontAttack": 5,
+    "backAttack": 2,
+    "hp": 16,
+    "effect": {
+      "kind": "noAttackOnSummonTurn"
+    }
+  },
+  {
+    "id": "oc05",
+    "name": "オーク狂戦士",
+    "race": "オーク",
+    "effectText": "攻撃するたびにエネルギーを1払う（足りなければ攻撃できない）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:12:38.000Z",
+    "cost": 3,
+    "frontAttack": 6,
+    "backAttack": 1,
+    "hp": 22,
+    "effect": {
+      "kind": "attackEnergyCost",
+      "amount": 1
+    }
+  },
+  {
+    "id": "oc06",
+    "name": "オーク重戦士",
+    "race": "オーク",
+    "effectText": "このターンに移動していないと攻撃できない。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:11:03.000Z",
+    "cost": 4,
+    "frontAttack": 6,
+    "backAttack": 4,
+    "hp": 26,
+    "effect": {
+      "kind": "mustMoveToAttack"
+    }
+  },
+  {
+    "id": "oc07",
+    "name": "オーク将軍",
+    "race": "オーク",
+    "effectText": "自分の場にゴブリンがいれば、FAが3上がる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:11:03.000Z",
+    "cost": 4,
+    "frontAttack": 5,
+    "backAttack": 3,
+    "hp": 11,
+    "effect": {
+      "kind": "allyRaceBonus",
+      "race": "ゴブリン",
+      "fa": 3,
+      "ba": 0
+    }
+  },
+  {
+    "id": "oc08",
+    "name": "オーク族長",
+    "race": "オーク",
+    "effectText": "召喚したターンは攻撃できない。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:11:03.000Z",
+    "cost": 5,
+    "frontAttack": 7,
+    "backAttack": 3,
+    "hp": 24,
+    "effect": {
+      "kind": "noAttackOnSummonTurn"
+    }
+  },
+  {
+    "id": "dr01",
+    "name": "ちびドラゴン",
+    "race": "ドラゴン",
+    "effectText": "自分のターン終了時、FAが1、最大HPが2上がる（3回まで）。",
+    "flavorText": "小さな竜。いずれ大きくなる。",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 1,
+    "frontAttack": 1,
+    "backAttack": 0,
+    "hp": 4,
+    "effect": {
+      "kind": "grow",
+      "fa": 1,
+      "hp": 2,
+      "max": 3
+    }
+  },
+  {
+    "id": "dr02",
+    "name": "子ドラゴン",
+    "race": "ドラゴン",
+    "effectText": "自分のターン終了時、FAが1、最大HPが3上がる（3回まで）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 2,
+    "frontAttack": 2,
+    "backAttack": 1,
+    "hp": 6,
+    "effect": {
+      "kind": "grow",
+      "fa": 1,
+      "hp": 3,
+      "max": 3
+    }
+  },
+  {
+    "id": "dr03",
+    "name": "若いドラゴン",
+    "race": "ドラゴン",
+    "effectText": "",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:12:38.000Z",
+    "cost": 3,
+    "frontAttack": 4,
+    "backAttack": 2,
+    "hp": 12
+  },
+  {
+    "id": "dr04",
+    "name": "竜の守り手",
+    "race": "ドラゴン",
+    "effectText": "自分の場にほかのドラゴンがいれば、FA・BAが2上がる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 3,
+    "frontAttack": 3,
+    "backAttack": 2,
+    "hp": 8,
+    "effect": {
+      "kind": "allyRaceBonus",
+      "race": "ドラゴン",
+      "fa": 2,
+      "ba": 2
+    }
+  },
+  {
+    "id": "dr05",
+    "name": "飛竜",
+    "race": "ドラゴン",
+    "effectText": "前衛から攻撃するとき、相手の前衛にモンスターがいても相手の後衛を攻撃できる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 3,
+    "frontAttack": 4,
+    "backAttack": 1,
+    "hp": 11,
+    "effect": {
+      "kind": "reach"
+    }
+  },
+  {
+    "id": "m012",
+    "name": "ドラゴン",
+    "race": "ドラゴン",
+    "effectText": "",
+    "flavorText": "翼を広げて炎を吐く。",
+    "illustration": {
+      "prompt": "",
+      "image": "dragon.svg"
+    },
+    "implementation": "効果なし",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 4,
+    "frontAttack": 6,
+    "backAttack": 3,
+    "hp": 10
+  },
+  {
+    "id": "dr06",
+    "name": "火竜",
+    "race": "ドラゴン",
+    "effectText": "自分の場のほかのドラゴン1体につき、FA・BAが1上がる（最大2）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:12:38.000Z",
+    "cost": 4,
+    "frontAttack": 6,
+    "backAttack": 2,
+    "hp": 6,
+    "effect": {
+      "kind": "packBonus",
+      "race": "ドラゴン",
+      "amount": 1,
+      "max": 2
+    }
+  },
+  {
+    "id": "dr07",
+    "name": "古竜",
+    "race": "ドラゴン",
+    "effectText": "",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "効果なし",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 5,
+    "frontAttack": 7,
+    "backAttack": 4,
+    "hp": 12
+  },
+  {
+    "id": "dr08",
+    "name": "竜王",
+    "race": "ドラゴン",
+    "effectText": "自分の場のほかのドラゴン1体につき、FA・BAが2上がる（最大4）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:02:35.000Z",
+    "cost": 5,
+    "frontAttack": 5,
+    "backAttack": 3,
+    "hp": 10,
+    "effect": {
+      "kind": "packBonus",
+      "race": "ドラゴン",
+      "amount": 2,
+      "max": 4
+    }
+  }
+]

@@ -1,0 +1,108 @@
+import React from 'react';
+import { FieldPosition, PlayerState, Row } from '../types/gameState';
+import Hand from './Hand';
+import CardSlot from './CardSlot';
+import EnergyZone from './EnergyZone';
+import LeaderCard from './LeaderCard';
+import { InspectTarget } from './CardPreview';
+
+interface PlayerAreaProps {
+  playerState: PlayerState;
+  isOpponent: boolean;
+  onSlotClick: (row: Row, index: number) => void;
+  onLeaderClick?: () => void;
+  isLeaderTargetable?: boolean;
+  onHandCardClick?: (index: number) => void;
+  onInspect: (target: InspectTarget | null) => void;
+  selectedCardIndex?: number | null;
+  selectedPosition?: FieldPosition | null;
+  usedLabels?: Record<string, string>; // { [カードID]: '攻撃済み' など } 行動済みのモンスター
+  markedHandIndices?: number[]; // 捨てるカードとして選んだ手札
+  hpBonuses?: Record<string, number>; // { [カードID]: 大将の効果で上がっている HP }
+  leaderStatus?: string; // 大将の効果が働いていないときのラベル（効果停止中など）
+  leaderBadge?: string; // 大将にかかっている効果（籠城など）
+  handCosts?: number[]; // 手札のカードの今のコスト（効果で下がっているとき）
+}
+
+const ROW_LABELS: Record<Row, string> = { frontRow: '前衛', backRow: '後衛' };
+
+// 1人分の盤面（手札・フィールド・大将カード・エネルギー・山札/墓地）
+const PlayerArea: React.FC<PlayerAreaProps> = ({
+  playerState,
+  isOpponent,
+  onSlotClick,
+  onLeaderClick,
+  isLeaderTargetable,
+  onHandCardClick,
+  onInspect,
+  selectedCardIndex,
+  selectedPosition,
+  usedLabels = {},
+  markedHandIndices,
+  hpBonuses = {},
+  leaderStatus,
+  leaderBadge,
+  handCosts,
+}) => {
+  // 自分から見て前衛が中央側になるよう、相手は後衛→前衛の順に並べる
+  const rows: Row[] = isOpponent ? ['backRow', 'frontRow'] : ['frontRow', 'backRow'];
+  const { leader, specialCardHp } = playerState;
+  const hand = isOpponent
+    ? <Hand cards={playerState.hand} faceDown />
+    : (
+      <Hand
+        cards={playerState.hand}
+        onCardClick={onHandCardClick}
+        onCardHover={card => onInspect(card ? { kind: 'card', card } : null)}
+        selectedCardIndex={selectedCardIndex}
+        markedIndices={markedHandIndices}
+        costs={handCosts}
+      />
+    );
+
+  return (
+    <div className={`player-area ${isOpponent ? 'opponent-area' : 'self-area'}`}>
+      {isOpponent && hand}
+      <div className="field-and-side">
+        <div className="field">
+          {rows.map(row => (
+            <div key={row} className={`row ${row === 'frontRow' ? 'front-row' : 'back-row'}`}>
+              <div className="row-label">{ROW_LABELS[row]}</div>
+              {playerState.field[row].map((card, i) => (
+                <CardSlot
+                  key={i}
+                  card={card}
+                  row={row}
+                  onClick={() => onSlotClick(row, i)}
+                  isSelected={selectedPosition?.row === row && selectedPosition.index === i}
+                  usedLabel={card ? usedLabels[card.id] : undefined}
+                  hpBonus={card ? hpBonuses[card.id] : undefined}
+                  onMouseEnter={() => card && onInspect({ kind: 'card', card, row, hpBonus: hpBonuses[card.id] })}
+                  onMouseLeave={() => onInspect(null)}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="side-panel">
+          <div className="side-label">{isOpponent ? '相手' : 'あなた'}</div>
+          <LeaderCard
+            leader={leader}
+            hp={specialCardHp}
+            onClick={onLeaderClick}
+            isTargetable={isLeaderTargetable}
+            statusLabel={leaderStatus}
+            badge={leaderBadge}
+            onMouseEnter={() => onInspect({ kind: 'leader', leader, hp: specialCardHp, statusLabel: leaderStatus })}
+            onMouseLeave={() => onInspect(null)}
+          />
+          <EnergyZone currentEnergy={playerState.currentEnergy} maxEnergy={playerState.maxEnergy} />
+          <div className="piles">山札 {playerState.deck.length} ・ 墓地 {playerState.graveyard.length}</div>
+        </div>
+      </div>
+      {!isOpponent && hand}
+    </div>
+  );
+};
+
+export default PlayerArea;

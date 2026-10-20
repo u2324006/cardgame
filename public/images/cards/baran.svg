@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4F82BF"/>
+      <stop offset="1" stop-color="#16243F"/>
+    </linearGradient>
+  </defs>
+  <rect width="160" height="120" fill="url(#sky)"/>
+  <path d="M0 100 L30 92 L60 100 L100 94 L130 100 L160 94 L160 120 L0 120 Z" fill="#121D33"/>
+  <ellipse cx="80" cy="112" rx="44" ry="6" fill="#0B1222" opacity="0.6"/>
+  <!-- 槍 -->
+  <path d="M112 14 L112 110" stroke="#8A6239" stroke-width="3"/>
+  <path d="M112 6 L117 20 L107 20 Z" fill="#D9DDE2"/>
+  <!-- 脚 -->
+  <path d="M68 92 L64 112 L74 112 L77 94 Z M84 94 L87 112 L97 112 L92 92 Z" fill="#2E3A55"/>
+  <!-- 胴体 -->
+  <path d="M64 54 L96 54 L94 94 L66 94 Z" fill="#7C8BA8"/>
+  <path d="M96 58 L112 66 L110 72 L94 66 Z" fill="#7C8BA8"/>
+  <!-- 盾（天秤の紋章） -->
+  <path d="M38 54 L68 54 L68 80 Q53 100 38 80 Z" fill="#2F64A8" stroke="#D4AF6A" stroke-width="3"/>
+  <path d="M53 60 L53 84 M44 66 L62 66" stroke="#D4AF6A" stroke-width="2"/>
+  <path d="M44 66 L40 76 L48 76 Z M62 66 L58 76 L66 76 Z" fill="none" stroke="#D4AF6A" stroke-width="1.5"/>
+  <!-- 兜 -->
+  <path d="M68 50 Q68 28 80 28 Q92 28 92 50 Z" fill="#9AA6BE"/>
+  <path d="M80 30 L80 50" stroke="#5B6680" stroke-width="2"/>
+  <rect x="71" y="40" width="18" height="3" fill="#0B1222"/>
+</svg>

@@ -1,522 +1,525 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import '../styles/GameBoard.css';
-import { initialGameState } from '../logic/initialState';
-import { GameState, PlayerState } from '../types/gameState';
-import { Card } from '../types/card';
-import Hand from './Hand';
-import CardSlot from './CardSlot';
-import EnergyZone from './EnergyZone';
+import { createInitialGameState } from '../logic/initialState';
+import {
+  ActionResult,
+  activateLeaderAbility,
+  attack,
+  boostMonster,
+  canBoost,
+  canCommand,
+  canUseLeaderAbility,
+  castSpell,
+  commandMonster,
+  discardCards,
+  endTurn,
+  canAttackThisTurn,
+  getAttackError,
+  getCardAt,
+  getHpBonus,
+  getMonsterPositions,
+  getSpellCost,
+  getSummonCost,
+  isLeaderActive,
+  hasFrontRowMonsters,
+  moveMonster,
+  needsPierceTarget,
+  nextPhase,
+  pickCard,
+  resolveReaction,
+  playCard,
+  skipFreeSpell,
+  skipFreeSummon,
+} from '../logic/gameLogic';
+import PickDialog from './PickDialog';
+import { getSpellTargetSide, isMonster, isUntargetedSpell } from '../types/card';
+import { DeckList } from '../logic/deck';
+import { AttackTarget, FieldPosition, GameState, PlayerId, Row } from '../types/gameState';
+import { useAutoProgress } from '../hooks/useAutoProgress';
+import { useTimedMessage } from '../hooks/useTimedMessage';
+import PlayerArea from './PlayerArea';
+import ControlPanel from './ControlPanel';
+import CardPreview, { InspectTarget } from './CardPreview';
 
-// 型定義
-interface AttackerInfo {
-  card: Card;
-  position: { row: 'frontRow' | 'backRow'; index: number; };
+const HUMAN: PlayerId = 'player1';
+const AI: PlayerId = 'player2';
+const MESSAGE_DURATION_MS = 3000;
+
+// プレイヤーが今選んでいるもの（同時に選べるのは1つだけ）
+type Selection =
+  | { kind: 'none' }
+  | { kind: 'hand'; index: number; payByDiscard?: boolean; payBySacrifice?: boolean } // 召喚・スペルに使う手札（payByDiscard：手札を捨てて召喚、payBySacrifice：仲間を墓地に送って合体）
+  | { kind: 'supply'; index: number; positions: FieldPosition[] } // 補給線で墓地に送る後衛のモンスターを選んでいる
+  | { kind: 'move'; from: FieldPosition } // 移動させるモンスター
+  | { kind: 'attacker'; from: FieldPosition } // 攻撃させるモンスター
+  | { kind: 'command'; from: FieldPosition } // 指揮する指揮官（次に FA を上げる前衛の味方を選ぶ）
+  | { kind: 'pierce'; from: FieldPosition; target: AttackTarget }; // 槍兵の攻撃（次に追加ダメージを与える相手の後衛を選ぶ）
+
+const NO_SELECTION: Selection = { kind: 'none' };
+
+// 対象を選ぶ場面の説明（怨霊・幻影兵・召喚したときの効果など）
+const REACTION_TEXT: Record<'damage' | 'summon' | 'heal' | 'debuff', (amount: number, row?: Row) => string> = {
+  damage: (amount, row) => `${amount}ダメージを与える相手の${row === 'backRow' ? '後衛の' : ''}モンスターを選んでください。`,
+  summon: () => '場に出す自分の空きスロットを選んでください。',
+  heal: amount => `HP を${amount}回復する自分のモンスターを選んでください。`,
+  debuff: amount => `FA・BA を${amount}下げる相手のモンスターを選んでください。`,
+};
+
+// 墓地や相手の手札から選ぶ場面の説明
+const PICK_TEXT: Record<'graveyard' | 'opponentHand' | 'graveyardSummon', (maxCost?: number, race?: string) => string> = {
+  graveyard: () => '手札に戻す墓地のモンスターを選んでください。',
+  opponentHand: () => '相手の手札です。捨てさせるスペルを選んでください。',
+  graveyardSummon: (maxCost, race) => `場に出す墓地のコスト${maxCost}以下の${race ?? ''}モンスターを選んでください。`,
+};
+
+const samePosition = (a: FieldPosition, b: FieldPosition) => a.row === b.row && a.index === b.index;
+
+interface GameBoardProps {
+  deck?: DeckList; // プレイヤーが使うデッキ（なければ自動のデッキ）
+  initialState?: GameState; // 中断した対戦を再開するときの状態
+  onStateChange?: (state: GameState) => void; // 状態が変わるたびに呼ばれる（途中経過の保存用）
+  onExit?: () => void; // メニューへ戻る
 }
-type AttackTarget = 
-  | { type: 'monster', card: Card; position: { player: 'player1' | 'player2', row: 'frontRow' | 'backRow', index: number } }
-  | { type: 'player', player: 'player1' | 'player2' };
 
-const GameBoard: React.FC = () => {
-  const [gameState, setGameState] = useState<GameState>(initialGameState);
-  const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null);
-  const [attackerInfo, setAttackerInfo] = useState<AttackerInfo | null>(null);
-  const [gameOver, setGameOver] = useState<string | null>(null);
-  const [attackedMonsterIds, setAttackedMonsterIds] = useState<string[]>([]);
-  const [movingCardInfo, setMovingCardInfo] = useState<AttackerInfo | null>(null);
-  const [hasMoved, setHasMoved] = useState<boolean>(false);
-  const [summonedThisTurnIds, setSummonedThisTurnIds] = useState<string[]>([]);
-  const [attackBuffs, setAttackBuffs] = useState<Record<string, number>>({}); // { [cardId]: buffValue }
+const GameBoard: React.FC<GameBoardProps> = ({ deck, initialState, onStateChange, onExit }) => {
+  const [gameState, setGameState] = useState<GameState>(() => initialState ?? createInitialGameState(deck));
+  const [selection, setSelection] = useState<Selection>(NO_SELECTION);
+  const [hovered, setHovered] = useState<InspectTarget | null>(null); // マウスを乗せているカード
+  const { message, showMessage, clearMessage } = useTimedMessage(MESSAGE_DURATION_MS);
 
-  const { players, turn, phase, currentPlayer } = gameState;
-  const isPlayer1Turn = currentPlayer === 'player1';
-
-  // フェイズを進める処理
-  const handleNextPhase = useCallback(() => {
-    if (gameOver) return;
-    setGameState(prevState => {
-      if (prevState.phase === 'Draw') {
-        const currentPlayerId = prevState.currentPlayer;
-        const newPlayers = { ...prevState.players };
-        const currentPlayerState = { ...newPlayers[currentPlayerId] };
-        if (currentPlayerState.deck.length > 0) {
-          const drawnCard = currentPlayerState.deck[0];
-          currentPlayerState.deck = currentPlayerState.deck.slice(1);
-          currentPlayerState.hand = [...currentPlayerState.hand, drawnCard];
-        }
-        if (currentPlayerState.currentEnergy < currentPlayerState.maxEnergy) {
-          currentPlayerState.currentEnergy += 1;
-        }
-        newPlayers[currentPlayerId] = currentPlayerState;
-        return { ...prevState, phase: 'Play', players: newPlayers };
-      }
-      let newPhase: GameState['phase'] = prevState.phase;
-      switch (prevState.phase) {
-        case 'Play': newPhase = 'Attack'; break;
-        case 'Attack': return { ...prevState, turn: prevState.turn + 1, currentPlayer: prevState.currentPlayer === 'player1' ? 'player2' : 'player1', phase: 'Draw' };
-      }
-      return { ...prevState, phase: newPhase };
+  const { players, turn, phase, currentPlayer, winner, turnState } = gameState;
+  const isPlayerTurn = currentPlayer === HUMAN && !winner;
+  const selectedFieldPosition = selection.kind === 'none' || selection.kind === 'hand' || selection.kind === 'supply' ? null : selection.from;
+  // 自分のターンで行動済みのモンスター（攻撃済み・移動済み）は薄く表示する
+  const usedLabels: Record<string, string> = {};
+  if (isPlayerTurn && phase === 'Play' && turnState.movedMonsterId) usedLabels[turnState.movedMonsterId] = '移動済み';
+  if (isPlayerTurn && phase === 'Play') {
+    gameState.moveLocks.filter(lock => lock.player === HUMAN).forEach(lock => { usedLabels[lock.cardId] = '移動不可'; });
+  }
+  if (isPlayerTurn && phase === 'Attack') {
+    // これ以上攻撃できない（2回攻撃できるモンスターは2回攻撃した）モンスター
+    getMonsterPositions(gameState, HUMAN).forEach(position => {
+      const card = getCardAt(gameState, HUMAN, position);
+      if (card && turnState.attackedMonsterIds.includes(card.id) && getAttackError(gameState, HUMAN, position)) usedLabels[card.id] = '攻撃済み';
     });
-  }, [gameOver]);
+  }
+  if (selection.kind === 'supply') {
+    selection.positions.forEach(position => {
+      const card = getCardAt(gameState, HUMAN, position);
+      if (card) usedLabels[card.id] = '墓地へ';
+    });
+  }
 
-  // ターンを終了する処理
-  const handleEndTurn = useCallback(() => {
-    if (gameOver) return;
-    setGameState(prevState => ({
-      ...prevState, turn: prevState.turn + 1, currentPlayer: prevState.currentPlayer === 'player1' ? 'player2' : 'player1', phase: 'Draw',
-    }));
-  }, [gameOver]);
+  // 籠城の効果（大将が受けるダメージを減らす）
+  const guardOf = (player: PlayerId): string | undefined => {
+    const amount = gameState.leaderGuards.filter(g => g.player === player).reduce((sum, g) => sum + g.amount, 0);
+    return amount > 0 ? `籠城 ダメージ -${amount}` : undefined;
+  };
+  // 手札のモンスターの召喚コスト（伏兵の効果で下がる）
+  const handCosts = players[HUMAN].hand.map(card => (isMonster(card) ? getSummonCost(gameState, HUMAN, card) : getSpellCost(gameState, card)));
 
-  // ターン開始時に各種状態をリセット
-  useEffect(() => {
-    setAttackedMonsterIds([]);
-    setAttackerInfo(null);
-    setMovingCardInfo(null);
-    setHasMoved(false);
-    setSummonedThisTurnIds([]);
-    setAttackBuffs({}); // バフをリセット
-  }, [turn]);
-
-  // 勝利判定
-  useEffect(() => {
-    if (players.player1.specialCardHp <= 0) {
-      setGameOver('Player 2');
-    } else if (players.player2.specialCardHp <= 0) {
-      setGameOver('Player 1');
-    }
-  }, [players]);
-
-  // AI とゲーム進行を管理
-  useEffect(() => {
-    if (gameOver) return;
-    let isCancelled = false;
-
-    if (currentPlayer === 'player2') {
-      const opponentTurnFlow = async () => {
-        if (isCancelled) return;
-
-        if (phase === 'Draw') {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          if (isCancelled) return;
-          handleNextPhase();
-          return;
-        }
-
-        if (phase === 'Play') {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          if (isCancelled) return;
-
-          setGameState(prevState => {
-            if (prevState.currentPlayer !== 'player2') return prevState;
-
-            const newState = { ...prevState };
-            const opponentState = { ...newState.players.player2 };
-
-            let currentEnergy = opponentState.currentEnergy;
-            let hand = [...opponentState.hand];
-            let field = { 
-              frontRow: [...opponentState.field.frontRow],
-              backRow: [...opponentState.field.backRow],
-            };
-            let hasPlayed = false;
-
-            while (true) {
-              const playableCards = hand.filter(card => card.type === 'Monster' && card.cost <= currentEnergy);
-              if (playableCards.length === 0) {
-                break;
-              }
-
-              const cardToPlay = playableCards[0];
-              let targetRow: 'frontRow' | 'backRow' = 'frontRow';
-
-              if (typeof cardToPlay.backAttack !== 'undefined' && typeof cardToPlay.frontAttack !== 'undefined') {
-                if (cardToPlay.backAttack > cardToPlay.frontAttack) {
-                  targetRow = 'backRow';
-                }
-              }
-
-              const slotIndex = field[targetRow].findIndex(slot => slot === null);
-
-              if (slotIndex === -1) {
-                hand = hand.filter(card => card.id !== cardToPlay.id);
-                continue;
-              }
-              
-              currentEnergy -= cardToPlay.cost;
-              hand = hand.filter(card => card.id !== cardToPlay.id);
-              field[targetRow][slotIndex] = cardToPlay;
-              hasPlayed = true;
-            }
-
-            if (hasPlayed) {
-              opponentState.currentEnergy = currentEnergy;
-              opponentState.field = field;
-              opponentState.hand = hand;
-              newState.players.player2 = opponentState;
-              return newState;
-            }
-            
-            return prevState;
-          });
-
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          if (isCancelled) return;
-          handleNextPhase();
-          return;
-        }
-
-        if (phase === 'Attack') {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          if (isCancelled) return;
-
-          const aiAttackedMonsterIdsThisTurn: string[] = []; // Moved declaration here
-
-          setGameState(prevState => {
-            if (prevState.currentPlayer !== 'player2') return prevState;
-
-            const newState = { ...prevState };
-            const player2State = { ...newState.players.player2 };
-            const player1State = { ...newState.players.player1 };
-
-            const player2Monsters: { card: Card; position: { row: 'frontRow' | 'backRow'; index: number; }; }[] = [];
-            player2State.field.frontRow.forEach((card, index) => {
-              if (card && card.type === 'Monster') player2Monsters.push({ card, position: { row: 'frontRow', index } });
-            });
-            player2State.field.backRow.forEach((card, index) => {
-              if (card && card.type === 'Monster') player2Monsters.push({ card, position: { row: 'backRow', index } });
-            });
-
-            const player1FrontRowMonsters = player1State.field.frontRow.filter(card => card !== null);
-
-            // AI attacks
-            player2Monsters.forEach(attacker => {
-              if (aiAttackedMonsterIdsThisTurn.includes(attacker.card.id)) { // This will now correctly reference the outer variable
-                return; // This monster has already attacked this turn
-              }
-
-              let target: AttackTarget | null = null;
-
-              if (player1FrontRowMonsters.length > 0) {
-                // Attack first monster in player1's front row
-                const targetCard = player1FrontRowMonsters[0];
-                const targetIndex = player1State.field.frontRow.findIndex(card => card === targetCard);
-                if (targetCard && targetIndex !== -1) {
-                  target = { type: 'monster', card: targetCard, position: { player: 'player1', row: 'frontRow', index: targetIndex } };
-                }
-              } else {
-                // Direct attack player1's special card
-                target = { type: 'player', player: 'player1' };
-              }
-
-              if (target) {
-                const baseAttack = (attacker.position.row === 'frontRow' ? attacker.card.frontAttack : attacker.card.backAttack) || 0;
-                const buff = attackBuffs[attacker.card.id] || 0;
-                const attackPower = baseAttack + buff;
-
-                console.log(`AI Attack Debug: Attacker: ${attacker.card.name} (ID: ${attacker.card.id}), Position: ${attacker.position.row}, Base Attack: ${baseAttack}, Buff: ${buff}, Total Attack Power: ${attackPower}`);
-                if (target.type === 'monster') {
-                  console.log(`AI Attack Debug: Target Monster: ${target.card.name} (ID: ${target.card.id}), Current HP: ${target.card.cardHp}, Damage Taken: ${attackPower}`);
-                  const newHp = target.card.cardHp! - attackPower;
-                  const newField = { ...player1State.field };
-                  if (newHp <= 0) {
-                    newField[target.position.row][target.position.index] = null;
-                    player1State.graveyard = [...player1State.graveyard, target.card];
-                  } else {
-                    const newTargetCard = { ...target.card, cardHp: newHp };
-                    newField[target.position.row][target.position.index] = newTargetCard;
-                  }
-                  player1State.field = newField;
-                } else if (target.type === 'player') {
-                  console.log(`AI Attack Debug: Target Player Special Card, Current HP: ${player1State.specialCardHp}, Damage Taken: ${attackPower}`);
-                  player1State.specialCardHp -= attackPower;
-                }
-                aiAttackedMonsterIdsThisTurn.push(attacker.card.id); // Mark as attacked in local array
-              }
-            });
-
-            newState.players.player1 = player1State;
-            newState.players.player2 = player2State;
-            return newState;
-          });
-
-          // Update the global attackedMonsterIds state after the setGameState call
-          setAttackedMonsterIds(prevIds => [...prevIds, ...aiAttackedMonsterIdsThisTurn]);
-
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          if (isCancelled) return;
-          handleEndTurn();
-        }
-      };
-      opponentTurnFlow();
-      return () => { isCancelled = true; };
-    }
-
-    if (currentPlayer === 'player1' && phase === 'Draw') {
-      const timerId = setTimeout(() => handleNextPhase(), 500);
-      return () => clearTimeout(timerId);
-    }
-  }, [phase, currentPlayer, handleNextPhase, handleEndTurn, gameOver]);
-
-  // 手札のカードを選択
-  const handleSelectCard = (cardIndex: number) => {
-    if (!isPlayer1Turn || gameOver) return;
-    setSelectedCardIndex(cardIndex);
+  // 大将カードの効果が働いていないときのラベル
+  const leaderStatusOf = (player: PlayerId): string | undefined => {
+    if (!isLeaderActive(gameState, player)) return '効果停止中';
+    return players[player].leaderAbilityUsed ? '効果使用済み' : undefined;
   };
 
-  // カードをフィールドにプレイ
-  const handlePlayCard = (row: 'frontRow' | 'backRow', slotIndex: number) => {
-    if (selectedCardIndex === null || !isPlayer1Turn || gameOver) return;
-    const selectedCard = players.player1.hand[selectedCardIndex];
-    if (players.player1.currentEnergy < selectedCard.cost) { alert('エネルギーが足りません！'); return; }
-    if (players.player1.field[row][slotIndex] !== null) return;
-    setGameState(prevState => {
-      const newPlayerState = { ...prevState.players.player1 };
-      newPlayerState.currentEnergy -= selectedCard.cost;
-      newPlayerState.hand = newPlayerState.hand.filter((_, i) => i !== selectedCardIndex);
-      const newField = { ...newPlayerState.field };
-      newField[row][slotIndex] = selectedCard;
-      newPlayerState.field = newField;
-      return { ...prevState, players: { ...prevState.players, player1: newPlayerState } };
+  // 大将カードの効果で上がっている HP（両方のプレイヤーの場のモンスター）
+  const hpBonusesOf = (owner: PlayerId): Record<string, number> => {
+    const bonuses: Record<string, number> = {};
+    getMonsterPositions(gameState, owner).forEach(position => {
+      const card = getCardAt(gameState, owner, position);
+      const bonus = card ? getHpBonus(gameState, owner, card) : 0;
+      if (card && bonus > 0) bonuses[card.id] = bonus;
     });
-    setSummonedThisTurnIds(prevIds => [...prevIds, selectedCard.id]);
-    setSelectedCardIndex(null);
+    return bonuses;
   };
 
-  // 攻撃を実行
-  const executeAttack = (attacker: AttackerInfo, target: AttackTarget) => {
-    if (gameOver) return;
-    if (attacker.card.type !== 'Monster' || typeof attacker.card.frontAttack === 'undefined' || typeof attacker.card.backAttack === 'undefined') return;
+  const canDirectAttack = isPlayerTurn && phase === 'Attack' && selection.kind === 'attacker' && selection.from.row === 'frontRow' && !hasFrontRowMonsters(players[AI]);
 
-    // バフを含めた攻撃力を計算
-    const baseAttack = attacker.position.row === 'frontRow' ? attacker.card.frontAttack : attacker.card.backAttack;
-    const buff = attackBuffs[attacker.card.id] || 0;
-    const attackPower = baseAttack + buff;
+  // カード情報欄：マウスを乗せているカード、なければ選択中のカード
+  const selectedTarget = ((): InspectTarget | null => {
+    if (selection.kind === 'hand' || selection.kind === 'supply') {
+      const card = players[HUMAN].hand[selection.index];
+      return card ? { kind: 'card', card } : null;
+    }
+    if (selection.kind === 'none') return null;
+    const card = getCardAt(gameState, HUMAN, selection.from);
+    return card ? { kind: 'card', card, row: selection.from.row } : null;
+  })();
+  const previewTarget = hovered ?? selectedTarget;
 
-    // ターゲットがHPを持つモンスターか事前にチェック
-    if (target.type === 'monster' && typeof target.card.cardHp === 'undefined') {
+  useAutoProgress(gameState, setGameState, AI);
+
+  useEffect(() => {
+    onStateChange?.(gameState);
+  }, [gameState, onStateChange]);
+
+  // フェイズやターンが変わったら選択を解除
+  useEffect(() => setSelection(NO_SELECTION), [phase, turn]);
+
+  // ルール違反ならメッセージを表示し、成功なら state を更新して選択を解除する
+  const apply = (result: ActionResult) => {
+    if (!result.ok) {
+      showMessage(result.error);
+      return;
+    }
+    setGameState(result.state);
+    setSelection(NO_SELECTION);
+  };
+
+  const handleRestart = () => {
+    setGameState(createInitialGameState(deck));
+    setSelection(NO_SELECTION);
+    setHovered(null);
+    clearMessage();
+  };
+
+  // 手札のカードを選択（もう一度クリックで解除）
+  // 「引いて捨てる」効果で、墓地に置くカードを選んでいるところ
+  const pendingDiscard = gameState.pendingDiscard?.player === HUMAN ? gameState.pendingDiscard : null;
+  const [discardIndices, setDiscardIndices] = useState<number[]>([]);
+  useEffect(() => setDiscardIndices([]), [pendingDiscard]);
+
+  const handleConfirmDiscard = () => {
+    const result = discardCards(gameState, HUMAN, discardIndices);
+    if (!result.ok) {
+      showMessage(result.error);
+      return;
+    }
+    setGameState(result.state);
+  };
+
+  // モンスターの効果で、コストなしで使うスペルを選んでいるところ
+  const pendingFreeSpell = gameState.pendingFreeSpell?.player === HUMAN ? gameState.pendingFreeSpell : null;
+  const pendingFreeSummon = gameState.pendingFreeSummon?.player === HUMAN ? gameState.pendingFreeSummon : null;
+  const pendingPick = gameState.pendingPick?.player === HUMAN ? gameState.pendingPick : null;
+  const pendingReaction = gameState.pendingReaction?.player === HUMAN ? gameState.pendingReaction : null;
+  const leaderAbility = players[HUMAN].leader.ability;
+
+  // 選んだ手札が、対象を選ばずに使うスペルなら「使う」ボタンを出す
+  const selectedHandCard = selection.kind === 'hand' ? players[HUMAN].hand[selection.index] : undefined;
+  const untargetedSpell = selectedHandCard && !isMonster(selectedHandCard) && isUntargetedSpell(selectedHandCard) ? selectedHandCard : null;
+
+  const handleHandCardClick = (index: number) => {
+    if (pendingDiscard) {
+      setDiscardIndices(current => current.includes(index)
+        ? current.filter(i => i !== index)
+        : current.length < pendingDiscard.count ? [...current, index] : current);
+      return;
+    }
+    if (!isPlayerTurn || phase !== 'Play') return;
+    const card = players[HUMAN].hand[index];
+    if ((selection.kind === 'hand' || selection.kind === 'supply') && selection.index === index) setSelection(NO_SELECTION);
+    else if (card && !isMonster(card) && card.effect.kind === 'supplyLine') setSelection({ kind: 'supply', index, positions: [] });
+    else setSelection({ kind: 'hand', index });
+  };
+
+  // 移動させるモンスターを選択
+  const selectMoveSource = (position: FieldPosition) => {
+    const card = getCardAt(gameState, HUMAN, position);
+    if (!card) return;
+    if (canCommand(gameState, HUMAN, position) || canBoost(gameState, HUMAN, position)) {
+      setSelection({ kind: 'move', from: position }); // 指揮・力を溜めるモンスターは、移動できなくても選べる
+    } else if (turnState.summonedThisTurnIds.includes(card.id)) {
+      showMessage('このモンスターは召喚されたターンには移動できません。');
+    } else if (turnState.movedMonsterId) {
+      showMessage('モンスターの移動は1ターンに1回までです。');
+    } else {
+      setSelection({ kind: 'move', from: position });
+    }
+  };
+
+  const handlePlayPhaseClick = (position: FieldPosition) => {
+    const clickedCard = getCardAt(gameState, HUMAN, position);
+
+    if (selection.kind === 'supply') {
+      // 補給線：自分の後衛のモンスターを選ぶ／外す
+      if (!clickedCard || position.row !== 'backRow') {
+        showMessage('墓地に送る自分の後衛のモンスターを選んでください。');
+        return;
+      }
+      const chosen = selection.positions.some(p => samePosition(p, position));
+      setSelection({ ...selection, positions: chosen ? selection.positions.filter(p => !samePosition(p, position)) : [...selection.positions, position] });
       return;
     }
 
-    setGameState(prevState => {
-      const newPlayers = { ...prevState.players };
-      const targetPlayerState = { ...newPlayers.player2 };
-
-      if (target.type === 'monster') {
-        // このスコープでは target.card.cardHp は number であることが保証される
-        const newHp = target.card.cardHp! - attackPower;
-        const newField = { ...targetPlayerState.field };
-
-        if (newHp <= 0) {
-          newField[target.position.row][target.position.index] = null;
-          targetPlayerState.graveyard = [...targetPlayerState.graveyard, target.card];
-        } else {
-          const newTargetCard = { ...target.card, cardHp: newHp };
-          newField[target.position.row][target.position.index] = newTargetCard;
-        }
-        targetPlayerState.field = newField;
-
-      } else if (target.type === 'player') {
-        targetPlayerState.specialCardHp -= attackPower;
-      }
-      
-      newPlayers.player2 = targetPlayerState;
-      return { ...prevState, players: newPlayers };
-    });
-
-    // 攻撃済みリストにIDを追加
-    setAttackedMonsterIds(prevIds => [...prevIds, attacker.card.id]);
-    setAttackerInfo(null);
-  };
-
-  // モンスターを移動させる処理
-  const executeMove = (from: AttackerInfo, to: { row: 'frontRow' | 'backRow', index: number }) => {
-    setGameState(prevState => {
-      const newPlayerState = { ...prevState.players.player1 };
-      const newField = { ...newPlayerState.field };
-
-      // 移動元と移動先が同じ場合は処理しない
-      if (from.position.row === to.row && from.position.index === to.index) {
-        return prevState;
-      }
-
-      // 移動元からカードを削除
-      newField[from.position.row][from.position.index] = null;
-      // 移動先にカードを配置
-      newField[to.row][to.index] = from.card;
-
-      newPlayerState.field = newField;
-      return { ...prevState, players: { ...prevState.players, player1: newPlayerState } };
-    });
-
-    setHasMoved(true);
-    setMovingCardInfo(null);
-  };
-
-  // スペルカードを使用する処理
-  const executeSpell = (spellCard: Card, targetCard: Card) => {
-    if (gameOver || !isPlayer1Turn) return;
-
-    // エネルギーチェック
-    if (players.player1.currentEnergy < spellCard.cost) {
-      alert("エネルギーが足りません！");
+    if (selection.kind === 'hand') {
+      const selectedCard = players[HUMAN].hand[selection.index];
+      if (selection.payBySacrifice) apply(playCard(gameState, HUMAN, selection.index, position, { payBySacrifice: true }));
+      else if (!clickedCard) apply(playCard(gameState, HUMAN, selection.index, position, { payByDiscard: selection.payByDiscard }));
+      else if (selectedCard && !isMonster(selectedCard)) apply(castSpell(gameState, HUMAN, selection.index, position));
+      else selectMoveSource(position);
       return;
     }
 
-    // 今回は '攻撃の呪文' の効果に限定して実装
-    if (spellCard.id.startsWith('s002')) {
-      console.log(`${targetCard.name} のFAを1上げます。`);
-      setAttackBuffs(prevBuffs => ({
-        ...prevBuffs,
-        [targetCard.id]: (prevBuffs[targetCard.id] || 0) + 1,
-      }));
+    if (selection.kind === 'command') {
+      if (clickedCard && !samePosition(selection.from, position)) apply(commandMonster(gameState, HUMAN, selection.from, position));
+      else setSelection(NO_SELECTION);
+      return;
     }
 
-    // スペル使用後の処理
-    setGameState(prevState => {
-      const newPlayerState = { ...prevState.players.player1 };
-      // エネルギー消費
-      newPlayerState.currentEnergy -= spellCard.cost;
-      // 手札からスペルを削除
-      newPlayerState.hand = newPlayerState.hand.filter(card => card.id !== spellCard.id);
-      // 墓地に送る
-      newPlayerState.graveyard = [...newPlayerState.graveyard, spellCard];
-      return { ...prevState, players: { ...prevState.players, player1: newPlayerState } };
-    });
-
-    setSelectedCardIndex(null);
-  };
-
-  // フィールドのカードをクリック
-  const handleFieldClick = (player: 'player1' | 'player2', row: 'frontRow' | 'backRow', index: number) => {
-    if (!isPlayer1Turn || gameOver) return;
-    const clickedCard = players[player].field[row][index];
-
-    // Attackフェイズのロジック
-    if (phase === 'Attack') {
-      if (player === 'player1' && clickedCard) {
-        if (attackedMonsterIds.includes(clickedCard.id)) {
-          alert("このモンスターは既に攻撃済みです。");
-          return;
-        }
-        setAttackerInfo({ card: clickedCard, position: { row, index } });
-      } else if (player === 'player2' && clickedCard && attackerInfo) {
-        const opponentFrontRow = players.player2.field.frontRow;
-        const frontRowHasMonsters = opponentFrontRow.some(card => card !== null);
-        if (row === 'backRow' && frontRowHasMonsters) {
-          alert("前衛にモンスターがいるため、後衛を攻撃できません。");
-          return;
-        }
-        executeAttack(attackerInfo, { type: 'monster', card: clickedCard, position: { player, row, index } });
+    if (selection.kind === 'move') {
+      if (clickedCard) {
+        if (samePosition(selection.from, position)) setSelection(NO_SELECTION);
+        else selectMoveSource(position);
+      } else if (selection.from.row === position.row) {
+        setSelection(NO_SELECTION); // 同じ列の空きスロットをクリックしたら取り消し
       } else {
-        setAttackerInfo(null);
+        apply(moveMonster(gameState, HUMAN, selection.from, position));
       }
-    } 
-    // Playフェイズのロジック
-    else if (phase === 'Play') {
-      if (player === 'player1') {
-        const selectedCard = selectedCardIndex !== null ? players.player1.hand[selectedCardIndex] : null;
-
-        // スペルカード使用のロジック
-        if (selectedCard && selectedCard.type === 'Spell' && clickedCard) {
-          executeSpell(selectedCard, clickedCard);
-          return;
-        }
-
-        // モンスター移動のロジック
-        if (clickedCard) {
-          if (summonedThisTurnIds.includes(clickedCard.id)) {
-            alert("このモンスターは召喚されたターンには移動できません。");
-            return;
-          }
-          setMovingCardInfo({ card: clickedCard, position: { row, index } });
-        } else if (!clickedCard && movingCardInfo) {
-          if (hasMoved) {
-            alert("モンスターの移動は1ターンに1回までです。");
-            return;
-          }
-          if (movingCardInfo.position.row === row) {
-            setMovingCardInfo(null); // 同じ列内での移動はキャンセル扱い
-            return;
-          }
-          executeMove(movingCardInfo, { row, index });
-        }
-        // 召喚処理
-        else {
-          handlePlayCard(row, index);
-        }
-      }
-    }
-  };
-
-  // 相手プレイヤーのHPをクリック（ダイレクトアタック）
-  const handlePlayerHpClick = () => {
-    if (!isPlayer1Turn || phase !== 'Attack' || !attackerInfo || gameOver) return;
-
-    const opponentFrontRow = players.player2.field.frontRow;
-    const frontRowHasMonsters = opponentFrontRow.some(c => c !== null);
-
-    // 前衛にモンスターがいる場合は直接攻撃できない
-    if (frontRowHasMonsters) {
-      alert("前衛にモンスターがいるため、直接攻撃できません。");
       return;
     }
 
-    executeAttack(attackerInfo, { type: 'player', player: 'player2' });
+    selectMoveSource(position);
   };
 
-  if (gameOver) {
-    return <div className="game-over-message">{gameOver} の勝利！</div>;
+  // 攻撃する。槍兵で相手の後衛が2体以上いるときは、追加ダメージの対象を選んでから攻撃する
+  const startAttack = (from: FieldPosition, target: AttackTarget) => {
+    if (needsPierceTarget(gameState, HUMAN, from)) setSelection({ kind: 'pierce', from, target });
+    else apply(attack(gameState, HUMAN, from, target));
+  };
+
+  const handleAttackPhaseClick = (player: PlayerId, position: FieldPosition) => {
+    const clickedCard = getCardAt(gameState, player, position);
+    if (selection.kind === 'pierce') {
+      if (player === AI && clickedCard && position.row === 'backRow') apply(attack(gameState, HUMAN, selection.from, selection.target, position));
+      else showMessage('追加で1ダメージを与える相手の後衛のモンスターを選んでください。');
+      return;
+    }
+    if (player === HUMAN && clickedCard) {
+      if (selection.kind === 'attacker' && samePosition(selection.from, position)) {
+        setSelection(NO_SELECTION);
+      } else if (getAttackError(gameState, HUMAN, position)) {
+        showMessage(getAttackError(gameState, HUMAN, position) as string);
+      } else {
+        setSelection({ kind: 'attacker', from: position });
+      }
+    } else if (player === AI && clickedCard && selection.kind === 'attacker') {
+      startAttack(selection.from, { type: 'monster', position });
+    } else {
+      setSelection(NO_SELECTION);
+    }
+  };
+
+  // 相手のモンスターを対象にするスペル（炎の呪文など）
+  const handleEnemyTargetSpell = (position: FieldPosition) => {
+    if (selection.kind !== 'hand') return;
+    const selectedCard = players[HUMAN].hand[selection.index];
+    if (!selectedCard || isMonster(selectedCard) || getSpellTargetSide(selectedCard) !== 'enemy') return;
+    apply(castSpell(gameState, HUMAN, selection.index, position));
+  };
+
+  const handleFieldClick = (player: PlayerId, row: Row, index: number) => {
+    // 捨てられた怨霊・幻影兵の対象選び（相手のターン中でも選ぶ）
+    if (pendingReaction) {
+      const expected = pendingReaction.kind === 'damage' || pendingReaction.kind === 'debuff' ? AI : HUMAN;
+      if (player === expected) apply(resolveReaction(gameState, HUMAN, { row, index }));
+      else showMessage(expected === AI ? '相手のモンスターを選んでください。' : pendingReaction.kind === 'heal' ? '自分のモンスターを選んでください。' : '自分の空いているスロットを選んでください。');
+      return;
+    }
+    if (!isPlayerTurn) return;
+    if (pendingDiscard) {
+      showMessage(`先に、墓地に置くカードを${pendingDiscard.count}枚選んでください。`);
+      return;
+    }
+    const position = { row, index };
+    if (phase === 'Attack') handleAttackPhaseClick(player, position);
+    else if (phase === 'Play' && player === HUMAN) handlePlayPhaseClick(position);
+    else if (phase === 'Play' && player === AI) handleEnemyTargetSpell(position);
+  };
+
+  // 相手の大将カードをクリック（ダイレクトアタック）
+  const handleOpponentLeaderClick = () => {
+    if (!isPlayerTurn || phase !== 'Attack' || selection.kind !== 'attacker') return;
+    startAttack(selection.from, { type: 'player' });
+  };
+
+  if (winner) {
+    return (
+      <div className="game-over-message">
+        {winner === HUMAN ? 'あなたの勝利！' : '相手の勝利…'}
+        <div className="game-over-actions">
+          <button onClick={handleRestart} className="primary-button">もう一度遊ぶ</button>
+          {onExit && <button onClick={onExit} className="secondary-button">メニューへ戻る</button>}
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="game-board">
-      <div className="info-panel"><div className="card-info">カード情報 {attackerInfo ? `${attackerInfo.card.name}を選択中` : ''}</div></div>
-      <div className="main-area">
-        <div className="player-area opponent-area">
-          <Hand cards={players.player2.hand} onCardClick={() => {}} />
-          <div className="field-and-deck">
-            <div className="field">
-              <div className="row back-row">{players.player2.field.backRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player2', 'backRow', i)} />)}</div>
-              <div className="row front-row">{players.player2.field.frontRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player2', 'frontRow', i)} />)}</div>
-            </div>
-            <div className="deck-graveyard">
-              <div className="deck">山札: {players.player2.deck.length}</div>
-              <div className="graveyard">墓地: {players.player2.graveyard.length}</div>
-            </div>
-            <div className="special-card-hp" onClick={handlePlayerHpClick}>HP: {players.player2.specialCardHp}</div>
-            <EnergyZone currentEnergy={players.player2.currentEnergy} maxEnergy={players.player2.maxEnergy} className="rotated" />
-          </div>
+      <aside className="info-panel">
+        <h2 className="panel-title">カード情報</h2>
+        <div className="card-info">
+          <CardPreview target={previewTarget} />
         </div>
-        <div className="player-area self-area">
-          <div className="field-and-deck">
-            <div className="deck-graveyard">
-              <div className="deck">山札: {players.player1.deck.length}</div>
-              <div className="graveyard">墓地: {players.player1.graveyard.length}</div>
-            </div>
-            <div className="field">
-              <div className="row front-row">{players.player1.field.frontRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player1', 'frontRow', i)} />)}</div>
-              <div className="row back-row">{players.player1.field.backRow.map((card, i) => <CardSlot key={i} card={card} onClick={() => handleFieldClick('player1', 'backRow', i)} />)}</div>
-            </div>
-            <div className="special-card-hp">HP: {players.player1.specialCardHp}</div>
-            <EnergyZone currentEnergy={players.player1.currentEnergy} maxEnergy={players.player1.maxEnergy} />
-          </div>
-          <Hand cards={players.player1.hand} onCardClick={handleSelectCard} selectedCardIndex={selectedCardIndex} />
-        </div>
-      </div>
-      <div className="control-panel">
-        <div className="turn-info">ターン {turn}</div>
-        <div className="phase-button">{phase} フェイズ</div>
-        <div className="current-player-info">{isPlayer1Turn ? 'あなたのターン' : "相手のターン"}</div>
-        {isPlayer1Turn && (
-          <>
-            {phase !== 'Draw' && <button onClick={handleNextPhase} className="phase-button">次のフェイズへ</button>}
-            <button onClick={handleEndTurn} className="turn-button">ターン終了</button>
-          </>
+        {untargetedSpell && selection.kind === 'hand' && !pendingDiscard && (
+          <button type="button" className="primary-button cast-button" onClick={() => apply(castSpell(gameState, HUMAN, selection.index))}>
+            「{untargetedSpell.name}」を使う
+          </button>
         )}
+        {pendingFreeSpell && !pendingDiscard && (
+          <div className="discard-panel" role="alert">
+            <p>「{pendingFreeSpell.source}」の効果：手札のコスト{pendingFreeSpell.maxCost}以下のスペルを1枚、<b>コストを払わずに</b>使えます。</p>
+            <button type="button" className="secondary-button" onClick={() => apply(skipFreeSpell(gameState, HUMAN))}>
+              使わない
+            </button>
+          </div>
+        )}
+        {selection.kind === 'move' && canCommand(gameState, HUMAN, selection.from) && (
+          <button type="button" className="primary-button cast-button" onClick={() => setSelection({ kind: 'command', from: selection.from })}>
+            指揮する（前衛の味方1体の FA を上げる）
+          </button>
+        )}
+        {selection.kind === 'move' && canBoost(gameState, HUMAN, selection.from) && (() => {
+          const ability = getCardAt(gameState, HUMAN, selection.from)?.ability;
+          if (ability?.kind !== 'selfBoost') return null;
+          const price = [ability.energy > 0 && `エネルギー${ability.energy}`, ability.hp > 0 && `HP${ability.hp}`].filter(Boolean).join('・');
+          return (
+            <button type="button" className="primary-button cast-button" onClick={() => apply(boostMonster(gameState, HUMAN, selection.from))}>
+              力を溜める（{price}を払って FA +{ability.fa}・BA +{ability.ba}）
+            </button>
+          );
+        })()}
+        {selectedHandCard && isMonster(selectedHandCard) && selectedHandCard.ability?.kind === 'fusionSummon' && selection.kind === 'hand' && !selection.payBySacrifice && (
+          <button type="button" className="secondary-button cast-button" onClick={() => setSelection({ ...selection, payBySacrifice: true })}>
+            {selectedHandCard.ability.race}を{selectedHandCard.ability.count}体墓地に送って召喚する（エネルギー不要）
+          </button>
+        )}
+        {selection.kind === 'hand' && selection.payBySacrifice && (
+          <div className="discard-panel" role="status">
+            <p>召喚するスロットを選んでください（空きスロット、または合体させる仲間のいるスロット）。コストと HP の低い仲間から墓地に送ります。</p>
+          </div>
+        )}
+        {selectedHandCard && isMonster(selectedHandCard) && selectedHandCard.ability?.kind === 'discardSummon' && selection.kind === 'hand' && !selection.payByDiscard && (
+          <button type="button" className="secondary-button cast-button" onClick={() => setSelection({ ...selection, payByDiscard: true })}>
+            手札を{selectedHandCard.ability.amount}枚捨てて召喚する（エネルギー不要）
+          </button>
+        )}
+        {selection.kind === 'hand' && selection.payByDiscard && (
+          <div className="discard-panel" role="status">
+            <p>召喚する<b>空きスロット</b>を選んでください。召喚したあと、捨てる手札を選びます。</p>
+          </div>
+        )}
+        {selection.kind === 'supply' && (
+          <div className="discard-panel" role="status">
+            <p>墓地に送る<b>自分の後衛のモンスター</b>を選んでください（{selection.positions.length}体）。</p>
+            <button
+              type="button"
+              className="primary-button"
+              disabled={selection.positions.length === 0}
+              onClick={() => apply(castSpell(gameState, HUMAN, selection.index, undefined, selection.positions))}
+            >
+              使う（{selection.positions.length}枚引く）
+            </button>
+          </div>
+        )}
+        {pendingReaction && (
+          <div className="discard-panel" role="alert">
+            <p>「{pendingReaction.card.name}」の効果：{REACTION_TEXT[pendingReaction.kind](pendingReaction.amount, pendingReaction.row)}</p>
+          </div>
+        )}
+        {pendingFreeSummon && (
+          <div className="discard-panel" role="alert">
+            <p>「{pendingFreeSummon.source}」の効果：手札のコスト{pendingFreeSummon.maxCost}以下のモンスターを1体、<b>コストを払わずに</b>{pendingFreeSummon.row === 'frontRow' ? '前衛に' : ''}召喚できます。</p>
+            <button type="button" className="secondary-button" onClick={() => apply(skipFreeSummon(gameState, HUMAN))}>召喚しない</button>
+          </div>
+        )}
+        {selection.kind === 'pierce' && (
+          <div className="discard-panel" role="status">
+            <p>槍兵の効果：追加で1ダメージを与える<b>相手の後衛のモンスター</b>を選んでください。</p>
+            <button type="button" className="secondary-button" onClick={() => setSelection(NO_SELECTION)}>攻撃をやめる</button>
+          </div>
+        )}
+        {selection.kind === 'command' && (
+          <div className="discard-panel" role="status">
+            <p>FA を上げる<b>前衛の味方</b>を選んでください。</p>
+            <button type="button" className="secondary-button" onClick={() => setSelection(NO_SELECTION)}>やめる</button>
+          </div>
+        )}
+        {leaderAbility?.kind === 'rallyEnergy' && canUseLeaderAbility(gameState, HUMAN) && (
+          <button type="button" className="primary-button cast-button" onClick={() => apply(activateLeaderAbility(gameState, HUMAN))}>
+            大将の効果を使う（エネルギー +{leaderAbility.amount}）
+          </button>
+        )}
+        {pendingDiscard && (
+          <div className="discard-panel" role="alert">
+            <p>手札から墓地に置くカードを<b>{pendingDiscard.count}枚</b>選んでください（{discardIndices.length} / {pendingDiscard.count}）。</p>
+            {pendingDiscard.then?.kind === 'damage' && <p>捨てたカードのコスト＋{pendingDiscard.then.bonus}のダメージを与えます。</p>}
+            {pendingDiscard.then?.kind === 'draw' && <p>捨てたあと、カードを{pendingDiscard.then.amount}枚引きます。</p>}
+            <button
+              type="button"
+              className="primary-button"
+              onClick={handleConfirmDiscard}
+              disabled={discardIndices.length !== pendingDiscard.count}
+            >
+              墓地に置く
+            </button>
+          </div>
+        )}
+        <div className="message-area" role="status">
+          {message && <div key={message.id} className="message">{message.text}</div>}
+        </div>
+      </aside>
+      <div className="main-area">
+        <PlayerArea
+          playerState={players[AI]}
+          isOpponent
+          onSlotClick={(row, index) => handleFieldClick(AI, row, index)}
+          onLeaderClick={handleOpponentLeaderClick}
+          isLeaderTargetable={canDirectAttack}
+          onInspect={setHovered}
+          hpBonuses={hpBonusesOf(AI)}
+          leaderStatus={leaderStatusOf(AI)}
+          leaderBadge={guardOf(AI)}
+        />
+        <div className="front-line" aria-hidden="true"><span>前線</span></div>
+        <PlayerArea
+          playerState={players[HUMAN]}
+          isOpponent={false}
+          onSlotClick={(row, index) => handleFieldClick(HUMAN, row, index)}
+          onHandCardClick={handleHandCardClick}
+          onInspect={setHovered}
+          selectedCardIndex={selection.kind === 'hand' ? selection.index : null}
+          selectedPosition={selectedFieldPosition}
+          usedLabels={usedLabels}
+          markedHandIndices={discardIndices}
+          hpBonuses={hpBonusesOf(HUMAN)}
+          leaderStatus={leaderStatusOf(HUMAN)}
+          leaderBadge={guardOf(HUMAN)}
+          handCosts={handCosts}
+        />
       </div>
+      {pendingPick && (
+        <PickDialog
+          title={pendingPick.source}
+          message={PICK_TEXT[pendingPick.kind](pendingPick.maxCost, pendingPick.race)}
+          cards={pendingPick.kind === 'opponentHand' ? players[AI].hand : players[HUMAN].graveyard}
+          isPickable={card => {
+            if (pendingPick.kind === 'opponentHand') return !isMonster(card);
+            if (pendingPick.kind === 'graveyard') return isMonster(card);
+            return isMonster(card) && card.cost <= (pendingPick.maxCost ?? 0) && (!pendingPick.race || card.race === pendingPick.race);
+          }}
+          onPick={index => apply(pickCard(gameState, HUMAN, index))}
+          onSkip={pendingPick.kind === 'graveyardSummon' || (pendingPick.kind === 'opponentHand' && players[AI].hand.every(isMonster))
+            ? () => apply(pickCard(gameState, HUMAN, null))
+            : undefined}
+          skipLabel={pendingPick.kind === 'graveyardSummon' ? '出さない' : undefined}
+        />
+      )}
+      <ControlPanel
+        turn={turn}
+        phase={phase}
+        isPlayerTurn={isPlayerTurn}
+        canAttack={canAttackThisTurn(gameState)}
+        isBusy={!!pendingDiscard || !!pendingFreeSpell || !!pendingFreeSummon || !!pendingPick || !!gameState.pendingReaction}
+        onNextPhase={() => setGameState(nextPhase)}
+        onEndTurn={() => setGameState(endTurn)}
+        onExit={onExit}
+      />
     </div>
   );
 };
 
 export default GameBoard;
-
-

@@ -1,19 +1,24 @@
 import React from 'react';
-import { Card as CardType } from '../types/card';
-import Card from './Card';
+import { MonsterCard } from '../types/card';
+import { Row } from '../types/gameState';
+import Card, { HoverHandlers } from './Card';
 import '../styles/CardSlot.css';
 
-interface CardSlotProps {
-  card: CardType | null;
+interface CardSlotProps extends HoverHandlers {
+  card: MonsterCard | null;
+  row: Row;
   onClick: () => void;
+  isSelected?: boolean;
+  usedLabel?: string;
+  hpBonus?: number;
 }
 
-const CardSlot: React.FC<CardSlotProps> = ({ card, onClick }) => {
-  return (
-    <div className="card-slot" onClick={onClick}>
-      {card ? <Card card={card} onClick={() => {}} isSelected={false} /> : <div className="empty-slot"></div>}
-    </div>
-  );
-};
+const CardSlot: React.FC<CardSlotProps> = ({ card, row, onClick, isSelected = false, usedLabel, hpBonus, onMouseEnter, onMouseLeave }) => (
+  <div className={`card-slot ${card ? '' : 'empty'}`} onClick={onClick}>
+    {card && (
+      <Card card={card} row={row} isSelected={isSelected} usedLabel={usedLabel} hpBonus={hpBonus} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} />
+    )}
+  </div>
+);
 
 export default CardSlot;

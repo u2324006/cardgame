@@ -1,23 +1,38 @@
 import React from 'react';
 import { Card as CardType } from '../types/card';
-import Card from './Card';
+import Card, { CardBack } from './Card';
 import '../styles/Hand.css';
 
 interface HandProps {
   cards: CardType[];
-  onCardClick: (index: number) => void;
+  onCardClick?: (index: number) => void;
+  onCardHover?: (card: CardType | null) => void;
   selectedCardIndex?: number | null;
+  markedIndices?: number[]; // 捨てるカードとして選んだ手札
+  costs?: number[]; // 今のコスト（効果で下がっているとき。なければカードのコスト）
+  faceDown?: boolean;
 }
 
-const Hand: React.FC<HandProps> = ({ cards, onCardClick, selectedCardIndex }) => {
+const Hand: React.FC<HandProps> = ({ cards, onCardClick, onCardHover, selectedCardIndex, markedIndices = [], costs, faceDown = false }) => {
+  if (faceDown) {
+    return (
+      <div className="hand-container face-down">
+        {cards.map(card => <CardBack key={card.id} />)}
+      </div>
+    );
+  }
   return (
     <div className="hand-container">
       {cards.map((card, index) => (
-        <Card 
-          key={card.id} 
-          card={card} 
-          onClick={() => onCardClick(index)} 
+        <Card
+          key={card.id}
+          card={card}
+          onClick={() => onCardClick?.(index)}
+          onMouseEnter={() => onCardHover?.(card)}
+          onMouseLeave={() => onCardHover?.(null)}
           isSelected={selectedCardIndex === index}
+          markLabel={markedIndices.includes(index) ? '墓地へ' : undefined}
+          displayCost={costs?.[index]}
         />
       ))}
     </div>

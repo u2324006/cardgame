@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9DB57E"/>
+      <stop offset="1" stop-color="#3E5A34"/>
+    </linearGradient>
+  </defs>
+  <rect width="160" height="120" fill="url(#sky)"/>
+  <circle cx="128" cy="26" r="13" fill="#F3E3B8" opacity="0.7"/>
+  <path d="M0 92 L22 78 L40 88 L62 74 L84 86 L108 72 L132 84 L160 76 L160 120 L0 120 Z" fill="#2E4527"/>
+  <ellipse cx="80" cy="112" rx="46" ry="6" fill="#1D2B18" opacity="0.6"/>
+  <!-- 足 -->
+  <path d="M70 96 L66 111 L74 111 L77 97 Z M86 97 L89 111 L97 111 L91 96 Z" fill="#3B5A2C"/>
+  <!-- 胴体（革の鎧） -->
+  <path d="M67 66 L93 66 L97 98 L63 98 Z" fill="#6B5032"/>
+  <path d="M65 84 L95 84" stroke="#2A2118" stroke-width="3"/>
+  <circle cx="80" cy="84" r="2.5" fill="#D4AF6A"/>
+  <!-- 左腕 -->
+  <path d="M67 69 L56 86 L61 89 L70 76 Z" fill="#4F7A3A"/>
+  <!-- 右腕と短剣 -->
+  <path d="M93 69 L106 72 L104 78 L92 76 Z" fill="#4F7A3A"/>
+  <path d="M104 73 L117 42 L120 44 L109 76 Z" fill="#D9DDE2"/>
+  <path d="M100 74 L112 79" stroke="#2A2118" stroke-width="3" stroke-linecap="round"/>
+  <!-- 頭と耳 -->
+  <path d="M66 50 L42 38 L65 59 Z M94 50 L118 38 L95 59 Z" fill="#4F7A3A"/>
+  <ellipse cx="80" cy="52" rx="16" ry="15" fill="#5C8A44"/>
+  <ellipse cx="74" cy="50" rx="3" ry="2.4" fill="#F2C14E"/>
+  <ellipse cx="86" cy="50" rx="3" ry="2.4" fill="#F2C14E"/>
+  <path d="M71 59 Q80 65 89 59" stroke="#2A2118" stroke-width="2" fill="none"/>
+  <path d="M75 60 L76 63 L77 61 M83 61 L84 63 L85 60" stroke="#F3E3B8" stroke-width="1.2" fill="none"/>
+</svg>

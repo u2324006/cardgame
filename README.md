@@ -1,46 +1,147 @@
-# Getting Started with Create React App
+# Card Game
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+AI と対戦するターン制カードゲームです（React + TypeScript / Create React App）。
+このファイルはプログラム全体の説明です。ゲームのルールは [RULES.md](RULES.md)、カードの強さの基準は [BALANCE.md](BALANCE.md)、種族の特徴は [RACES.md](RACES.md) を見てください。
 
-## Available Scripts
+## 起動のしかた
 
-In the project directory, you can run:
+Node.js が必要です。
 
-### `npm start`
+```bash
+npm install
+npm start      # http://localhost:3000 で起動
+npm test       # テストを実行
+npm run build  # 本番用ビルド（build/ に出力）
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+`PUBLIC_URL=. npm run build` でビルドすると、画像などを相対パスで読むので、任意の場所に置いて公開できます。
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## 技術構成
 
-### `npm test`
+- React 19 + TypeScript（Create React App）
+- テスト：Jest + Testing Library（`npm test`）
+- サーバーは使っていません。デッキ・対戦の途中経過・作成したカードはブラウザの localStorage に保存します。
+- フォント：Google Fonts（Shippori Mincho B1 / Zen Kaku Gothic New）
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 画面
 
-### `npm run build`
+メニューから次の画面に進めます。
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- **対戦**：保存したデッキ（なければ自動で作ったデッキ）で AI と対戦します。
+  対戦の途中経過はこのブラウザに保存され、再読み込みしたりメニューへ戻ったりしても「続きから」で再開できます。
+- **デッキ作成**：「1. 大将を選ぶ」「2. カードを選ぶ」の順にデッキを組み、このブラウザに保存します。
+- **カード一覧**：すべてのカードと大将カードを、種類で絞り込んで見られます。
+- **カード作成**：白紙のカードに名前・コスト・能力・効果・雰囲気の文を直接書き込んでカードを作ります。
+  左の一覧から今までのカードを選んで能力を調整したり、複製・削除したりできます。
+  モンスターには「強さの目安」（同じコストのほかのモンスターとの比較）を表示します。
+  「イラストのイメージ」と「効果」の文章は、AI に渡して実装・作画してもらうための情報です（下の「カードデータ」）。
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## ゲームルール
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+ルールは [RULES.md](RULES.md) にまとめています。
 
-### `npm run eject`
+## 対戦の操作
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+| やりたいこと | 操作 |
+|---|---|
+| 召喚 | 手札のモンスター → 自分の空きスロット |
+| スペル | 手札のスペル → 対象のモンスター（回復の呪文・前衛支援・後衛支援は味方、炎の呪文は相手）。対象のないスペルは、手札で選んで左の「使う」を押す |
+| 引いて捨てる | 手札から捨てるカードを選び、左の「墓地に置く」を押す |
+| 移動 | 自分のモンスター → 反対の列の空きスロット |
+| 攻撃 | 自分のモンスター → 相手のモンスター、または相手の大将カード（HP。前衛のモンスターだけ） |
+| 指揮（指揮官） | プレイフェイズに後衛の指揮官を選び、左の「指揮する」→ 前衛の味方 |
+| 補給線 | 手札の補給線 → 墓地に送る自分の後衛のモンスターを選ぶ → 左の「使う」 |
+| 傭兵を手札を捨てて召喚 | 手札の傭兵 → 左の「手札を2枚捨てて召喚する」→ 空きスロット → 捨てるカードを選ぶ |
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+選んだものをもう一度クリックすると選択を解除できます。
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+## ディレクトリ構成
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+```
+src/
+├── types/        型定義（カード・ゲーム状態）
+├── logic/        ゲームのルール（React に依存しない純粋関数）
+│   ├── rules.ts       ルールの数値（デッキ枚数・HP など）
+│   ├── builtinCards.ts 最初から入っているカード・大将カード・イラストのデータ
+│   ├── cards.ts       今使っているカードの一覧（最初のカード＋カード作成での変更）と、カードを引く関数
+│   ├── cardEditor.ts  カード作成画面の処理（白紙のカード・入力チェック・強さの目安など）
+│   ├── cardData.ts    カードとカテゴリごとの JSON（AI に渡す形）の変換
+│   ├── spellEffects.ts スペルの効果の文章
+│   ├── deck.ts        デッキのルール（40枚・同名3枚まで）と保存
+│   ├── initialState.ts 対戦の初期状態
+│   ├── gameLogic.ts   フェイズ進行と各行動（召喚・スペル・移動・攻撃）
+│   ├── ai.ts          AI の思考ルーチン
+│   ├── savedBattle.ts 対戦の途中経過の保存と読み込み
+│   └── testUtils.ts   テスト用のカード・盤面を作るヘルパー
+├── data/cards/   カード作成で作ったカード（monsters.json・spells.json・leaders.json）と、AI 向けの説明（README.md）
+├── screens/      メニュー・カード一覧・デッキ作成・カード作成の画面
+├── hooks/        対戦画面用のフック（AI の自動進行・メッセージ表示）
+├── components/   App（画面の切り替え）、対戦画面とカードの部品
+└── styles/       CSS（index.css に配色とフォントの変数）
+public/images/cards/  カードのイラスト（SVG）
+```
 
-## Learn More
+## しくみ
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- `components/App.tsx` が今の画面（メニュー・カード一覧・デッキ作成・対戦）を切り替えます。
+- 対戦画面（`components/GameBoard.tsx`）はゲームの状態（`GameState`）を1つ持ち、
+  クリックに応じて `logic/gameLogic.ts` の関数（`playCard`・`castSpell`・`moveMonster`・`attack` など）を呼びます。
+- 自分のドローフェイズと AI のターンは `hooks/useAutoProgress.ts` がタイマーで進めます。
+- ルールの数値（デッキ枚数・同名の上限・手札・エネルギー上限など）は `logic/rules.ts` にまとまっています。
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+ルールの処理はすべて `src/logic/` にあり、state を書き換えずに新しい state を返します。
+行動がルール違反のときは `{ ok: false, error }` を返し、画面はそのメッセージを表示します。
+AI もプレイヤーと同じ関数を通して行動するので、ルール違反の手は打てません。
+
+### ブラウザに保存するデータ
+
+| キー | 内容 | 消えるとき |
+|---|---|---|
+| `cardgame.deck` | デッキ作成で保存したデッキ | ブラウザのデータを消したとき |
+| `cardgame.battle` | 対戦の途中経過（「続きから」用） | 新しく対戦を始めたとき、決着がついたとき |
+| `cardgame.cards` | カード作成で追加・変更・削除したカード（最初から入っているカードとの違いだけ） | 「すべて最初の状態に戻す」を選んだとき |
+
+`GameState` の形を変えたときは、`logic/savedBattle.ts` の `VERSION` を上げてください（古い途中経過は読み込まれなくなります）。
+保存したデッキが今のカードやルールに合わない場合は、メニューで知らせて自動のデッキを使います。
+
+### カードデータ（AI への引き継ぎ）
+
+カード作成で作ったカードは、カテゴリ（モンスター・スペル・大将）ごとの JSON にして AI に渡せます。
+
+1. ゲームの「カード作成」→「書き出し・読み込み」で、カテゴリごとの JSON をコピーする。
+2. それを AI に渡し、`src/data/cards/` の該当ファイルに取り込んでもらう。
+3. AI が「効果」の文章どおりに効果を実装し、「イラストのイメージ」から絵を作る。
+
+JSON の項目と、AI がやることは [src/data/cards/README.md](src/data/cards/README.md) にまとめています。
+`src/data/cards/` のカードは、最初から入っているカードとして読み込まれます（同じ ID なら `builtinCards.ts` のカードを置き換えます）。
+ブラウザに保存したカードと同じ ID のカードがあるときは、`updatedAt`（保存・取り込みした日時）が新しい方を使います。
+
+### カードを追加するには
+
+画面から追加・変更するときは、メニューの「カード作成」を使います（変更はそのブラウザにだけ保存されます）。
+ほかの人や AI に渡すときは、上の「カードデータ」の手順で JSON にします。
+
+プログラムで追加するときは、`src/logic/builtinCards.ts` の `BUILTIN_MONSTER_CARDS` または `BUILTIN_SPELL_CARDS` にカードを加えます。
+カードの ID は英数字と `_` だけにしてください（`-` は1枚ごとの個別IDの区切りに使います）。
+スペルの効果は `effect` で指定します（`buffFa`：FA上昇、`buffBa`：BA上昇、`heal`：回復、`damage`：相手にダメージ、`drawDiscard`：引いて捨てる、`disableLeader`：相手の大将の効果をなくす、`damageBack`：相手の後衛にダメージ、`forceMove`：相手を移動、`catchUpEnergy`：数の差だけエネルギー など。一覧は src/data/cards/README.md）。
+モンスター・大将の効果は `ability` で指定します。効果の種類の一覧は [src/data/cards/README.md](src/data/cards/README.md) にあります。
+種族「戦士」は効果のない基準カードで、能力値は [BALANCE.md](BALANCE.md) の式で決めています。ほかの種族は [RACES.md](RACES.md) の特徴に合わせてずらしています。
+カードを変えたら [RACES.md](RACES.md) のカード一覧も更新してください。
+デッキを40枚組めるよう、カードは最低14種類（同名3枚まで × 14 = 42枚）必要です。
+
+### 絵を入れるには
+
+カード作成画面では、カードの絵の部分をクリックすると、用意されたイラストから選ぶか画像をアップロードできます。
+プログラムでは、画像を `public/images/cards/` に置き、`src/logic/builtinCards.ts` のカードの定義の `image` にファイル名を指定します
+（選べるイラストの一覧は同じファイルの `BUILTIN_IMAGES`）。
+今入っているイラストは SVG で、同じ名前の PNG などに差し替えることもできます。
+
+```ts
+monster({
+  id: 'm001', name: 'ゴブリンアタッカー', image: cardImage('goblin.svg'), race: 'ゴブリン',
+  cost: 1, frontAttack: 2, backAttack: 2, cardHp: 6,
+  description: '前衛でも後衛でも同じ力で戦える、身軽なゴブリン。',
+}),
+```
+
+大将カードは `src/logic/builtinCards.ts` の `BUILTIN_LEADER_CARDS` で、名前・説明・最大HP・`image`・効果（`ability`）を設定できます。

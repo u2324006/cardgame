@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2E5A57"/>
+      <stop offset="1" stop-color="#0F2422"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#E6FFF7" stop-opacity="0.95"/>
+      <stop offset="0.5" stop-color="#7FE0C8" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#7FE0C8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="160" height="120" fill="url(#sky)"/>
+  <!-- 森の木々 -->
+  <path d="M0 80 L12 34 L24 80 Z M18 80 L32 22 L46 80 Z M118 80 L132 20 L146 80 Z M138 80 L150 36 L160 80 Z" fill="#163331"/>
+  <!-- 地面 -->
+  <path d="M0 78 Q80 66 160 78 L160 120 L0 120 Z" fill="#1E3B2C"/>
+  <!-- 泉の縁の石 -->
+  <ellipse cx="80" cy="94" rx="54" ry="16" fill="#5E6B6A"/>
+  <ellipse cx="80" cy="92" rx="46" ry="12" fill="#3FA8A0"/>
+  <ellipse cx="80" cy="92" rx="46" ry="12" fill="url(#glow)"/>
+  <!-- 湧き出す水 -->
+  <path d="M74 92 Q72 64 80 44 Q88 64 86 92 Z" fill="#BDF5EA" opacity="0.85"/>
+  <path d="M80 46 Q66 52 62 66 M80 46 Q94 52 98 66" stroke="#BDF5EA" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.8"/>
+  <circle cx="80" cy="56" r="26" fill="url(#glow)"/>
+  <!-- 光の粒 -->
+  <circle cx="54" cy="40" r="2" fill="#F3E3B8"/>
+  <circle cx="108" cy="34" r="2.4" fill="#F3E3B8"/>
+  <circle cx="98" cy="58" r="1.4" fill="#E6FFF7"/>
+  <circle cx="60" cy="62" r="1.4" fill="#E6FFF7"/>
+  <circle cx="72" cy="28" r="1.2" fill="#E6FFF7"/>
+  <circle cx="118" cy="70" r="1.6" fill="#F3E3B8"/>
+  <!-- 水面の波紋 -->
+  <ellipse cx="80" cy="92" rx="18" ry="4" fill="none" stroke="#E6FFF7" stroke-width="1" opacity="0.7"/>
+  <ellipse cx="80" cy="92" rx="30" ry="7" fill="none" stroke="#E6FFF7" stroke-width="0.8" opacity="0.4"/>
+</svg>

@@ -1,0 +1,140 @@
+[
+  {
+    "id": "l001",
+    "name": "大将",
+    "race": "",
+    "effectText": "このカードのHPが半分以下になったときに一度だけ使える。自分のエネルギーを3つ増やす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": "leader.svg"
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T07:17:46.000Z",
+    "maxHp": 42,
+    "effect": {
+      "kind": "rallyEnergy",
+      "hpRatio": 0.5,
+      "amount": 3
+    }
+  },
+  {
+    "id": "lmvcf1jj9pvni",
+    "name": "マウンテンゴーレム",
+    "race": "ゴーレム",
+    "effectText": "種族がゴーレムの自分モンスターのHPを+3する",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T07:17:46.000Z",
+    "maxHp": 45,
+    "effect": {
+      "kind": "raceHpBonus",
+      "race": "ゴーレム",
+      "amount": 3
+    }
+  },
+  {
+    "id": "l002",
+    "name": "軍師",
+    "race": "",
+    "effectText": "自分のモンスターが移動したとき、そのモンスターのHPを2回復する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T07:17:46.000Z",
+    "maxHp": 45,
+    "effect": {
+      "kind": "healOnMove",
+      "amount": 2
+    }
+  },
+  {
+    "id": "l003",
+    "name": "弓兵隊長",
+    "race": "",
+    "effectText": "このカードのHPが半分以下のとき、自分の後衛のモンスターのBAを1上げる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T07:10:48.000Z",
+    "maxHp": 42,
+    "effect": {
+      "kind": "backRowBaBonus",
+      "amount": 1,
+      "hpRatio": 0.5
+    }
+  },
+  {
+    "id": "l004",
+    "name": "不屈の将",
+    "race": "",
+    "effectText": "ターン開始時、自分の場のモンスターが相手より2体以上少なければ、カードを1枚多く引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T07:10:48.000Z",
+    "maxHp": 42,
+    "effect": {
+      "kind": "extraDrawWhenBehind",
+      "margin": 2,
+      "amount": 1
+    }
+  },
+  {
+    "id": "l005",
+    "name": "大魔導師",
+    "race": "",
+    "effectText": "1ターンに1回、自分がスペルを使ったとき、エネルギーを1増やす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T07:10:48.000Z",
+    "maxHp": 37,
+    "effect": {
+      "kind": "spellEnergy",
+      "amount": 1
+    }
+  },
+  {
+    "id": "l006",
+    "name": "賢者",
+    "race": "",
+    "effectText": "ターン開始時、手札が2枚以下なら、カードを1枚多く引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T07:10:48.000Z",
+    "maxHp": 42,
+    "effect": {
+      "kind": "extraDrawWhenFewCards",
+      "handSize": 2,
+      "amount": 1
+    }
+  }
+]

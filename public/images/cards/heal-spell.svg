@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+  <defs>
+    <radialGradient id="bg" cx="0.5" cy="0.55" r="0.7">
+      <stop offset="0" stop-color="#3E8E6A"/>
+      <stop offset="1" stop-color="#0F2A22"/>
+    </radialGradient>
+    <radialGradient id="glow">
+      <stop offset="0" stop-color="#E9FFE8"/>
+      <stop offset="0.5" stop-color="#8FE3A8" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#8FE3A8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="160" height="120" fill="url(#bg)"/>
+  <circle cx="80" cy="60" r="44" fill="none" stroke="#D4AF6A" stroke-width="1.5" opacity="0.7"/>
+  <circle cx="80" cy="60" r="34" fill="url(#glow)"/>
+  <!-- 十字 -->
+  <path d="M72 36 L88 36 L88 52 L104 52 L104 68 L88 68 L88 84 L72 84 L72 68 L56 68 L56 52 L72 52 Z" fill="#F3FFF0" stroke="#D4AF6A" stroke-width="2"/>
+  <!-- 葉 -->
+  <path d="M30 96 Q38 80 52 84 Q44 98 30 96 Z" fill="#7CC79A"/>
+  <path d="M130 96 Q122 80 108 84 Q116 98 130 96 Z" fill="#7CC79A"/>
+  <path d="M36 30 L38 36 L44 38 L38 40 L36 46 L34 40 L28 38 L34 36 Z" fill="#F3FFF0"/>
+  <path d="M126 22 L127.5 26 L131.5 27.5 L127.5 29 L126 33 L124.5 29 L120.5 27.5 L124.5 26 Z" fill="#F3FFF0"/>
+</svg>

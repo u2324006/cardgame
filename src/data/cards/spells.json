@@ -1,0 +1,702 @@
+[
+  {
+    "id": "s001",
+    "name": "前衛支援",
+    "race": "スペル",
+    "effectText": "味方モンスター1体のFAを、ターン終了まで1上げる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": "attack-spell.svg"
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-17T13:28:00.000Z",
+    "cost": 1,
+    "target": "allyMonster",
+    "effect": {
+      "kind": "buffFa",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s002",
+    "name": "回復の呪文",
+    "race": "スペル",
+    "effectText": "味方モンスター1体のHPを6回復する（最大HPまで）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": "heal-spell.svg"
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:04:14.000Z",
+    "cost": 1,
+    "target": "allyMonster",
+    "effect": {
+      "kind": "heal",
+      "amount": 6
+    }
+  },
+  {
+    "id": "s003",
+    "name": "炎の呪文",
+    "race": "スペル",
+    "effectText": "相手のモンスター1体に6ダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": "fire-spell.svg"
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:04:14.000Z",
+    "cost": 1,
+    "target": "enemyMonster",
+    "effect": {
+      "kind": "damage",
+      "amount": 6
+    }
+  },
+  {
+    "id": "cmvcejw05kll9",
+    "name": "恵の泉",
+    "race": "スペル",
+    "effectText": "カードを2枚引き、その後手札から2枚を選んで墓地に置く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "森の奥で、光る泉から澄んだ水が湧き出している。水面と周りに光の粒が舞う、やさしい雰囲気。",
+      "image": "blessing-spring.svg"
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-17T13:28:00.000Z",
+    "cost": 2,
+    "target": "none",
+    "effect": {
+      "kind": "drawDiscard",
+      "amount": 2
+    }
+  },
+  {
+    "id": "cmvcf4e4u3szf",
+    "name": "指揮低下",
+    "race": "スペル",
+    "effectText": "このターンの間相手の大将カードの効果をなくす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-17T13:28:00.000Z",
+    "cost": 1,
+    "target": "enemyLeader",
+    "effect": {
+      "kind": "disableLeader",
+      "amount": 1
+    }
+  },
+  {
+    "id": "cmvcf6svl19jp",
+    "name": "後衛支援",
+    "race": "スペル",
+    "effectText": "このターン自分のモンスター1体のBAを+1する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-17T13:28:00.000Z",
+    "cost": 1,
+    "target": "allyMonster",
+    "effect": {
+      "kind": "buffBa",
+      "amount": 1
+    }
+  },
+  {
+    "id": "cmvde4e0w32ku",
+    "name": "逆転の兆し",
+    "race": "スペル",
+    "effectText": "相手のモンスターの数と自分のモンスターの数の差分エネルギーを増やす",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T05:46:54.000Z",
+    "cost": 1,
+    "target": "none",
+    "effect": {
+      "kind": "catchUpEnergy",
+      "amount": 1
+    }
+  },
+  {
+    "id": "cmvdecarqav9w",
+    "name": "投擲",
+    "race": "スペル",
+    "effectText": "相手の後衛のモンスター1体に6ダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:04:14.000Z",
+    "cost": 1,
+    "target": "enemyMonster",
+    "effect": {
+      "kind": "damageBack",
+      "amount": 6
+    }
+  },
+  {
+    "id": "cmvdedg1ew8k5",
+    "name": "強制移動",
+    "race": "スペル",
+    "effectText": "相手モンスター1体を移動させる。相手は次の番そのモンスターを移動できない",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T05:46:54.000Z",
+    "cost": 1,
+    "target": "enemyMonster",
+    "effect": {
+      "kind": "forceMove",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s004",
+    "name": "薙ぎ払い",
+    "race": "スペル",
+    "effectText": "相手の前衛のモンスターすべてに4ダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:04:14.000Z",
+    "cost": 3,
+    "target": "none",
+    "effect": {
+      "kind": "damageFrontAll",
+      "amount": 4
+    }
+  },
+  {
+    "id": "s005",
+    "name": "一斉射撃",
+    "race": "スペル",
+    "effectText": "相手の前衛のモンスター1体に、自分の後衛にいるモンスターの数×2ダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:04:14.000Z",
+    "cost": 2,
+    "target": "enemyMonster",
+    "effect": {
+      "kind": "volley",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s006",
+    "name": "撤退命令",
+    "race": "スペル",
+    "effectText": "自分の前衛のモンスター1体を後衛へ下げ、HPを4回復する（移動の回数を使わない）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:04:14.000Z",
+    "cost": 1,
+    "target": "allyMonster",
+    "effect": {
+      "kind": "retreat",
+      "amount": 4
+    }
+  },
+  {
+    "id": "s007",
+    "name": "陣形転換",
+    "race": "スペル",
+    "effectText": "自分のモンスター1体がいる位置の、前衛と後衛のモンスターを入れ替える（移動の回数を使わない）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "cost": 1,
+    "target": "allyMonster",
+    "effect": {
+      "kind": "swapColumn",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s008",
+    "name": "挑発",
+    "race": "スペル",
+    "effectText": "相手の後衛のモンスター1体を同じ位置の前衛へ移動させる。前衛にモンスターがいるときは入れ替える。移動したモンスターは次のターン移動できない。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "cost": 1,
+    "target": "enemyMonster",
+    "effect": {
+      "kind": "pullForward",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s009",
+    "name": "背水の陣",
+    "race": "スペル",
+    "effectText": "自分の場のモンスターが相手より少ないとき、このターン自分の全モンスターのFA・BAを2上げる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T06:12:46.000Z",
+    "cost": 2,
+    "target": "none",
+    "effect": {
+      "kind": "lastStand",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s010",
+    "name": "籠城",
+    "race": "スペル",
+    "effectText": "次の相手のターン、自分の大将が受けるダメージを1回につき4減らす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:04:14.000Z",
+    "cost": 2,
+    "target": "allyLeader",
+    "effect": {
+      "kind": "guardLeader",
+      "amount": 4
+    }
+  },
+  {
+    "id": "s011",
+    "name": "奇襲部隊",
+    "race": "スペル",
+    "effectText": "手札のコスト3以下のモンスター1体を、コストを払わずに前衛に召喚する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 2,
+    "target": "none",
+    "effect": {
+      "kind": "freeSummon",
+      "amount": 3
+    }
+  },
+  {
+    "id": "s012",
+    "name": "魔導書",
+    "race": "スペル",
+    "effectText": "このターン、次に使うスペルのコストを2下げる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "target": "none",
+    "effect": {
+      "kind": "spellDiscount",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s013",
+    "name": "援軍要請",
+    "race": "スペル",
+    "effectText": "自分の場のモンスターが相手より少ないとき、このターン次に召喚するモンスターのコストを2下げる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "target": "none",
+    "effect": {
+      "kind": "summonDiscount",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s014",
+    "name": "生贄の儀式",
+    "race": "スペル",
+    "effectText": "自分のモンスター1体を墓地に置き、手札のコスト2以下のモンスター1体をコストを払わずに召喚する。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 0,
+    "target": "allyMonster",
+    "effect": {
+      "kind": "sacrificeSummon",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s015",
+    "name": "魔力の泉",
+    "race": "スペル",
+    "effectText": "次の自分のターン開始時、エネルギーを2増やす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "target": "none",
+    "effect": {
+      "kind": "delayedEnergy",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s016",
+    "name": "魔力結晶",
+    "race": "スペル",
+    "effectText": "手札を2枚捨て、エネルギーを1増やす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T07:00:54.000Z",
+    "cost": 0,
+    "target": "none",
+    "effect": {
+      "kind": "discardForEnergy",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s017",
+    "name": "蓄魔の壺",
+    "race": "スペル",
+    "effectText": "エネルギーの上限を1上げる（最大12）。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 0,
+    "target": "none",
+    "effect": {
+      "kind": "raiseMaxEnergy",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s018",
+    "name": "魔力吸収",
+    "race": "スペル",
+    "effectText": "相手のエネルギーを2減らし、自分のエネルギーを1増やす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 2,
+    "target": "none",
+    "effect": {
+      "kind": "drainEnergy",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s019",
+    "name": "生命変換",
+    "race": "スペル",
+    "effectText": "自分の大将のHPを5減らし、エネルギーを2増やす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T07:00:54.000Z",
+    "cost": 0,
+    "target": "none",
+    "effect": {
+      "kind": "lifeToEnergy",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s020",
+    "name": "捧げ物",
+    "race": "スペル",
+    "effectText": "自分のモンスター1体を墓地に置き、そのコストぶんエネルギーを増やす。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "target": "allyMonster",
+    "effect": {
+      "kind": "sacrificeForEnergy",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s021",
+    "name": "作戦会議",
+    "race": "スペル",
+    "effectText": "カードを2枚引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 2,
+    "target": "none",
+    "effect": {
+      "kind": "draw",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s022",
+    "name": "補給線",
+    "race": "スペル",
+    "effectText": "自分の後衛のモンスターを好きな数だけ墓地に送り、その数だけカードを引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "target": "allyMonster",
+    "effect": {
+      "kind": "supplyLine",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s023",
+    "name": "戦利品",
+    "race": "スペル",
+    "effectText": "このターン、最初に相手のモンスターを倒したとき、カードを1枚引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "target": "none",
+    "effect": {
+      "kind": "spoils",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s024",
+    "name": "墓荒らし",
+    "race": "スペル",
+    "effectText": "自分の墓地のモンスター1体を手札に戻す。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "target": "none",
+    "effect": {
+      "kind": "graveRob",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s025",
+    "name": "錬成",
+    "race": "スペル",
+    "effectText": "手札を1枚捨て、カードを2枚引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "target": "none",
+    "effect": {
+      "kind": "discardDraw",
+      "amount": 2
+    }
+  },
+  {
+    "id": "s026",
+    "name": "略奪",
+    "race": "スペル",
+    "effectText": "相手の手札をランダムに1枚捨てさせる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 2,
+    "target": "none",
+    "effect": {
+      "kind": "randomDiscard",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s027",
+    "name": "火炎瓶",
+    "race": "スペル",
+    "effectText": "手札を1枚捨て、相手のモンスター1体に「捨てたカードのコスト＋4」ダメージを与える。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-19T08:04:14.000Z",
+    "cost": 1,
+    "target": "enemyMonster",
+    "effect": {
+      "kind": "firebomb",
+      "amount": 4
+    }
+  },
+  {
+    "id": "s028",
+    "name": "情報戦",
+    "race": "スペル",
+    "effectText": "相手の手札を見て、スペルを1枚選んで捨てさせる。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 1,
+    "target": "none",
+    "effect": {
+      "kind": "reveal",
+      "amount": 1
+    }
+  },
+  {
+    "id": "s029",
+    "name": "仕切り直し",
+    "race": "スペル",
+    "effectText": "手札をすべて捨て、同じ枚数のカードを引く。",
+    "flavorText": "",
+    "illustration": {
+      "prompt": "",
+      "image": ""
+    },
+    "implementation": "実装済み",
+    "memo": "",
+    "updatedAt": "2026-10-18T16:08:11.000Z",
+    "cost": 3,
+    "target": "none",
+    "effect": {
+      "kind": "reshuffle",
+      "amount": 1
+    }
+  }
+]

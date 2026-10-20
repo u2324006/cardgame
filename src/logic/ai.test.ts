@@ -1,0 +1,331 @@
+import { GameState, Phase } from '../types/gameState';
+import { createInitialGameState } from './initialState';
+import { nextPhase } from './gameLogic';
+import { resolveAiReaction, runAiAttackPhase, runAiPlayPhase } from './ai';
+import { apprentice, spellOf, withAbility, backSpell, catchUpSpell, disableSpell, drawSpell, forceMoveSpell, throwSpell, withRallyLeader, emptyState, fireSpell, healSpell, inPhase, monster, spell, withField, withGolemLeader, withPlayer } from './testUtils';
+
+const aiTurn = (state: GameState, phase: Phase = 'Play'): GameState => inPhase(state, phase, 'player2');
+
+describe('AI play phase', () => {
+  it('summons the strongest affordable monsters into their preferred row', () => {
+    const state = withPlayer(aiTurn(emptyState()), 'player2', {
+      currentEnergy: 3,
+      hand: [
+        monster('weak', { frontAttack: 1, cardHp: 2 }),
+        monster('big', { frontAttack: 5, cardHp: 9, cost: 2 }),
+        monster('back', { frontAttack: 0, backAttack: 4 }),
+        monster('pricey', { frontAttack: 9, cost: 4 }),
+      ],
+    });
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.players.player2.field.frontRow[0]?.id).toBe('big');
+    expect(next.players.player2.field.backRow[0]?.id).toBe('back');
+    expect(next.players.player2.hand.map(c => c.id)).toEqual(['weak', 'pricey']);
+    expect(next.players.player2.currentEnergy).toBe(0);
+  });
+
+  it('falls back to the other row when the preferred row is full', () => {
+    let state = withField(aiTurn(emptyState()), 'player2', 'frontRow', [monster('a'), monster('b'), monster('c')]);
+    state = withPlayer(state, 'player2', { currentEnergy: 1, hand: [monster('d', { frontAttack: 3, backAttack: 1 })] });
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.players.player2.field.backRow[0]?.id).toBe('d');
+  });
+
+  it('does not summon into a row where the monster has no attack', () => {
+    let state = withField(aiTurn(emptyState()), 'player2', 'frontRow', [monster('a'), monster('b'), monster('c')]);
+    state = withPlayer(state, 'player2', { currentEnergy: 1, hand: [monster('d', { frontAttack: 3, backAttack: 0 })] });
+    expect(runAiPlayPhase(state, 'player2').players.player2.hand.map(c => c.id)).toEqual(['d']);
+  });
+
+  it('moves a monster to the row where it attacks harder', () => {
+    const state = withField(aiTurn(emptyState()), 'player2', 'frontRow', [monster('mage', { frontAttack: 0, backAttack: 5 }), null, null]);
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.players.player2.field.backRow[0]?.id).toBe('mage');
+    expect(next.turnState.movedMonsterId).toBe('mage');
+  });
+
+  it('casts the attack spell only when the +1 enables a kill', () => {
+    let state = withField(aiTurn(emptyState()), 'player2', 'frontRow', [monster('x', { frontAttack: 3 }), null, null]);
+    state = withPlayer(state, 'player2', { currentEnergy: 1, hand: [spell] });
+
+    const noKill = withField(state, 'player1', 'frontRow', [monster('a', { cardHp: 9 }), null, null]);
+    expect(runAiPlayPhase(noKill, 'player2').players.player2.hand).toHaveLength(1);
+
+    const kill = withField(state, 'player1', 'frontRow', [monster('a', { cardHp: 4 }), null, null]);
+    const next = runAiPlayPhase(kill, 'player2');
+    expect(next.players.player2.hand).toHaveLength(0);
+    expect(next.turnState.attackBuffs['x']).toBe(1);
+  });
+});
+
+describe('AI spells', () => {
+  it('uses the fire spell only when it can destroy a monster', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 2, hand: [fireSpell] });
+    const tough = withField(state, 'player1', 'frontRow', [monster('a', { cardHp: 9 }), null, null]);
+    expect(runAiPlayPhase(tough, 'player2').players.player2.hand).toHaveLength(1);
+
+    state = withField(state, 'player1', 'backRow', [monster('weak', { cardHp: 2 }), null, null]);
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.players.player1.field.backRow[0]).toBeNull();
+  });
+
+  it('heals a damaged ally', () => {
+    let state = withField(aiTurn(emptyState()), 'player2', 'frontRow', [{ ...monster('m002-0'), cardHp: 7 }, null, null]);
+    state = withPlayer(state, 'player2', { currentEnergy: 1, hand: [healSpell] });
+    expect(runAiPlayPhase(state, 'player2').players.player2.field.frontRow[0]?.cardHp).toBe(10);
+  });
+});
+
+describe('AI with unimplemented spells', () => {
+  it('keeps them in hand', () => {
+    const custom = { ...spell, id: 'cx-0', effect: { kind: 'custom' as const }, target: 'enemyMonster' as const };
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 5, hand: [custom] });
+    state = withField(state, 'player1', 'frontRow', [monster('a', { cardHp: 1 }), null, null]);
+    expect(runAiPlayPhase(state, 'player2').players.player2.hand).toHaveLength(1);
+  });
+});
+
+describe('AI with draw-then-discard spells', () => {
+  it('casts it when the deck has enough cards and discards unusable cards first', () => {
+    const custom = { ...spell, id: 'cx-0', effect: { kind: 'custom' as const } };
+    const state = withPlayer(aiTurn(emptyState()), 'player2', {
+      currentEnergy: 1,
+      hand: [drawSpell, custom, monster('strong', { frontAttack: 6, cardHp: 12, cost: 9 })],
+      deck: [monster('weak', { frontAttack: 0, backAttack: 0, cardHp: 1, cost: 9 }), monster('ok', { cost: 9 }), monster('rest')],
+    });
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.pendingDiscard).toBeNull();
+    expect(next.players.player2.hand.map(c => c.id).sort()).toEqual(['ok', 'strong']);
+    expect(next.players.player2.graveyard.map(c => c.id)).toEqual(expect.arrayContaining([drawSpell.id, 'cx-0', 'weak']));
+  });
+
+  it('keeps it when the deck is too small', () => {
+    const state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 1, hand: [drawSpell], deck: [monster('only')] });
+    expect(runAiPlayPhase(state, 'player2').players.player2.hand.map(c => c.id)).toEqual([drawSpell.id]);
+  });
+});
+
+describe('AI attack phase', () => {
+  it('kills the most valuable monster it can and chips the rest', () => {
+    let state = withField(aiTurn(emptyState(), 'Attack'), 'player2', 'frontRow', [monster('x', { frontAttack: 5 }), monster('y', { frontAttack: 2 }), null]);
+    state = withField(state, 'player1', 'frontRow', [
+      monster('weak', { frontAttack: 1, cardHp: 3 }),
+      monster('strong', { frontAttack: 6, cardHp: 5 }),
+      monster('tank', { cardHp: 20 }),
+    ]);
+    const next = runAiAttackPhase(state, 'player2');
+    const front = next.players.player1.field.frontRow;
+    expect(front[1]).toBeNull(); // x(5) が strong を倒す
+    expect(front[0]?.cardHp).toBe(1); // y(2) は倒せないので一番HPの低い weak を削る
+    expect(front[2]?.cardHp).toBe(20);
+  });
+
+  it('uses the attacker with the least overkill and attacks directly once the front row is clear', () => {
+    let state = withField(aiTurn(emptyState(), 'Attack'), 'player2', 'frontRow', [monster('big', { frontAttack: 9 }), monster('small', { frontAttack: 3 }), null]);
+    state = withField(state, 'player1', 'frontRow', [monster('a', { cardHp: 3 }), null, null]);
+    const next = runAiAttackPhase(state, 'player2');
+    expect(next.players.player1.field.frontRow[0]).toBeNull();
+    expect(next.players.player1.specialCardHp).toBe(20 - 9);
+  });
+
+  it('attacks the special card with front-row monsters and the back row with back-row monsters', () => {
+    let state = withField(aiTurn(emptyState(), 'Attack'), 'player2', 'frontRow', [monster('x', { frontAttack: 4 }), null, null]);
+    state = withField(state, 'player2', 'backRow', [monster('y', { backAttack: 2 }), null, null]);
+    state = withField(state, 'player1', 'backRow', [monster('b'), null, null]);
+    const next = runAiAttackPhase(state, 'player2');
+    expect(next.players.player1.specialCardHp).toBe(20 - 4); // 後衛の y は大将を攻撃できない
+    expect(next.players.player1.field.backRow[0]?.cardHp).toBe(5 - 2);
+  });
+
+  it('does not attack with the back row when nothing but the special card is left', () => {
+    const state = withField(aiTurn(emptyState(), 'Attack'), 'player2', 'backRow', [monster('y', { backAttack: 2 }), null, null]);
+    const next = runAiAttackPhase(state, 'player2');
+    expect(next.players.player1.specialCardHp).toBe(20);
+    expect(next.turnState.attackedMonsterIds).toEqual([]);
+  });
+});
+
+describe('AI with leader-related spells', () => {
+  it('casts 指揮低下 only when the opponent leader is boosting a monster', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 1, hand: [disableSpell] });
+    state = withField(state, 'player1', 'frontRow', [monster('g', { race: 'ゴーレム', cardHp: 0 }), null, null]);
+    expect(runAiPlayPhase(state, 'player2').players.player2.hand).toHaveLength(1);
+    const next = runAiPlayPhase(withGolemLeader(state, 'player1'), 'player2');
+    expect(next.players.player2.hand).toHaveLength(0);
+    expect(next.players.player1.field.frontRow[0]).toBeNull();
+  });
+
+  it('casts 後衛支援 on a back-row attacker', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 1, hand: [backSpell] });
+    state = withField(state, 'player2', 'backRow', [monster('archer', { frontAttack: 0, backAttack: 3 }), null, null]);
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.turnState.backAttackBuffs).toEqual({ archer: 1 });
+  });
+});
+
+describe('AI with the second batch of cards', () => {
+  it('casts a free spell after summoning 見習い魔導士', () => {
+    const fire = { ...fireSpell, cost: 1 };
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 1, hand: [apprentice(), fire] });
+    state = withField(state, 'player1', 'frontRow', [monster('weak', { cardHp: 3 }), null, null]);
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.pendingFreeSpell).toBeNull();
+    expect(next.players.player1.field.frontRow[0]).toBeNull();
+    expect(next.players.player2.hand).toHaveLength(0);
+  });
+
+  it('skips the free spell when nothing is worth casting', () => {
+    const state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 1, hand: [apprentice(), { ...fireSpell, cost: 1 }] });
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.pendingFreeSpell).toBeNull();
+    expect(next.players.player2.hand).toHaveLength(1);
+  });
+
+  it('throws at a back-row monster it can destroy', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 1, hand: [throwSpell] });
+    state = withField(state, 'player1', 'frontRow', [monster('f', { cardHp: 2 }), null, null]);
+    state = withField(state, 'player1', 'backRow', [monster('b', { cardHp: 3 }), null, null]);
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.players.player1.field.backRow[0]).toBeNull();
+    expect(next.players.player1.field.frontRow[0]).not.toBeNull();
+  });
+
+  it('force-moves the last front-row blocker so it can attack the leader', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 1, hand: [forceMoveSpell] });
+    state = withField(state, 'player2', 'frontRow', [monster('atk', { frontAttack: 4 }), null, null]);
+    state = withField(state, 'player1', 'frontRow', [null, monster('wall', { cardHp: 20 }), null]);
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.players.player1.field.frontRow[1]).toBeNull();
+    expect(next.players.player1.field.backRow[1]?.id).toBe('wall');
+  });
+
+  it('casts 逆転の兆し only when it gains more energy than it costs, and uses the leader ability', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 1, hand: [catchUpSpell] });
+    state = withField(state, 'player1', 'frontRow', [monster('a'), null, null]);
+    expect(runAiPlayPhase(state, 'player2').players.player2.hand).toHaveLength(1);
+    state = withField(state, 'player1', 'backRow', [monster('b'), monster('c'), null]);
+    expect(runAiPlayPhase(state, 'player2').players.player2.currentEnergy).toBe(3);
+
+    const rally = withPlayer(withRallyLeader(aiTurn(emptyState()), 'player2'), 'player2', { currentEnergy: 0, specialCardHp: 8 });
+    const next = runAiPlayPhase(rally, 'player2');
+    expect(next.players.player2.leaderAbilityUsed).toBe(true);
+    expect(next.players.player2.currentEnergy).toBe(3);
+  });
+});
+
+describe('AI with front/back row cards', () => {
+  it('snipes a back-row monster it can destroy past the front row', () => {
+    let state = withField(aiTurn(emptyState(), 'Attack'), 'player2', 'backRow', [withAbility('sn', { kind: 'sniper' }, { backAttack: 3 }), null, null]);
+    state = withField(state, 'player1', 'frontRow', [monster('wall', { cardHp: 20 }), null, null]);
+    state = withField(state, 'player1', 'backRow', [monster('soft', { cardHp: 3 }), null, null]);
+    expect(runAiAttackPhase(state, 'player2').players.player1.field.backRow[0]).toBeNull();
+  });
+
+  it('sweeps a crowded front row and commands from the back row', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 3, hand: [spellOf('sweep', { kind: 'damageFrontAll', amount: 2 }, 3)] });
+    state = withField(state, 'player1', 'frontRow', [monster('a', { cardHp: 2 }), monster('b', { cardHp: 6 }), null]);
+    state = withField(state, 'player2', 'backRow', [withAbility('cm', { kind: 'commander', amount: 1 }, { frontAttack: 1, backAttack: 2 }), null, null]);
+    state = withField(state, 'player2', 'frontRow', [monster('f', { frontAttack: 3 }), null, null]);
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.players.player1.field.frontRow[0]).toBeNull();
+    expect(next.players.player1.field.frontRow[1]?.cardHp).toBe(4);
+    expect(next.turnState.attackBuffs).toEqual({ f: 1 });
+  });
+
+  it('summons 伏兵 at the reduced cost when outnumbered', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 1, hand: [withAbility('am', { kind: 'ambush', amount: 1 }, { cost: 2 })] });
+    state = withField(state, 'player1', 'frontRow', [monster('a'), null, null]);
+    expect(runAiPlayPhase(state, 'player2').players.player2.hand).toHaveLength(0);
+  });
+});
+
+describe('AI with resource cards', () => {
+  it('uses 召喚士 to summon a second monster for free', () => {
+    const summoner = withAbility('sm', { kind: 'freeSummonOnSummon', maxCost: 2 }, { cost: 3 });
+    const state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 3, hand: [summoner, monster('cheap', { cost: 2 })] });
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.pendingFreeSummon).toBeNull();
+    expect(next.players.player2.hand).toHaveLength(0);
+  });
+
+  it('draws with 作戦会議 before summoning and strips a spell with 情報戦', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', {
+      currentEnergy: 3,
+      hand: [spellOf('meeting', { kind: 'draw', amount: 2 }, 2), spellOf('intel', { kind: 'reveal', amount: 1 })],
+      deck: ['d1', 'd2', 'd3', 'd4', 'd5'].map(id => monster(id, { cost: 9 })),
+    });
+    state = withPlayer(state, 'player1', { hand: [monster('x'), { ...fireSpell, cost: 1 }] });
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.pendingPick).toBeNull();
+    expect(next.players.player1.hand.map(c => c.id)).toEqual(['x']);
+    expect(next.players.player2.deck.length).toBeLessThanOrEqual(3);
+  });
+});
+
+describe('AI vs AI full games', () => {
+  // 両方のプレイヤーを AI に動かさせて、途中で止まったり例外が出たりしないことを確かめる
+  const playGame = (): GameState => {
+    let state = createInitialGameState();
+    for (let step = 0; step < 2000 && !state.winner; step++) {
+      const player = state.currentPlayer;
+      if (state.pendingReaction) {
+        // 相手の効果で捨てられた怨霊・幻影兵は、その持ち主（相手側の AI）が選ぶ
+        state = resolveAiReaction(state, state.pendingReaction.player);
+        continue;
+      }
+      if (state.phase === 'Play') state = runAiPlayPhase(state, player);
+      else if (state.phase === 'Attack') state = runAiAttackPhase(state, player);
+      if (state.pendingReaction) continue; // 相手側が選ぶ場面（次のループで相手の AI が選ぶ）
+      const advanced = nextPhase(state);
+      if (advanced === state && !state.winner) throw new Error(`stuck at turn ${state.turn} ${state.phase}`);
+      state = advanced;
+    }
+    return state;
+  };
+
+  it('finishes games without getting stuck', () => {
+    for (let i = 0; i < 20; i++) {
+      const finished = playGame();
+      expect(finished.winner).not.toBeNull();
+    }
+  });
+});
+
+describe('AI reactions to discards', () => {
+  it('chooses a target for 怨霊 discarded by the opponent', () => {
+    let state = withField(emptyState(), 'player1', 'frontRow', [monster('tough', { cardHp: 9 }), monster('weak', { cardHp: 2, cost: 3 }), null]);
+    state = { ...state, pendingReaction: { player: 'player2', card: monster('wr'), kind: 'damage', amount: 2 } };
+    const next = resolveAiReaction(state, 'player2');
+    expect(next.pendingReaction).toBeNull();
+    expect(next.players.player1.field.frontRow[1]).toBeNull();
+  });
+});
+
+describe('AI energy planning', () => {
+  it('casts an impactful spell before spending energy on summons', () => {
+    let state = withPlayer(aiTurn(emptyState()), 'player2', { currentEnergy: 2, hand: [monster('cheap', { cost: 2 }), { ...fireSpell, cost: 2 }] });
+    state = withField(state, 'player1', 'frontRow', [monster('weak', { cardHp: 3 }), null, null]);
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.players.player1.field.frontRow[0]).toBeNull();
+    expect(next.players.player2.hand.map(c => c.id)).toEqual(['cheap']);
+  });
+
+  it('saves energy for a much stronger monster when only a couple of slots are left', () => {
+    let state = withField(aiTurn(emptyState()), 'player2', 'frontRow', [monster('a'), monster('b'), null]);
+    state = withField(state, 'player2', 'backRow', [monster('c'), monster('d'), null]);
+    state = withPlayer(state, 'player2', { currentEnergy: 1, hand: [monster('filler', { cost: 1, frontAttack: 1, cardHp: 2 }), monster('big', { cost: 2, frontAttack: 6, cardHp: 20 })] });
+    expect(runAiPlayPhase(state, 'player2').players.player2.hand).toHaveLength(2);
+  });
+
+  it('uses 錬成 to replace a card it cannot use soon', () => {
+    const state = withPlayer(aiTurn(emptyState()), 'player2', {
+      currentEnergy: 1,
+      hand: [spellOf('alchemy', { kind: 'discardDraw', amount: 2 }), monster('huge', { cost: 9 }), monster('ok', { cost: 5 })],
+      deck: ['d1', 'd2', 'd3', 'd4', 'd5'].map(id => monster(id, { cost: 9 })),
+    });
+    const next = runAiPlayPhase(state, 'player2');
+    expect(next.players.player2.graveyard.map(c => c.id)).toEqual(expect.arrayContaining(['alchemy']));
+    expect(next.pendingDiscard).toBeNull();
+  });
+});
+

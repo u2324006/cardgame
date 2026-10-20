@@ -1,23 +1,162 @@
+/* デザイン案A「ダークファンタジー」の配色 */
 :root {
-  --board-bg-color: #0D2B45;
-  --player-area-bg-color: #1C4B7A;
-  --card-slot-bg-color: #2A6DAD;
-  --card-info-bg-color: #061A2E;
-  --card-border-color: #84A9C0;
-  --text-color: #F0F8FF;
-  --turn-button-bg-color: #5D9B9B;
-  --turn-button-hover-bg-color: #84C0C0;
+  --bg: #12141C;
+  --panel: #1B1F2B;
+  --panel-border: #343A4E;
+  --slot-border: #3A4056;
+  --text: #E9E4D8;
+  --text-muted: #B9B3A5;
+  --text-faint: #8F8A7E;
+  --gold: #D4AF6A;
+  --gold-frame: #C9A45C;
+  --gold-text: #F3E3B8;
+  --gold-dark: #6B5530;
+  --parchment: #EFE5CF;
+  --parchment-art: #D9CBAE;
+  --ink: #2A2118;
+  --ink-muted: #5B4A33;
+  --leader-header: #5A1E1E;
+  --leader-art: #CDB894;
+  --spell-frame: #8A6BC9;
+  --spell-header: #3B2766;
+  --spell-art: #D9CFEA;
+  --spell-text: #4B2E83;
+  --fa: #B4471F;
+  --ba: #2F64A8;
+  --hp: #8E2525;
+  --hp-damaged: #C2410C;
+  --energy: #F2C14E;
+  --selected: #F5D27A;
+  --warning-bg: #2A2215;
+  --warning-border: #A8742B;
+  --warning-text: #F3D9A4;
+
+  color-scheme: dark;
+
+  --font-display: 'Shippori Mincho B1', 'Hiragino Mincho ProN', serif;
+  --font-body: 'Zen Kaku Gothic New', 'Hiragino Sans', 'Meiryo', sans-serif;
 }
 
 body {
   margin: 0;
-  font-family: 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--board-bg-color);
-  color: var(--text-color);
+  background-color: var(--bg);
+  color: var(--text);
 }
 
 * {
   box-sizing: border-box;
+}
+
+button {
+  font-family: var(--font-body);
+}
+
+/* --- 共通のボタン --- */
+
+.primary-button,
+.secondary-button {
+  height: 48px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s, background-color 0.15s;
+}
+
+.primary-button {
+  border: none;
+  background: var(--gold);
+  color: var(--ink);
+}
+
+.secondary-button {
+  border: 1px solid var(--gold-frame);
+  background: transparent;
+  color: var(--gold-text);
+}
+
+.primary-button:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: var(--warning-bg);
+}
+
+.primary-button:disabled,
+.secondary-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.text-button {
+  align-self: flex-start;
+  padding: 8px 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.text-button:hover {
+  color: var(--gold-text);
+}
+
+.text-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* --- 確認ダイアログ --- */
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(8, 9, 14, 0.7);
+}
+
+.dialog {
+  width: min(400px, 100%);
+  padding: 24px;
+  border: 1px solid var(--gold-frame);
+  border-radius: 14px;
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dialog-message {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.dialog-actions button {
+  height: 42px;
+  padding: 0 18px;
+  font-size: 14px;
+}
+
+/* キーボード操作時のフォーカス表示 */
+button:focus-visible {
+  outline: 2px solid var(--selected);
+  outline-offset: 2px;
 }
